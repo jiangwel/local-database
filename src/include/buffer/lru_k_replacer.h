@@ -17,6 +17,7 @@
 #include <mutex>  // NOLINT
 #include <unordered_map>
 #include <vector>
+#include <memory>
 
 #include "common/config.h"
 #include "common/macros.h"
@@ -27,22 +28,42 @@ namespace bustub {
 
   class LRUKNode {
   public:
-    explicit LRUKNode(size_t current_timestamp) {
+    explicit LRUKNode(size_t current_timestamp, size_t k) {
+      latch_.lock();
+
+      k_ = k;
+      timestamp_num_ = 0;
+      std::unique_ptr<std::vector<size_t>> temp_ptr(new std::vector<size_t>(2 * k_));
+      history_ptr_.reset(temp_ptr.release());
       insertCurrentTimeStamp(current_timestamp);
+
+      latch_.unlock();
     };
     void insertCurrentTimeStamp(size_t current_timestamp) {
-      history_.insert(history_.begin(), current_timestamp);
+      latch_.lock();
+      if (timestamp_num_ < 2 * k_)
+        (*history_ptr_)[timestamp_num_++] = current_timestamp;
+      else
+        (*history_ptr_).push_back(current_timestamp);
+      latch_.unlock();
     };
     DISALLOW_COPY_AND_MOVE(LRUKNode);
-    ~LRUKNode() = default;
+    ~LRUKNode(){
+      latch_.lock();
+      history_ptr_.reset();
+      latch_.unlock();
+    }
   private:
     /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
     // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
 
-    std::vector<size_t> history_;
-    [[maybe_unused]] size_t k_;
+    [[maybe_unused]] std::vector<size_t> history_;
+    size_t k_;
     [[maybe_unused]] frame_id_t fid_;
     bool is_evictable_{ false };
+    std::unique_ptr<std::vector<size_t>> history_ptr_;
+    size_t timestamp_num_;
+    std::mutex latch_;
   };
 
   /**
@@ -169,7 +190,7 @@ namespace bustub {
     size_t curr_size_{ 0 };
     size_t replacer_size_;
     size_t k_;
-    [[maybe_unused]] std::mutex latch_;
+    std::mutex latch_;
   };
 
 }  // namespace bustub
