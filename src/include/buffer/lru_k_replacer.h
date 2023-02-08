@@ -87,8 +87,12 @@ namespace bustub {
      * @param num_frames the maximum number of frames the LRUReplacer will be required to store
      */
     explicit LRUKReplacer(size_t num_frames, size_t k) {
+      latch_.lock();
       k_ = k;
       replacer_size_ = num_frames;
+      std::unique_ptr<std::unordered_map<frame_id_t, LRUKNode>> temp_ptr(new std::unordered_map<frame_id_t, LRUKNode>);
+      node_store_ptr_.reset(temp_ptr.release());
+      latch_.unlock();
     }
 
     DISALLOW_COPY_AND_MOVE(LRUKReplacer);
@@ -98,7 +102,11 @@ namespace bustub {
      *
      * @brief Destroys the LRUReplacer.
      */
-    ~LRUKReplacer() = default;
+    ~LRUKReplacer(){
+      latch_.lock();
+      node_store_ptr_.reset();
+      latch_.unlock();
+    };
 
     /**
      * TODO(P1): Add implementation
@@ -185,12 +193,13 @@ namespace bustub {
   private:
     // TODO(student): implement me! You can replace these member variables as you like.
     // Remove maybe_unused if you start using them.
-    std::unordered_map<frame_id_t, LRUKNode> node_store_;
+    [[maybe_unused]] std::unordered_map<frame_id_t, LRUKNode> node_store_;
     size_t current_timestamp_{ 0 };
     size_t curr_size_{ 0 };
     size_t replacer_size_;
     size_t k_;
     std::mutex latch_;
+    std::unique_ptr<std::unordered_map<frame_id_t, LRUKNode>> node_store_ptr_;
   };
 
 }  // namespace bustub
