@@ -14,17 +14,54 @@
 #include "common/exception.h"
 
 namespace bustub {
+    LRUKNode::LRUKNode(size_t current_timestamp, size_t k) {
+        latch_.lock();
 
-LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_frames), k_(k) {}
+        k_ = k;
+        timestamp_num_ = 0;
+        std::unique_ptr<std::vector<size_t>> temp_ptr(new std::vector<size_t>(2 * k_));
+        history_ptr_.reset(temp_ptr.release());
+        insertCurrentTimeStamp(current_timestamp);
 
-auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool { return false; }
+        latch_.unlock();
+    }
+    void LRUKNode::insertCurrentTimeStamp(size_t current_timestamp) {
+        latch_.lock();
+        if (timestamp_num_ < 2 * k_)
+            (*history_ptr_)[timestamp_num_++] = current_timestamp;
+        else
+            (*history_ptr_).push_back(current_timestamp);
+        latch_.unlock();
+    }
+    LRUKNode::~LRUKNode() {
+        latch_.lock();
+        history_ptr_.reset();
+        latch_.unlock();
+    }
 
-void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {}
+    LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) {
+        latch_.lock();
+        k_ = k;
+        replacer_size_ = num_frames;
+        std::unique_ptr<std::unordered_map<frame_id_t, LRUKNode>> temp_ptr(new std::unordered_map<frame_id_t, LRUKNode>);
+        node_store_ptr_.reset(temp_ptr.release());
+        latch_.unlock();
+    }
 
-void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {}
+    LRUKReplacer::~LRUKReplacer() {
+        latch_.lock();
+        node_store_ptr_.reset();
+        latch_.unlock();
+    }
 
-void LRUKReplacer::Remove(frame_id_t frame_id) {}
+    auto LRUKReplacer::Evict(frame_id_t* frame_id) -> bool { return false; }
 
-auto LRUKReplacer::Size() -> size_t { return 0; }
+    void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {}
+
+    void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {}
+
+    void LRUKReplacer::Remove(frame_id_t frame_id) {}
+
+    auto LRUKReplacer::Size() -> size_t { return 0; }  
 
 }  // namespace bustub

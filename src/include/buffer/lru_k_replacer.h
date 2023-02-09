@@ -28,31 +28,10 @@ namespace bustub {
 
   class LRUKNode {
   public:
-    explicit LRUKNode(size_t current_timestamp, size_t k) {
-      latch_.lock();
-
-      k_ = k;
-      timestamp_num_ = 0;
-      std::unique_ptr<std::vector<size_t>> temp_ptr(new std::vector<size_t>(2 * k_));
-      history_ptr_.reset(temp_ptr.release());
-      insertCurrentTimeStamp(current_timestamp);
-
-      latch_.unlock();
-    };
-    void insertCurrentTimeStamp(size_t current_timestamp) {
-      latch_.lock();
-      if (timestamp_num_ < 2 * k_)
-        (*history_ptr_)[timestamp_num_++] = current_timestamp;
-      else
-        (*history_ptr_).push_back(current_timestamp);
-      latch_.unlock();
-    };
+    explicit LRUKNode(size_t current_timestamp, size_t k);
+    void insertCurrentTimeStamp(size_t current_timestamp);
     DISALLOW_COPY_AND_MOVE(LRUKNode);
-    ~LRUKNode(){
-      latch_.lock();
-      history_ptr_.reset();
-      latch_.unlock();
-    }
+    ~LRUKNode();
   private:
     /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
     // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
@@ -86,14 +65,7 @@ namespace bustub {
      * @brief a new LRUKReplacer.
      * @param num_frames the maximum number of frames the LRUReplacer will be required to store
      */
-    explicit LRUKReplacer(size_t num_frames, size_t k) {
-      latch_.lock();
-      k_ = k;
-      replacer_size_ = num_frames;
-      std::unique_ptr<std::unordered_map<frame_id_t, LRUKNode>> temp_ptr(new std::unordered_map<frame_id_t, LRUKNode>);
-      node_store_ptr_.reset(temp_ptr.release());
-      latch_.unlock();
-    }
+    explicit LRUKReplacer(size_t num_frames, size_t k);
 
     DISALLOW_COPY_AND_MOVE(LRUKReplacer);
 
@@ -102,11 +74,7 @@ namespace bustub {
      *
      * @brief Destroys the LRUReplacer.
      */
-    ~LRUKReplacer(){
-      latch_.lock();
-      node_store_ptr_.reset();
-      latch_.unlock();
-    };
+    ~LRUKReplacer();
 
     /**
      * TODO(P1): Add implementation
