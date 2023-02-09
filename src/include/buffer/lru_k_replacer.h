@@ -29,9 +29,9 @@ namespace bustub {
   class LRUKNode {
   public:
     explicit LRUKNode(size_t current_timestamp, size_t k);
-    void insertCurrentTimeStamp(size_t current_timestamp);
     DISALLOW_COPY_AND_MOVE(LRUKNode);
     ~LRUKNode();
+    void insertCurrentTimeStamp(size_t current_timestamp);
   private:
     /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
     // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
@@ -43,6 +43,8 @@ namespace bustub {
     std::unique_ptr<std::vector<size_t>> history_ptr_;
     size_t timestamp_num_;
     std::mutex latch_;
+
+    void set_is_evitctable(bool set_evictable_);
   };
 
   /**
@@ -154,9 +156,7 @@ namespace bustub {
      *
      * @return size_t
      */
-    auto Size() {
-      return k_;
-    };
+    auto Size() -> size_t;
 
   private:
     // TODO(student): implement me! You can replace these member variables as you like.
@@ -167,7 +167,7 @@ namespace bustub {
     size_t replacer_size_;
     size_t k_;
     std::mutex latch_;
-    std::unique_ptr<std::unordered_map<frame_id_t, LRUKNode>> node_store_ptr_;
+    std::unique_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>> node_store_ptr_;
   };
 
 }  // namespace bustub
