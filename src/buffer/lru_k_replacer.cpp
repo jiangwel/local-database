@@ -60,7 +60,7 @@ namespace bustub {
 
     auto LRUKReplacer::Evict(frame_id_t* frame_id) -> bool { return false; }
 
-    void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {
+    void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
         //want to insert new frame but buffer pool is fulled.
         if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end() && LRUKReplacer::curr_size_ == LRUKReplacer::replacer_size_) {
             throw Exception("Buffer pool is fulled,can't add frame any more!");
@@ -86,6 +86,6 @@ namespace bustub {
 
     void LRUKReplacer::Remove(frame_id_t frame_id) {}
 
-    auto LRUKReplacer::Size() -> size_t { return this->replacer_size_; }
+    auto LRUKReplacer::Size() -> size_t { return this->curr_size_; }
 
 }  // namespace bustub

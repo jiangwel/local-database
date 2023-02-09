@@ -16,7 +16,7 @@
 
 namespace bustub {
 
-  /* TEST(LRUKReplacerTest, DISABLED_SampleTest) {
+  TEST(LRUKReplacerTest, DISABLED_SampleTest) {
     LRUKReplacer lru_replacer(7, 2);
 
     // Scenario: add six elements to the replacer. We have [1,2,3,4,5]. Frame 6 is non-evictable.
@@ -95,13 +95,12 @@ namespace bustub {
     ASSERT_EQ(false, lru_replacer.Evict(&value));
     ASSERT_EQ(0, lru_replacer.Size());
   }
-   */
+
 
   TEST(LRUKReplacerTest, RecordAccess) {
     LRUKReplacer lruk_replacer(5, 5);
-    for (int i = 1;i <= 5;++i) {
-      lruk_replacer.RecordAccess(i);
-    }
-    ASSERT_EQ(5, lruk_replacer.Size());
+    ASSERT_EQ(0, lruk_replacer.Size());
+    lruk_replacer.RecordAccess(1, AccessType::Unknown);
+    ASSERT_EQ(1, lruk_replacer.Size());
   }
 }  // namespace bustub
