@@ -24,20 +24,14 @@ namespace bustub {
         LRUKNode::k_ = k;
         //LOG_INFO("@6");
         //LOG_INFO("@7");
-        std::unique_ptr<std::deque<size_t>> temp_ptr(new std::deque<size_t>(2 * k_));
         //LOG_INFO("@8");
-        LRUKNode::history_ptr_.reset(temp_ptr.release());
+        LRUKNode::history_ptr_=std::make_shared<std::deque<size_t>>(2*k);
         //LOG_INFO("@9");
         insertCurrentTimeStamp(current_timestamp);
         //LOG_INFO("@10");
         LRUKNode::latch_.unlock();
     }
 
-    LRUKNode::~LRUKNode() {
-        LRUKNode::latch_.lock();
-        LRUKNode::history_ptr_.reset();
-        LRUKNode::latch_.unlock();
-    }
 
     void LRUKNode::insertCurrentTimeStamp(size_t current_timestamp) {
         //LOG_INFO("@11");
@@ -53,9 +47,11 @@ namespace bustub {
     }
     auto LRUKNode::get_is_evictable()->bool { return this->is_evictable_; }
 
-    auto LRUKNode::get_timestamp_num()->size_t{return this->timestamp_num_;}
+    auto LRUKNode::get_timestamp_num()->size_t { return this->timestamp_num_; }
 
-    auto LRUKNode::get_k()->size_t{return this->k_;}
+    auto LRUKNode::get_history_ptr()->std::shared_ptr<std::deque<size_t>>{return this->history_ptr_;}
+
+    auto LRUKNode::get_k()->size_t { return this->k_; }
 
     //LRUKReplacer
     LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) {
@@ -73,13 +69,16 @@ namespace bustub {
         LRUKReplacer::latch_.unlock();
     }
 
-    void LRUKReplacer::deal_with_history(Frame_Node_pair it,std::shared_ptr<bool> exst_kpls1_tmstmp_frm_ptr,Bckwrd_k_dstnc_grp bckwrd_k_dstnc_grp,Fsrttm_accss_tmstmp_grp fsrttm_accss_tmstmp_grp){
-        if(it.second->get_timestamp_num()==this->k_+1){*exst_kpls1_tmstmp_frm_ptr=true;}
-        if(*exst_kpls1_tmstmp_frm_ptr==false){
+    /* void LRUKReplacer::deal_with_history(Frame_Node_pair it, std::shared_ptr<bool> exst_kpls1_tmstmp_frm_ptr, Bckwrd_k_dstnc_grp bckwrd_k_dstnc_grp, Fsrttm_accss_tmstmp_grp fsrttm_accss_tmstmp_grp) {
+        if (it.second->get_timestamp_num() == this->k_ + 1) { *exst_kpls1_tmstmp_frm_ptr = true; }
+        if (*exst_kpls1_tmstmp_frm_ptr == false &&) {
 
         }
-        
-    }
+        else {
+
+        }
+
+    } */
 
 
     auto LRUKReplacer::Evict(frame_id_t* frame_id) -> bool {
@@ -87,11 +86,22 @@ namespace bustub {
         Bckwrd_k_dstnc_grp bckwrd_k_dstnc_grp;
         Fsrttm_accss_tmstmp_grp fsrttm_accss_tmstmp_grp;
         auto exst_kpls1_tmstmp_frm_ptr = std::make_shared<bool>(false);
+        bool exst_kpls1_tmstmp_frm = 0;
         bool exist_evictable_frame = 0;
         for (auto it : *node_store_ptr_) {
             if (it.second->get_is_evictable() == true) {
                 exist_evictable_frame = 1;
-                deal_with_history(it, exst_kpls1_tmstmp_frm_ptr,bckwrd_k_dstnc_grp,fsrttm_accss_tmstmp_grp);
+                //more than k historical references
+                if (it.second->get_timestamp_num() >= this->k_ + 1) {
+                    exst_kpls1_tmstmp_frm = 1;
+                }
+                else {
+                    if(exst_kpls1_tmstmp_frm==false){
+                        auto current_history_ptr = it.second->get_history_ptr();
+                        fsrttm_accss_tmstmp_grp.push({});
+                    }
+                }
+                //deal_with_history(it, exst_kpls1_tmstmp_frm_ptr,bckwrd_k_dstnc_grp,fsrttm_accss_tmstmp_grp);
             }
         }
         //no evictable frame

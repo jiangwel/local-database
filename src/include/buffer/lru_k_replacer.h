@@ -36,12 +36,13 @@ namespace bustub {
   public:
     explicit LRUKNode(size_t current_timestamp, size_t k);
     DISALLOW_COPY_AND_MOVE(LRUKNode);
-    ~LRUKNode();
+    ~LRUKNode()=default;
     void insertCurrentTimeStamp(size_t current_timestamp);
     void printHistory();
     auto get_is_evictable()->bool;
     auto get_timestamp_num()->size_t;
     auto get_k()->size_t;
+    auto get_history_ptr()->std::shared_ptr<std::deque<size_t>>;
     
   private:
     /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
@@ -51,7 +52,7 @@ namespace bustub {
     size_t k_;
     [[maybe_unused]] frame_id_t fid_;
     bool is_evictable_{ false };
-    std::unique_ptr<std::deque<size_t>> history_ptr_;
+    std::shared_ptr<std::deque<size_t>> history_ptr_;
     size_t timestamp_num_{0};
     std::mutex latch_;
 
