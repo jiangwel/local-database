@@ -32,6 +32,8 @@ namespace bustub {
     DISALLOW_COPY_AND_MOVE(LRUKNode);
     ~LRUKNode();
     void insertCurrentTimeStamp(size_t current_timestamp);
+    void printHistory();
+    
   private:
     /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
     // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
@@ -45,6 +47,7 @@ namespace bustub {
     std::mutex latch_;
 
     void set_is_evitctable(bool set_evictable_);
+    
   };
 
   /**
@@ -95,6 +98,9 @@ namespace bustub {
      * @return true if a frame is evicted successfully, false if no frames can be evicted.
      */
     auto Evict(frame_id_t* frame_id) -> bool;
+
+    void printRecord(frame_id_t frame_id);
+    
 
     /**
      * TODO(P1): Add implementation
