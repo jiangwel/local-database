@@ -15,6 +15,7 @@
 #include "common/logger.h"
 #include <iostream>
 
+
 namespace bustub {
     //LRUKNode
     LRUKNode::LRUKNode(size_t current_timestamp, size_t k) {
@@ -22,9 +23,8 @@ namespace bustub {
         //LOG_INFO("@5");
         LRUKNode::k_ = k;
         //LOG_INFO("@6");
-        LRUKNode::timestamp_num_ = 0;
         //LOG_INFO("@7");
-        std::unique_ptr<std::vector<size_t>> temp_ptr(new std::vector<size_t>(2 * k_));
+        std::unique_ptr<std::deque<size_t>> temp_ptr(new std::deque<size_t>(2 * k_));
         //LOG_INFO("@8");
         LRUKNode::history_ptr_.reset(temp_ptr.release());
         //LOG_INFO("@9");
@@ -41,14 +41,9 @@ namespace bustub {
 
     void LRUKNode::insertCurrentTimeStamp(size_t current_timestamp) {
         //LOG_INFO("@11");
-        if (LRUKNode::timestamp_num_ < 2 * k_) {
-            size_t max_index = 2*k_-1;
-            (*LRUKNode::history_ptr_)[max_index-LRUKNode::timestamp_num_++] = current_timestamp;
-            //LOG_INFO("@12");
-        }
-        else {
-            (*LRUKNode::history_ptr_).push_back(current_timestamp);
-        }
+        (*LRUKNode::history_ptr_).push_front(current_timestamp);
+        LRUKNode::timestamp_num_++;
+
         //LOG_INFO("@13");
     }
     void LRUKNode::printHistory() {
@@ -56,7 +51,11 @@ namespace bustub {
             std::cout << " " << i << " ";
         }
     }
+    auto LRUKNode::get_is_evictable()->bool { return this->is_evictable_; }
 
+    auto LRUKNode::get_timestamp_num()->size_t{return this->timestamp_num_;}
+
+    auto LRUKNode::get_k()->size_t{return this->k_;}
 
     //LRUKReplacer
     LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) {
@@ -74,12 +73,35 @@ namespace bustub {
         LRUKReplacer::latch_.unlock();
     }
 
-    auto LRUKReplacer::Evict(frame_id_t* frame_id) -> bool { return false; }
+    void LRUKReplacer::deal_with_history(Frame_Node_pair it,std::shared_ptr<bool> exst_kpls1_tmstmp_frm_ptr,Bckwrd_k_dstnc_grp bckwrd_k_dstnc_grp,Fsrttm_accss_tmstmp_grp fsrttm_accss_tmstmp_grp){
+        if(it.second->get_timestamp_num()==this->k_+1){*exst_kpls1_tmstmp_frm_ptr=true;}
+        if(*exst_kpls1_tmstmp_frm_ptr==false){
+
+        }
+        
+    }
+
+
+    auto LRUKReplacer::Evict(frame_id_t* frame_id) -> bool {
+        //no frame or no is_evictable frame
+        Bckwrd_k_dstnc_grp bckwrd_k_dstnc_grp;
+        Fsrttm_accss_tmstmp_grp fsrttm_accss_tmstmp_grp;
+        auto exst_kpls1_tmstmp_frm_ptr = std::make_shared<bool>(false);
+        bool exist_evictable_frame = 0;
+        for (auto it : *node_store_ptr_) {
+            if (it.second->get_is_evictable() == true) {
+                exist_evictable_frame = 1;
+                deal_with_history(it, exst_kpls1_tmstmp_frm_ptr,bckwrd_k_dstnc_grp,fsrttm_accss_tmstmp_grp);
+            }
+        }
+        //no evictable frame
+        return exist_evictable_frame;
+    }
     void LRUKReplacer::printRecord(frame_id_t frame_id) {
-        std::cout<<frame_id<<" ";
+        std::cout << frame_id << " ";
         auto frame_ptr = node_store_ptr_->find(frame_id)->second;
         frame_ptr->printHistory();
-        std::cout<<std::endl;
+        std::cout << std::endl;
     }
     void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {
         //want to insert new frame but buffer pool is fulled.

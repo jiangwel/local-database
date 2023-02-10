@@ -103,10 +103,10 @@ namespace bustub {
       lruk_replacer.RecordAccess(i);
       lruk_replacer.printRecord(i);
     }
-    for (int i = 0;i < 10;++i) {
+    for (int i = 0;i < 20;++i) {
       std::this_thread::sleep_for(std::chrono::seconds(1));
-      lruk_replacer.RecordAccess(1);
+      lruk_replacer.RecordAccess(2);
     }
-    lruk_replacer.printRecord(1);
+    lruk_replacer.printRecord(2);
   }
 }  // namespace bustub
