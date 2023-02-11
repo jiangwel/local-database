@@ -24,9 +24,9 @@
 #include "common/config.h"
 #include "common/macros.h"
 
-#define Fsrttm_accss_tmstmp_grp std::priority_queue<std::pair<size_t,size_t>,std::vector<std::pair<size_t,size_t>>,std::greater<std::pair<size_t,size_t>>>
+#define Fsrttm_accss_tmstmp_grp std::priority_queue<std::pair<size_t,frame_id_t>,std::vector<std::pair<size_t,frame_id_t>>,std::greater<std::pair<size_t,frame_id_t>>>
 #define Frame_Node_pair std::pair<const bustub::frame_id_t, std::shared_ptr<bustub::LRUKNode>>
-#define Bckwrd_k_dstnc_grp std::priority_queue<std::pair<size_t, size_t>>
+#define Bckwrd_k_dstnc_grp std::priority_queue<std::pair<size_t, frame_id_t>>
 
 namespace bustub {
 
@@ -43,6 +43,7 @@ namespace bustub {
     auto get_timestamp_num()->size_t;
     auto get_k()->size_t;
     auto get_history_ptr()->std::shared_ptr<std::deque<size_t>>;
+    void set_is_evictable(bool set_evictable_);
     
   private:
     /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
@@ -89,7 +90,7 @@ namespace bustub {
      *
      * @brief Destroys the LRUReplacer.
      */
-    ~LRUKReplacer();
+    ~LRUKReplacer()=default;
 
     /**
      * TODO(P1): Add implementation
@@ -174,6 +175,8 @@ namespace bustub {
      */
     auto Size() -> size_t;
 
+    auto get_node_store_ptr()->std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>;
+
   private:
     // TODO(student): implement me! You can replace these member variables as you like.
     // Remove maybe_unused if you start using them.
@@ -183,9 +186,7 @@ namespace bustub {
     size_t replacer_size_;
     size_t k_;
     std::mutex latch_;
-    std::unique_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>> node_store_ptr_;
-
-    void deal_with_history(Frame_Node_pair it,std::shared_ptr<bool> exst_kpls1_tmstmp_frm_ptr,Bckwrd_k_dstnc_grp bckwrd_k_dstnc_grp,Fsrttm_accss_tmstmp_grp fsrttm_accss_tmstmp_grp);
+    std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>> node_store_ptr_;
   };
 
 }  // namespace bustub
