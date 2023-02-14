@@ -20,13 +20,10 @@
 #include <memory>
 #include <deque>
 #include <queue>
+#include <iostream>
 
 #include "common/config.h"
 #include "common/macros.h"
-
-#define Fsrttm_accss_tmstmp_grp std::priority_queue<std::pair<size_t,frame_id_t>,std::vector<std::pair<size_t,frame_id_t>>,std::greater<std::pair<size_t,frame_id_t>>>
-#define Frame_Node_pair std::pair<const bustub::frame_id_t, std::shared_ptr<bustub::LRUKNode>>
-#define Bckwrd_k_dstnc_grp std::priority_queue<std::pair<size_t, frame_id_t>>
 
 namespace bustub {
 
@@ -36,15 +33,15 @@ namespace bustub {
   public:
     explicit LRUKNode(size_t current_timestamp, size_t k);
     DISALLOW_COPY_AND_MOVE(LRUKNode);
-    ~LRUKNode()=default;
+    ~LRUKNode() = default;
     void insertCurrentTimeStamp(size_t current_timestamp);
     void printHistory();
-    auto get_is_evictable()->bool;
-    auto get_timestamp_num()->size_t;
-    auto get_k()->size_t;
-    auto get_history_ptr()->std::shared_ptr<std::deque<size_t>>;
+    auto get_is_evictable() -> bool;
+    auto get_timestamp_num() -> size_t;
+    auto get_k() -> size_t;
+    auto get_history_ptr() -> std::shared_ptr<std::deque<size_t>>;
     void set_is_evictable(bool set_evictable_);
-    
+
   private:
     /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
     // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
@@ -54,11 +51,11 @@ namespace bustub {
     [[maybe_unused]] frame_id_t fid_;
     bool is_evictable_{ false };
     std::shared_ptr<std::deque<size_t>> history_ptr_;
-    size_t timestamp_num_{0};
+    size_t timestamp_num_{ 0 };
     std::mutex latch_;
 
     void set_is_evitctable(bool set_evictable_);
-    
+
   };
 
   /**
@@ -90,7 +87,7 @@ namespace bustub {
      *
      * @brief Destroys the LRUReplacer.
      */
-    ~LRUKReplacer()=default;
+    ~LRUKReplacer() = default;
 
     /**
      * TODO(P1): Add implementation
@@ -111,7 +108,7 @@ namespace bustub {
     auto Evict(frame_id_t* frame_id) -> bool;
 
     void printRecord(frame_id_t frame_id);
-    
+
 
     /**
      * TODO(P1): Add implementation
@@ -175,7 +172,7 @@ namespace bustub {
      */
     auto Size() -> size_t;
 
-    auto get_node_store_ptr()->std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>;
+    auto get_node_store_ptr() -> std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>;
 
   private:
     // TODO(student): implement me! You can replace these member variables as you like.
@@ -187,6 +184,16 @@ namespace bustub {
     size_t k_;
     std::mutex latch_;
     std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>> node_store_ptr_;
+
+    enum class NodeStatus {
+      Evictable_MoreThanKHistories_CurrentMoreThanKHistories,
+      Evictable_MoreThanKHistories_CurrentLessThanKHistories,
+      Evictable_LessThanKHistories_CurrentMoreThanKHistories_IsFirstNode,
+      Evictable_LessThanKHistories_CurrentMoreThanKHistories_NotFirstNode,
+      Evictable_LessThanKHistories_CurrentLessThanKHistories
+    };
+
+     inline auto get_node_status(std::shared_ptr<LRUKNode> node_ptr,bool exst_k_tmstmp_frm_p,bool exist_evictable_frame_p,std::pair<frame_id_t, size_t> earliest_access_frame_p) -> NodeStatus;
   };
 
 }  // namespace bustub

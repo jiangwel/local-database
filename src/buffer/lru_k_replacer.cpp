@@ -13,7 +13,13 @@
 #include "buffer/lru_k_replacer.h"
 #include "common/exception.h"
 #include "common/logger.h"
-#include <iostream>
+
+#define Frame_Node_pair std::pair<const bustub::frame_id_t, std::shared_ptr<bustub::LRUKNode>>
+#define Bckwrd_k_dstnc_grp std::priority_queue<std::pair<size_t, frame_id_t>>
+//定义一个frame_id_t类型的 最大值的宏
+#define MAX_FRAME_ID_T std::numeric_limits<bustub::frame_id_t>::max()
+//定义一个size_t类型的 最大值的宏
+#define MAX_SIZE_T std::numeric_limits<size_t>::max()
 
 
 namespace bustub {
@@ -65,32 +71,102 @@ namespace bustub {
         LRUKReplacer::node_store_ptr_ = std::make_unique<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>();
         LRUKReplacer::latch_.unlock();
     }
-
+    inline auto LRUKReplacer::get_node_status(std::shared_ptr<LRUKNode> node_ptr, bool exst_k_tmstmp_frm_p, bool exist_evictable_frame_p, std::pair<frame_id_t, size_t> earliest_access_frame_p) -> LRUKReplacer::NodeStatus {
+        if (exist_evictable_frame_p == true) {
+            if (exst_k_tmstmp_frm_p == true) {
+                if (node_ptr->get_timestamp_num() < k_) {
+                    return NodeStatus::Evictable_MoreThanKHistories_CurrentLessThanKHistories;
+                }
+                else {
+                    return NodeStatus::Evictable_MoreThanKHistories_CurrentMoreThanKHistories;
+                }
+            }
+            else {
+                if (node_ptr->get_timestamp_num() < k_) {
+                    return NodeStatus::Evictable_LessThanKHistories_CurrentLessThanKHistories;
+                }
+                else {
+                    if (earliest_access_frame_p.first == MAX_FRAME_ID_T) {
+                        return NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_IsFirstNode;
+                    }
+                    else {
+                        return NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_NotFirstNode;
+                    }
+                }
+            }
+        }
+    }
     auto LRUKReplacer::Evict(frame_id_t* frame_id) -> bool {
         LRUKReplacer::latch_.lock();
         //no frame or no is_evictable frame
         Bckwrd_k_dstnc_grp bckwrd_k_dstnc_grp;
-        Fsrttm_accss_tmstmp_grp fsrttm_accss_tmstmp_grp;
-        bool exst_kpls1_tmstmp_frm = 0;
-        bool exist_evictable_frame = 0;
+        std::pair<frame_id_t, size_t> earliest_access_frame = { MAX_FRAME_ID_T,MAX_SIZE_T };
+        bool exst_k_tmstmp_frm = false;
+        bool exist_evictable_frame = false;
         for (auto it : *node_store_ptr_) {
-            if (it.second->get_is_evictable() == true) {
+            auto frame = it.second;
+            auto node_status = get_node_status(frame, exst_k_tmstmp_frm, exist_evictable_frame, earliest_access_frame);
+            auto current_history_ptr = frame->get_history_ptr();
+            auto current_frame_id = it.first;
+            switch (node_status) {
+            case NodeStatus::Evictable_MoreThanKHistories_CurrentMoreThanKHistories: {
+                auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
+                bckwrd_k_dstnc_grp.push({ backward_k_distance,current_frame_id });
+                break;
+            }
+            case NodeStatus::Evictable_MoreThanKHistories_CurrentLessThanKHistories: {
+                break;
+            }
+            case NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_IsFirstNode: {
+                break;
+            }
+            case NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_NotFirstNode: {
+                break;
+            }
+            case NodeStatus::Evictable_LessThanKHistories_CurrentLessThanKHistories: {
+                break;
+            }
+            }
+
+            if (frame->get_is_evictable() == true) {
                 exist_evictable_frame = 1;
-                auto frame = it.second;
                 auto current_history_ptr = frame->get_history_ptr();
-                auto frame_id = it.first;
-                //more than k  historical references ,calculate distance
-                if (it.second->get_timestamp_num() >= this->k_) {
-                    exst_kpls1_tmstmp_frm = 1;
-                    auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_-1);
-                    bckwrd_k_dstnc_grp.push({ backward_k_distance,frame_id });
+                auto current_frame_id = it.first;
+                //more than k  historical references
+                if (exst_k_tmstmp_frm == true) {
+                    //当前帧有k个历史记录
+                    if (frame->get_timestamp_num() >= k_) {
+                        auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
+                        bckwrd_k_dstnc_grp.push({ backward_k_distance,current_frame_id });
+                    }
+                    //当前帧不足k个历史记录
+                    else {
+                        *frame_id = current_frame_id;
+                        break;
+                    }
                 }
                 //less than k historical references
-                else if (exst_kpls1_tmstmp_frm == false) {
-                    auto first_access_timestamp = current_history_ptr->at(frame->get_timestamp_num() - 1);
-                    fsrttm_accss_tmstmp_grp.push({ first_access_timestamp,frame_id });
+                else {
+                    //当前帧有k个历史记录
+                    if (frame->get_timestamp_num() >= k_) {
+                        exst_k_tmstmp_frm = true;
+                        if (earliest_access_frame.second != MAX_SIZE_T) {
+                            auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
+                            bckwrd_k_dstnc_grp.push({ backward_k_distance,current_frame_id });
+                        }
+                        else {
+                            *frame_id = current_frame_id;
+                            break;
+                        }
+                    }
+                    //当前帧不足k个历史记录
+                    else {
+                        auto firsttime_access_timestamp = current_history_ptr->at(frame->get_timestamp_num() - 1);
+                        if (firsttime_access_timestamp < earliest_access_frame.second) {
+                            earliest_access_frame = { current_frame_id,firsttime_access_timestamp };
+                        }
+                    }
                 }
-                //deal_with_history(it, exst_kpls1_tmstmp_frm_ptr,bckwrd_k_dstnc_grp,fsrttm_accss_tmstmp_grp);
             }
         }
         //no evictable frame
@@ -98,7 +174,6 @@ namespace bustub {
             LRUKReplacer::latch_.unlock();
             return false;
         }
-        *frame_id = exst_kpls1_tmstmp_frm ? bckwrd_k_dstnc_grp.top().second : fsrttm_accss_tmstmp_grp.top().second;
         LRUKReplacer::node_store_ptr_->erase(*frame_id);
         this->curr_size_--;
         LRUKReplacer::latch_.unlock();
