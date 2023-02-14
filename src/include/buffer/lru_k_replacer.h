@@ -186,14 +186,15 @@ namespace bustub {
     std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>> node_store_ptr_;
 
     enum class NodeStatus {
+      Null_Status,
       Evictable_MoreThanKHistories_CurrentMoreThanKHistories,
       Evictable_MoreThanKHistories_CurrentLessThanKHistories,
       Evictable_LessThanKHistories_CurrentMoreThanKHistories_IsFirstNode,
       Evictable_LessThanKHistories_CurrentMoreThanKHistories_NotFirstNode,
-      Evictable_LessThanKHistories_CurrentLessThanKHistories
+      Evictable_LessThanKHistories_CurrentLessThanKHistories_CurrentMoreEarlier
     };
 
-     inline auto get_node_status(std::shared_ptr<LRUKNode> node_ptr,bool exst_k_tmstmp_frm_p,bool exist_evictable_frame_p,std::pair<frame_id_t, size_t> earliest_access_frame_p) -> NodeStatus;
+     inline auto get_node_status(std::shared_ptr<LRUKNode> node_ptr,bool* exst_k_tmstmp_frm_p,bool* exist_evictable_frame_p,std::pair<frame_id_t, size_t> earliest_access_frame_p) -> NodeStatus;
   };
 
 }  // namespace bustub

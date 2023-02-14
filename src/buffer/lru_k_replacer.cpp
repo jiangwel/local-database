@@ -71,9 +71,12 @@ namespace bustub {
         LRUKReplacer::node_store_ptr_ = std::make_unique<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>();
         LRUKReplacer::latch_.unlock();
     }
-    inline auto LRUKReplacer::get_node_status(std::shared_ptr<LRUKNode> node_ptr, bool exst_k_tmstmp_frm_p, bool exist_evictable_frame_p, std::pair<frame_id_t, size_t> earliest_access_frame_p) -> LRUKReplacer::NodeStatus {
-        if (exist_evictable_frame_p == true) {
-            if (exst_k_tmstmp_frm_p == true) {
+    inline auto LRUKReplacer::get_node_status(std::shared_ptr<LRUKNode> node_ptr, bool* exst_k_tmstmp_frm_p, bool* exist_evictable_frame_p, std::pair<frame_id_t, size_t> earliest_access_frame_p) -> LRUKReplacer::NodeStatus {
+        if (*exist_evictable_frame_p == false && node_ptr->get_is_evictable() == true) {
+            *exist_evictable_frame_p = true;
+        }
+        if (*exist_evictable_frame_p == true) {
+            if (*exst_k_tmstmp_frm_p == true) {
                 if (node_ptr->get_timestamp_num() < k_) {
                     return NodeStatus::Evictable_MoreThanKHistories_CurrentLessThanKHistories;
                 }
@@ -83,9 +86,13 @@ namespace bustub {
             }
             else {
                 if (node_ptr->get_timestamp_num() < k_) {
-                    return NodeStatus::Evictable_LessThanKHistories_CurrentLessThanKHistories;
+                    auto firsttime_access_timestamp = node_ptr->get_history_ptr()->at(node_ptr->get_timestamp_num() - 1);
+                    if (firsttime_access_timestamp < earliest_access_frame_p.second) {
+                        return NodeStatus::Evictable_LessThanKHistories_CurrentLessThanKHistories_CurrentMoreEarlier;
+                    }
                 }
                 else {
+                    *exst_k_tmstmp_frm_p = true;
                     if (earliest_access_frame_p.first == MAX_FRAME_ID_T) {
                         return NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_IsFirstNode;
                     }
@@ -95,84 +102,59 @@ namespace bustub {
                 }
             }
         }
+        return NodeStatus::Null_Status;
     }
     auto LRUKReplacer::Evict(frame_id_t* frame_id) -> bool {
         LRUKReplacer::latch_.lock();
         //no frame or no is_evictable frame
         Bckwrd_k_dstnc_grp bckwrd_k_dstnc_grp;
         std::pair<frame_id_t, size_t> earliest_access_frame = { MAX_FRAME_ID_T,MAX_SIZE_T };
-        bool exst_k_tmstmp_frm = false;
-        bool exist_evictable_frame = false;
+        bool false_value = false;
+        bool* exst_k_tmstmp_frm = &false_value;
+        bool* exist_evictable_frame = &false_value;
         for (auto it : *node_store_ptr_) {
             auto frame = it.second;
             auto node_status = get_node_status(frame, exst_k_tmstmp_frm, exist_evictable_frame, earliest_access_frame);
             auto current_history_ptr = frame->get_history_ptr();
             auto current_frame_id = it.first;
             switch (node_status) {
+            case NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_IsFirstNode:
             case NodeStatus::Evictable_MoreThanKHistories_CurrentMoreThanKHistories: {
                 auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
                 bckwrd_k_dstnc_grp.push({ backward_k_distance,current_frame_id });
                 break;
             }
             case NodeStatus::Evictable_MoreThanKHistories_CurrentLessThanKHistories: {
-                break;
-            }
-            case NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_IsFirstNode: {
-                break;
+                *frame_id = current_frame_id;
+                LRUKReplacer::node_store_ptr_->erase(*frame_id);
+                this->curr_size_--;
+                LRUKReplacer::latch_.unlock();
+                return true;
             }
             case NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_NotFirstNode: {
+                auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
+                bckwrd_k_dstnc_grp.push({ backward_k_distance,current_frame_id });
                 break;
             }
-            case NodeStatus::Evictable_LessThanKHistories_CurrentLessThanKHistories: {
+            case NodeStatus::Evictable_LessThanKHistories_CurrentLessThanKHistories_CurrentMoreEarlier: {
+                auto firsttime_access_timestamp = current_history_ptr->at(frame->get_timestamp_num() - 1);
+                earliest_access_frame = { current_frame_id,firsttime_access_timestamp };
                 break;
             }
-            }
-
-            if (frame->get_is_evictable() == true) {
-                exist_evictable_frame = 1;
-                auto current_history_ptr = frame->get_history_ptr();
-                auto current_frame_id = it.first;
-                //more than k  historical references
-                if (exst_k_tmstmp_frm == true) {
-                    //当前帧有k个历史记录
-                    if (frame->get_timestamp_num() >= k_) {
-                        auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
-                        bckwrd_k_dstnc_grp.push({ backward_k_distance,current_frame_id });
-                    }
-                    //当前帧不足k个历史记录
-                    else {
-                        *frame_id = current_frame_id;
-                        break;
-                    }
-                }
-                //less than k historical references
-                else {
-                    //当前帧有k个历史记录
-                    if (frame->get_timestamp_num() >= k_) {
-                        exst_k_tmstmp_frm = true;
-                        if (earliest_access_frame.second != MAX_SIZE_T) {
-                            auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
-                            bckwrd_k_dstnc_grp.push({ backward_k_distance,current_frame_id });
-                        }
-                        else {
-                            *frame_id = current_frame_id;
-                            break;
-                        }
-                    }
-                    //当前帧不足k个历史记录
-                    else {
-                        auto firsttime_access_timestamp = current_history_ptr->at(frame->get_timestamp_num() - 1);
-                        if (firsttime_access_timestamp < earliest_access_frame.second) {
-                            earliest_access_frame = { current_frame_id,firsttime_access_timestamp };
-                        }
-                    }
-                }
+            case NodeStatus::Null_Status:
+                break;
             }
         }
         //no evictable frame
-        if (exist_evictable_frame == false) {
+        if (*exist_evictable_frame == false) {
             LRUKReplacer::latch_.unlock();
             return false;
+        }
+        if (*exst_k_tmstmp_frm == false) {
+            *frame_id = earliest_access_frame.first;
+        }
+        else {
+            *frame_id = bckwrd_k_dstnc_grp.top().second;
         }
         LRUKReplacer::node_store_ptr_->erase(*frame_id);
         this->curr_size_--;
