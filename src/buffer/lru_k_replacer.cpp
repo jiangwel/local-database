@@ -16,9 +16,7 @@
 
 #define Frame_Node_pair std::pair<const bustub::frame_id_t, std::shared_ptr<bustub::LRUKNode>>
 #define Bckwrd_k_dstnc_grp std::priority_queue<std::pair<size_t, frame_id_t>>
-//定义一个frame_id_t类型的 最大值的宏
-#define MAX_FRAME_ID_T std::numeric_limits<bustub::frame_id_t>::max()
-//定义一个size_t类型的 最大值的宏
+#define MAX_FRAME_ID_T std::numeric_limits<int>::max()
 #define MAX_SIZE_T std::numeric_limits<size_t>::max()
 
 
@@ -26,25 +24,15 @@ namespace bustub {
     //LRUKNode
     LRUKNode::LRUKNode(size_t current_timestamp, size_t k) {
         LRUKNode::latch_.lock();
-        //LOG_INFO("@5");
         LRUKNode::k_ = k;
-        //LOG_INFO("@6");
-        //LOG_INFO("@7");
-        //LOG_INFO("@8");
         LRUKNode::history_ptr_ = std::make_shared<std::deque<size_t>>(2 * k);
-        //LOG_INFO("@9");
         insertCurrentTimeStamp(current_timestamp);
-        //LOG_INFO("@10");
         LRUKNode::latch_.unlock();
     }
 
-
     void LRUKNode::insertCurrentTimeStamp(size_t current_timestamp) {
-        //LOG_INFO("@11");
         (*LRUKNode::history_ptr_).push_front(current_timestamp);
         LRUKNode::timestamp_num_++;
-
-        //LOG_INFO("@13");
     }
 
     void LRUKNode::printHistory() {
@@ -71,97 +59,83 @@ namespace bustub {
         LRUKReplacer::node_store_ptr_ = std::make_unique<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>();
         LRUKReplacer::latch_.unlock();
     }
-    inline auto LRUKReplacer::get_node_status(std::shared_ptr<LRUKNode> node_ptr, bool* exst_k_tmstmp_frm_p, bool* exist_evictable_frame_p, std::pair<frame_id_t, size_t> earliest_access_frame_p) -> LRUKReplacer::NodeStatus {
-        if (*exist_evictable_frame_p == false && node_ptr->get_is_evictable() == true) {
-            *exist_evictable_frame_p = true;
+
+    inline void LRUKReplacer::vctm_is_lss_thn_k_tmstmp_erlr_accssd(std::shared_ptr<LRUKNode> frame_p, std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_p, frame_id_t current_frame_id_p) {
+        auto first_access_timestamp = frame_p->get_history_ptr()->at(frame_p->get_timestamp_num() - 1);
+        if (first_access_timestamp <= evict_frame_p->second) {
+            evict_frame_p->first = current_frame_id_p;
+            evict_frame_p->second = first_access_timestamp;
         }
-        if (*exist_evictable_frame_p == true) {
-            if (*exst_k_tmstmp_frm_p == true) {
-                if (node_ptr->get_timestamp_num() < k_) {
-                    return NodeStatus::Evictable_MoreThanKHistories_CurrentLessThanKHistories;
-                }
-                else {
-                    return NodeStatus::Evictable_MoreThanKHistories_CurrentMoreThanKHistories;
-                }
+    }
+
+    inline auto LRUKReplacer::get_node_status(std::shared_ptr<LRUKNode> node_ptr, bool* is_evict_had_k_timestamp_node_p, std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_p) -> LRUKReplacer::NodeStatus {
+        if (node_ptr->get_is_evictable() == true) {
+            if (*is_evict_had_k_timestamp_node_p == true && node_ptr->get_timestamp_num() >= this->k_) {
+                return NodeStatus::Exst_k_Tmstmp_Node;
             }
-            else {
-                if (node_ptr->get_timestamp_num() < k_) {
-                    auto firsttime_access_timestamp = node_ptr->get_history_ptr()->at(node_ptr->get_timestamp_num() - 1);
-                    if (firsttime_access_timestamp < earliest_access_frame_p.second) {
-                        return NodeStatus::Evictable_LessThanKHistories_CurrentLessThanKHistories_CurrentMoreEarlier;
-                    }
-                }
-                else {
-                    *exst_k_tmstmp_frm_p = true;
-                    if (earliest_access_frame_p.first == MAX_FRAME_ID_T) {
-                        return NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_IsFirstNode;
-                    }
-                    else {
-                        return NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_NotFirstNode;
-                    }
-                }
+            else if (*is_evict_had_k_timestamp_node_p == false && node_ptr->get_timestamp_num() < this->k_) {
+                return NodeStatus::Not_Exst_k_Tmstmp_Node;
+            }
+            else if (*is_evict_had_k_timestamp_node_p == true && node_ptr->get_timestamp_num() < this->k_) {
+                return NodeStatus::Exst_k_Tmstmp_Node_Curr_Lessthan_k_Tmstmp;
+            }
+            else if (*is_evict_had_k_timestamp_node_p == false && node_ptr->get_timestamp_num() >= this->k_) {
+                return NodeStatus::Not_Exst_k_Tmstmp_Node_Curr_Morethan_k_Tmstmp;
             }
         }
-        return NodeStatus::Null_Status;
+        return NodeStatus::Not_Evictable;
     }
     auto LRUKReplacer::Evict(frame_id_t* frame_id) -> bool {
         LRUKReplacer::latch_.lock();
         //no frame or no is_evictable frame
-        Bckwrd_k_dstnc_grp bckwrd_k_dstnc_grp;
-        std::pair<frame_id_t, size_t> earliest_access_frame = { MAX_FRAME_ID_T,MAX_SIZE_T };
-        bool false_value = false;
-        bool* exst_k_tmstmp_frm = &false_value;
-        bool* exist_evictable_frame = &false_value;
+        std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_ptr = std::make_shared<std::pair<frame_id_t, size_t> >(MAX_FRAME_ID_T, 0);
+        bool init_bool_ptr = true;
+        bool* is_evict_had_k_timestamp_node = &init_bool_ptr;
+
         for (auto it : *node_store_ptr_) {
             auto frame = it.second;
-            auto node_status = get_node_status(frame, exst_k_tmstmp_frm, exist_evictable_frame, earliest_access_frame);
+            auto node_status = get_node_status(frame, is_evict_had_k_timestamp_node, evict_frame_ptr);
             auto current_history_ptr = frame->get_history_ptr();
             auto current_frame_id = it.first;
             switch (node_status) {
-            case NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_IsFirstNode:
-            case NodeStatus::Evictable_MoreThanKHistories_CurrentMoreThanKHistories: {
+            case NodeStatus::Exst_k_Tmstmp_Node: {
                 auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
-                bckwrd_k_dstnc_grp.push({ backward_k_distance,current_frame_id });
+                if (backward_k_distance > evict_frame_ptr->second) {
+                    evict_frame_ptr->first = current_frame_id;
+                    evict_frame_ptr->second = backward_k_distance;
+                }
                 break;
             }
-            case NodeStatus::Evictable_MoreThanKHistories_CurrentLessThanKHistories: {
-                *frame_id = current_frame_id;
-                LRUKReplacer::node_store_ptr_->erase(*frame_id);
-                this->curr_size_--;
-                LRUKReplacer::latch_.unlock();
-                return true;
-            }
-            case NodeStatus::Evictable_LessThanKHistories_CurrentMoreThanKHistories_NotFirstNode: {
-                auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
-                bckwrd_k_dstnc_grp.push({ backward_k_distance,current_frame_id });
+            case NodeStatus::Not_Exst_k_Tmstmp_Node: {
+                vctm_is_lss_thn_k_tmstmp_erlr_accssd(frame, evict_frame_ptr, current_frame_id);
                 break;
             }
-            case NodeStatus::Evictable_LessThanKHistories_CurrentLessThanKHistories_CurrentMoreEarlier: {
-                auto firsttime_access_timestamp = current_history_ptr->at(frame->get_timestamp_num() - 1);
-                earliest_access_frame = { current_frame_id,firsttime_access_timestamp };
+            case NodeStatus::Exst_k_Tmstmp_Node_Curr_Lessthan_k_Tmstmp: {
+                *is_evict_had_k_timestamp_node = false;
+                *evict_frame_ptr = { MAX_FRAME_ID_T,MAX_SIZE_T };
+                vctm_is_lss_thn_k_tmstmp_erlr_accssd(frame, evict_frame_ptr, current_frame_id);
                 break;
             }
-            case NodeStatus::Null_Status:
+            case NodeStatus::Not_Exst_k_Tmstmp_Node_Curr_Morethan_k_Tmstmp: {
                 break;
+            }
+            case NodeStatus::Not_Evictable: {
+                break;
+            }
             }
         }
         //no evictable frame
-        if (*exist_evictable_frame == false) {
+        if (evict_frame_ptr->first == MAX_FRAME_ID_T) {
             LRUKReplacer::latch_.unlock();
             return false;
         }
-        if (*exst_k_tmstmp_frm == false) {
-            *frame_id = earliest_access_frame.first;
-        }
-        else {
-            *frame_id = bckwrd_k_dstnc_grp.top().second;
-        }
+        *frame_id = evict_frame_ptr->first;
         LRUKReplacer::node_store_ptr_->erase(*frame_id);
         this->curr_size_--;
         LRUKReplacer::latch_.unlock();
         return true;
     }
-
+    //Delete in the future
     void LRUKReplacer::printRecord(frame_id_t frame_id) {
         std::cout << frame_id << " ";
         auto frame_ptr = node_store_ptr_->find(frame_id)->second;
@@ -227,7 +201,7 @@ namespace bustub {
     }
 
     auto LRUKReplacer::Size() -> size_t { return this->curr_size_; }
-
+    //Delete in the future
     auto LRUKReplacer::get_node_store_ptr()->std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>> { return LRUKReplacer::node_store_ptr_; }
 
 }  // namespace bustub

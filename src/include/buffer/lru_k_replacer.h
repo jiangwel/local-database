@@ -35,6 +35,7 @@ namespace bustub {
     DISALLOW_COPY_AND_MOVE(LRUKNode);
     ~LRUKNode() = default;
     void insertCurrentTimeStamp(size_t current_timestamp);
+    //Delete in the future
     void printHistory();
     auto get_is_evictable() -> bool;
     auto get_timestamp_num() -> size_t;
@@ -53,9 +54,6 @@ namespace bustub {
     std::shared_ptr<std::deque<size_t>> history_ptr_;
     size_t timestamp_num_{ 0 };
     std::mutex latch_;
-
-    void set_is_evitctable(bool set_evictable_);
-
   };
 
   /**
@@ -171,7 +169,7 @@ namespace bustub {
      * @return size_t
      */
     auto Size() -> size_t;
-
+    //Delete in the future
     auto get_node_store_ptr() -> std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>;
 
   private:
@@ -186,15 +184,15 @@ namespace bustub {
     std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>> node_store_ptr_;
 
     enum class NodeStatus {
-      Null_Status,
-      Evictable_MoreThanKHistories_CurrentMoreThanKHistories,
-      Evictable_MoreThanKHistories_CurrentLessThanKHistories,
-      Evictable_LessThanKHistories_CurrentMoreThanKHistories_IsFirstNode,
-      Evictable_LessThanKHistories_CurrentMoreThanKHistories_NotFirstNode,
-      Evictable_LessThanKHistories_CurrentLessThanKHistories_CurrentMoreEarlier
+      Not_Evictable,
+      Exst_k_Tmstmp_Node,
+      Not_Exst_k_Tmstmp_Node,
+      Exst_k_Tmstmp_Node_Curr_Lessthan_k_Tmstmp,
+      Not_Exst_k_Tmstmp_Node_Curr_Morethan_k_Tmstmp
     };
 
-     inline auto get_node_status(std::shared_ptr<LRUKNode> node_ptr,bool* exst_k_tmstmp_frm_p,bool* exist_evictable_frame_p,std::pair<frame_id_t, size_t> earliest_access_frame_p) -> NodeStatus;
+    inline auto get_node_status(std::shared_ptr<LRUKNode> node_ptr, bool* is_evict_had_k_timestamp_node_p, std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_p) -> NodeStatus;
+    inline void vctm_is_lss_thn_k_tmstmp_erlr_accssd(std::shared_ptr<LRUKNode> frame_p, std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_p,frame_id_t current_frame_id_p);
   };
 
 }  // namespace bustub
