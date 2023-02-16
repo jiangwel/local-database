@@ -56,16 +56,16 @@ namespace bustub {
 
     // Scenario: Now replacer has frames [5,1].
     // Insert new frames 3, 4, and update access history for 5. We should end with [3,1,5,4]
-    //[5,3,1]
+    // [5,3,1]
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     lru_replacer.RecordAccess(3);
-    //[5,3,4,1]
+    // [5,3,4,1]
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     lru_replacer.RecordAccess(4);
-    //[3,4,1,5]
+    // [3,4,1,5]
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     lru_replacer.RecordAccess(5);
-    //[3,1,5,4]
+    // [3,1,5,4]
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     lru_replacer.RecordAccess(4);
     lru_replacer.SetEvictable(3, true);
@@ -78,7 +78,7 @@ namespace bustub {
     ASSERT_EQ(3, lru_replacer.Size());
 
     // Set 6 to be evictable. 6 Should be evicted next since it has max backward k-dist.
-    //[6,1,5,4]
+    // [6,1,5,4]
     lru_replacer.SetEvictable(6, true);
     ASSERT_EQ(4, lru_replacer.Size());
     lru_replacer.Evict(&value);
@@ -87,11 +87,11 @@ namespace bustub {
 
     // Now we have [1,5,4]. Continue looking for victims.
     lru_replacer.SetEvictable(1, false);
-    //[5,4]
+    // [5,4]
     ASSERT_EQ(2, lru_replacer.Size());
     ASSERT_EQ(true, lru_replacer.Evict(&value));
     ASSERT_EQ(5, value);
-    //[4]
+    // [4]
     ASSERT_EQ(1, lru_replacer.Size());
 
     // Update access history for 1. Now we have [4,1]. Next victim is 4.
@@ -101,14 +101,14 @@ namespace bustub {
     lru_replacer.RecordAccess(1);
     lru_replacer.SetEvictable(1, true);
     ASSERT_EQ(2, lru_replacer.Size());
-    //[4,1]
+    // [4,1]
     ASSERT_EQ(true, lru_replacer.Evict(&value));
     ASSERT_EQ(value, 4);
-    //[1]
+    //  [1]
     ASSERT_EQ(1, lru_replacer.Size());
     lru_replacer.Evict(&value);
     ASSERT_EQ(value, 1);
-    //[]
+    // []
     ASSERT_EQ(0, lru_replacer.Size());
 
     // This operation should not modify size
@@ -120,13 +120,13 @@ namespace bustub {
       LRUKReplacer lruk_replacer(5, 5);
       for (int i = 1;i <= 5;++i) {
         lruk_replacer.RecordAccess(i);
-        lruk_replacer.printRecord(i);
+        lruk_replacer.PrintRecord(i);
       }
       for (int i = 0;i < 20;++i) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         lruk_replacer.RecordAccess(2);
       }
-      lruk_replacer.printRecord(2);
+      lruk_replacer.PrintRecord(2);
     }
 
 
@@ -139,11 +139,11 @@ namespace bustub {
       ASSERT_THROW(lruk_replacer.SetEvictable(6, true), std::exception);
       //当frame id有效，且set_evictable为true时，设置frame的is_evictable属性，replacer size增加
       lruk_replacer.SetEvictable(1, true);
-      ASSERT_EQ(lruk_replacer.get_node_store_ptr()->find(1)->second->get_is_evictable(), true);
+      ASSERT_EQ(lruk_replacer.GetNodeStorePtr()->find(1)->second->GetIsEvictable(), true);
       ASSERT_EQ(lruk_replacer.Size(), 6);
       //当frame id有效，且set_evictable为false时，设置frame的is_evictable属性，replacer size减少
       lruk_replacer.SetEvictable(1, false);
-      ASSERT_EQ(lruk_replacer.get_node_store_ptr()->find(1)->second->get_is_evictable(), false);
+      ASSERT_EQ(lruk_replacer.GetNodeStorePtr()->find(1)->second->GetIsEvictable(), false);
       ASSERT_EQ(lruk_replacer.Size(), 5);
 
     }
@@ -166,7 +166,11 @@ namespace bustub {
       lruk_replacer.Remove(6);
       ASSERT_EQ(lruk_replacer.Size(), 2);
     }
-    //Add implementation  for evict() that Find the frame with largest backward k-distance and evict that frame. Only frames that are marked as 'evictable' are candidates for eviction. A frame with less than k historical references is given +inf as its backward k-distance. If multiple frames have inf backward k-distance, then evict frame with earliest timestamp based on LRU. Successful eviction of a frame should decrement the size of replacer and remove the frame's access history.
+    //Add implementation  for evict() that Find the frame with largest backward k-distance and evict that frame. Only
+    frames that are marked as 'evictable' are candidates for eviction. A frame with less than k historical references is
+    given +inf as its backward k-distance. If multiple frames have inf backward k-distance, then evict frame with earliest
+    timestamp based on LRU. Successful eviction of a frame should decrement the size of replacer and remove the frame's
+    access history.
     //请为Evict函数编写测试用例
     TEST(LRUKReplacerTest, DISABLED_SampleTest) {
       //测试Evict函数，当node_store_ptr_为空时或者没有is_evictable时，返回false
