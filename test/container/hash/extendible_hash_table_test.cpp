@@ -10,13 +10,19 @@
 
 namespace bustub {
 
-TEST(ExtendibleHashTableTest, DISABLED_SampleTest) {
+TEST(ExtendibleHashTableTest, SampleTest) {
+  std::cout<<"@1"<<std::endl;
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(2);
+  std::cout<<"@2"<<std::endl;
 
   table->Insert(1, "a");
+  std::cout<<"@3"<<std::endl;
   table->Insert(2, "b");
+  std::cout<<"@4"<<std::endl;
   table->Insert(3, "c");
+  std::cout<<"@5"<<std::endl;
   table->Insert(4, "d");
+  std::cout<<"@6"<<std::endl;
   table->Insert(5, "e");
   table->Insert(6, "f");
   table->Insert(7, "g");
