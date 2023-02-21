@@ -25,7 +25,7 @@ namespace bustub {
   template <typename K, typename V>
   ExtendibleHashTable<K, V>::ExtendibleHashTable(size_t bucket_size)
     : global_depth_(0), bucket_size_(bucket_size), num_buckets_(1) {
-      if(!latch_.try_lock()){std::scoped_lock<std::mutex> lock(latch_);}
+      std::unique_lock<std::mutex> lock(latch_,std::try_to_lock_t());
       std::shared_ptr<Bucket> first_bucket= std::make_shared<Bucket>(bucket_size_,global_depth_);
       dir_.push_back(first_bucket);
   }
@@ -72,7 +72,7 @@ namespace bustub {
   template <typename K, typename V>
   auto ExtendibleHashTable<K, V>::Find(const K& key, V& value) -> bool {
     LOG_INFO("#7");
-    if(!latch_.try_lock()){std::scoped_lock<std::mutex> lock(latch_);}
+    std::unique_lock<std::mutex> lock(latch_,std::try_to_lock_t());
     LOG_INFO("#12");
     std::shared_ptr<bustub::ExtendibleHashTable<K, V>::Bucket> bucket;
     LOG_INFO("#13");
@@ -83,7 +83,7 @@ namespace bustub {
 
   template <typename K, typename V>
   auto ExtendibleHashTable<K, V>::Remove(const K& key) -> bool {
-    if(!latch_.try_lock()){std::scoped_lock<std::mutex> lock(latch_);}
+    std::unique_lock<std::mutex> lock(latch_,std::try_to_lock_t());
     std::shared_ptr<bustub::ExtendibleHashTable<K, V>::Bucket> bucket;
     return (FindBucket(key,bucket) && bucket->Remove(key) ? true : false);
   }
@@ -91,7 +91,7 @@ namespace bustub {
   template <typename K, typename V>
   void ExtendibleHashTable<K, V>::Insert(const K& key, const V& value) {
     LOG_INFO("#1");
-    if(!latch_.try_lock()){std::scoped_lock<std::mutex> lock(latch_);}
+    std::unique_lock<std::mutex> lock(latch_,std::try_to_lock_t());
     V temp;
     std::shared_ptr<bustub::ExtendibleHashTable<K, V>::Bucket> bucket;
     LOG_INFO("#2");
