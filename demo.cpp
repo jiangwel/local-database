@@ -2,11 +2,13 @@
 using namespace std;
 
     std::mutex mtx;
+void sbfun(string * &parr){
+    string a = "hello";
+    parr = &a;
+}
 int main() {
-    std::unique_lock<std::mutex> lck(mtx, std::defer_lock);
-    if(lck.try_lock())
-        cout << "locked" << endl;
-    else
-        cout << "not locked" << endl;
+    array<int,3> arr;
+    arr.push_back(1);
+    for(auto it:arr) cout
     return 0;
 }

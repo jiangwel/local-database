@@ -71,14 +71,9 @@ namespace bustub {
 
   template <typename K, typename V>
   auto ExtendibleHashTable<K, V>::Find(const K& key, V& value) -> bool {
-    LOG_INFO("#7");
     std::unique_lock<std::mutex> lock(latch_,std::try_to_lock_t());
-    LOG_INFO("#12");
-    std::shared_ptr<bustub::ExtendibleHashTable<K, V>::Bucket> bucket;
-    LOG_INFO("#13");
-    auto ans = FindBucket(key,bucket) && bucket->Find(key,value) ? true : false;
-    LOG_INFO("#14");
-    return ans;
+    std::shared_ptr<Bucket> bucket;
+    return (FindBucket(key,bucket) && bucket->Find(key,value)) ? true : false;
   }
 
   template <typename K, typename V>
@@ -90,45 +85,36 @@ namespace bustub {
 
   template <typename K, typename V>
   void ExtendibleHashTable<K, V>::Insert(const K& key, const V& value) {
-    LOG_INFO("#1");
     std::unique_lock<std::mutex> lock(latch_,std::try_to_lock_t());
     V temp;
     std::shared_ptr<bustub::ExtendibleHashTable<K, V>::Bucket> bucket;
-    LOG_INFO("#2");
     // update value
     if(Find(key,temp)){
       FindBucket(key,bucket);
       // 在bucket里找到key，然后更新value
       bucket->Insert(key,value);
     } else { // insert value
-    LOG_INFO("#3");
       auto index_of_key = IndexOf(key);
       bucket = dir_[index_of_key];
-    LOG_INFO("#4");
       if(bucket->IsFull() && bucket->GetDepth() == global_depth_){
-        global_depth_*=2;
+        ++global_depth_;
         for(int i = 0;i < num_buckets_;i++){dir_.push_back(dir_[i]);}
         num_buckets_*=2;
         RedistributeBucket(bucket,index_of_key);
       } else if(bucket->IsFull() && bucket->GetDepth() + 1 == global_depth_){
         RedistributeBucket(bucket,index_of_key);
       }
-    LOG_INFO("#5");
       bucket->Insert(key,value);
-    LOG_INFO("#6");
     }
   }
 
   template <typename K, typename V>
-  auto ExtendibleHashTable<K, V>::FindBucket(const K &key,std::shared_ptr<Bucket> bucket) -> bool{
-    LOG_INFO("#8");
+  auto ExtendibleHashTable<K, V>::FindBucket(const K &key,std::shared_ptr<Bucket> &bucket) -> bool{
     int index = IndexOf(key);
     if(index >= num_buckets_){
-    LOG_INFO("#9");
       return false;
     } else {
       bucket = dir_[index];
-    LOG_INFO("#10");
       return true;
     }
   }
@@ -136,18 +122,21 @@ namespace bustub {
   template <typename K, typename V>
   void ExtendibleHashTable<K, V>::RedistributeBucket(std::shared_ptr<Bucket> bucket,size_t old_index){
     bucket->IncrementDepth();
+    std::vector<typename std::list<std::pair<K, V>>::iterator> to_be_moved;
     //仅仅遍历bucket
     for(auto it = bucket->GetItems().begin();it != bucket->GetItems().end();it++){
       auto new_index = IndexOf(it->first);
       // 如果新的index和旧的index不一样，在dir_[new_index]里生成一个新的bucket，然后把当前的pair插入到新的bucket里
       if(new_index != old_index&&dir_[new_index] == dir_[old_index]){
-        dir_[new_index] = std::make_shared<Bucket>(bucket_size_,GetGlobalDepth());
+        std::shared_ptr<Bucket> new_bucket = std::make_shared<Bucket>(bucket_size_,GetGlobalDepthInternal());
+        dir_[new_index] = new_bucket;
       }
       if(new_index != old_index){
         dir_[new_index]->GetItems().push_back(*it);
-        bucket->GetItems().erase(it);
+        to_be_moved.push_back(it);
       }
     }
+    for(auto it:to_be_moved){bucket->GetItems().erase(it);}
   }
 
   //===--------------------------------------------------------------------===//
