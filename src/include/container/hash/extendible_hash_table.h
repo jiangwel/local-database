@@ -180,8 +180,8 @@ class ExtendibleHashTable : public HashTable<K, V> {
    * @brief Redistribute the kv pairs in a full bucket.
    * @param bucket The bucket to be redistributed.
    */
-  void RedistributeBucket(std::shared_ptr<Bucket> bucket,size_t old_index);
-  auto FindBucket(const K &key,std::shared_ptr<Bucket> &bucket) -> bool;
+  void RedistributeBucket(std::shared_ptr<Bucket> bucket, size_t old_index);
+  auto FindBucket(const K &key, std::shared_ptr<Bucket> &bucket) -> bool;
 
   /*****************************************************************
    * Must acquire latch_ first before calling the below functions. *
