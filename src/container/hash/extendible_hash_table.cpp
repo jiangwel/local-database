@@ -73,14 +73,14 @@ template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::Find(const K &key, V &value) -> bool {
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   std::shared_ptr<Bucket> bucket;
-  return (FindBucket(key, bucket) && bucket->Find(key, value)) ? true : false;
+  return (FindBucket(key, bucket) && bucket->Find(key, value)) ? 1 : 0;
 }
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::Remove(const K &key) -> bool {
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   std::shared_ptr<bustub::ExtendibleHashTable<K, V>::Bucket> bucket;
-  return (FindBucket(key, bucket) && bucket->Remove(key) ? true : false);
+  return (FindBucket(key, bucket) && bucket->Remove(key)) ? 1 : 0;
 }
 
 template <typename K, typename V>
@@ -115,17 +115,16 @@ auto ExtendibleHashTable<K, V>::FindBucket(const K &key, std::shared_ptr<Bucket>
   int index = IndexOf(key);
   if (index >= num_buckets_) {
     return false;
-  } else {
-    bucket = dir_[index];
-    return true;
   }
+  bucket = dir_[index];
+  return true;
 }
 
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::RedistributeBucket(std::shared_ptr<Bucket> bucket, size_t old_index) {
   bucket->IncrementDepth();
   std::vector<typename std::list<std::pair<K, V>>::iterator> to_be_moved;
-  //仅仅遍历bucket
+  // 仅仅遍历bucket
   for (auto it = bucket->GetItems().begin(); it != bucket->GetItems().end(); it++) {
     auto new_index = IndexOf(it->first);
     // 如果新的index和旧的index不一样，在dir_[new_index]里生成一个新的bucket，然后把当前的pair插入到新的bucket里
@@ -186,9 +185,8 @@ auto ExtendibleHashTable<K, V>::Bucket::Insert(const K &key, const V &value) -> 
   if (!IsFull()) {
     list_.push_back(std::make_pair(key, value));
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 template class ExtendibleHashTable<page_id_t, Page *>;

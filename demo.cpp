@@ -2,13 +2,12 @@
 using namespace std;
 
     std::mutex mtx;
-void sbfun(string * &parr){
-    string a = "hello";
-    parr = &a;
+int sbfun(string * &parr){
+    int t=1;
+    return t==1?(*parr="hello",1):(*parr="world",0);
 }
 int main() {
-    array<int,3> arr;
-    arr.push_back(1);
-    for(auto it:arr) cout
+    string* a;
+    cout<<sbfun(a)<<*a<<endl;
     return 0;
 }
