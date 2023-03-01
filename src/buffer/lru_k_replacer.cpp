@@ -22,11 +22,10 @@
 namespace bustub {
 // LRUKNode
 LRUKNode::LRUKNode(size_t current_timestamp, size_t k) {
-  LRUKNode::latch_.lock();
+  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   LRUKNode::k_ = k;
   LRUKNode::history_ptr_ = std::make_shared<std::deque<size_t>>(2 * k);
   InsertCurrentTimeStamp(current_timestamp);
-  LRUKNode::latch_.unlock();
 }
 
 void LRUKNode::InsertCurrentTimeStamp(size_t current_timestamp) {
@@ -52,11 +51,10 @@ void LRUKNode::SetIsEvictable(bool set_evictable_) { this->is_evictable_ = set_e
 
 // LRUKReplacer
 LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) {
-  LRUKReplacer::latch_.lock();
+  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   LRUKReplacer::k_ = k;
   LRUKReplacer::replacer_size_ = num_frames;
   LRUKReplacer::node_store_ptr_ = std::make_unique<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>();
-  LRUKReplacer::latch_.unlock();
 }
 
 inline void LRUKReplacer::VctmIsLssThnKTmstmpErlrAccssd(const std::shared_ptr<LRUKNode> &frame_p,
@@ -88,7 +86,7 @@ inline auto LRUKReplacer::GetNodeStatus(const std::shared_ptr<LRUKNode> &node_pt
   return ans;
 }
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
-  LRUKReplacer::latch_.lock();
+  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   // no frame or no is_evictable frame
   std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_ptr =
       std::make_shared<std::pair<frame_id_t, size_t>>(MAX_FRAME_ID_T, 0);
@@ -128,13 +126,11 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   }
   // no evictable frame
   if (evict_frame_ptr->first == MAX_FRAME_ID_T) {
-    LRUKReplacer::latch_.unlock();
     return false;
   }
   *frame_id = evict_frame_ptr->first;
   LRUKReplacer::node_store_ptr_->erase(*frame_id);
   this->curr_size_--;
-  LRUKReplacer::latch_.unlock();
   return true;
 }
 // Delete in the future
@@ -151,7 +147,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
       LRUKReplacer::curr_size_ == LRUKReplacer::replacer_size_) {
     throw Exception("Buffer pool is fulled,can't add frame any more!");
   }
-  LRUKReplacer::latch_.lock();
+  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   this->current_timestamp_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   // insert a new frame to buffer pool
   if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end()) {
@@ -161,7 +157,6 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
     auto frame_ptr = LRUKReplacer::node_store_ptr_->find(frame_id)->second;
     frame_ptr->InsertCurrentTimeStamp(this->current_timestamp_);
   }
-  LRUKReplacer::latch_.unlock();
 }
 
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
@@ -169,7 +164,7 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end()) {
     throw Exception("Frame_id is not exist!");
   }
-  LRUKReplacer::latch_.lock();
+  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   // Find the corresponding lruknode through Frame_id,
   // then set its IS_EVICTABLE_ attribute, and finally change the
   // number of current replaceable frames
@@ -183,7 +178,6 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   // Use the three yuan expression. If set_evictable is true,
   // the current replaceable frame number is added, otherwise
   // one will be reduced by one
-  LRUKReplacer::latch_.unlock();
 }
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
@@ -192,14 +186,13 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
   if (frameid_frame_pair == LRUKReplacer::node_store_ptr_->end()) {
     return;
   }
-  LRUKReplacer::latch_.lock();
+  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   if (frameid_frame_pair->second->GetIsEvictable()) {
     LRUKReplacer::node_store_ptr_->erase(frame_id);
     this->curr_size_ -= 1;
   } else {
     throw Exception("Frame is not evictable!");
   }
-  LRUKReplacer::latch_.unlock();
 }
 
 auto LRUKReplacer::Size() -> size_t { return this->curr_size_; }
