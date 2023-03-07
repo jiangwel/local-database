@@ -71,7 +71,7 @@ TEST(BufferPoolManagerInstanceTest, DISABLED_BinaryDataTest) {
     EXPECT_EQ(true, bpm->UnpinPage(i, true));
     bpm->FlushPage(i);
   }
-  // page_id 0-4
+  // page_id 10-14
   for (int i = 0; i < 5; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
     bpm->UnpinPage(page_id_temp, false);
@@ -97,8 +97,9 @@ TEST(BufferPoolManagerInstanceTest, DISABLED_SampleTest) {
 
   auto *disk_manager = new DiskManager(db_name);
   auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
-
+  // init code 
   page_id_t page_id_temp;
+  // page0 pin cont = 1
   auto *page0 = bpm->NewPage(&page_id_temp);
 
   // Scenario: The buffer pool is empty. We should be able to create a new page.
@@ -117,30 +118,33 @@ TEST(BufferPoolManagerInstanceTest, DISABLED_SampleTest) {
   }
 
   // Scenario: Once the buffer pool is full, we should not be able to create any new pages.
-  // page_id 10-19
   for (size_t i = buffer_pool_size; i < buffer_pool_size * 2; ++i) {
     EXPECT_EQ(nullptr, bpm->NewPage(&page_id_temp));
   }
 
   // Scenario: After unpinning pages {0, 1, 2, 3, 4} and pinning another 4 new pages,
   // there would still be one buffer page left for reading page 0.
+  // page id 0-4 pin cont = 0
   for (int i = 0; i < 5; ++i) {
     EXPECT_EQ(true, bpm->UnpinPage(i, true));
   }
-  // page_id 0-3
+
+  // page_id 10-13 be allocated,page 0 be writted to disk
   for (int i = 0; i < 4; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
   }
 
   // Scenario: We should be able to fetch the data we wrote a while ago.
+  // page0 ,get from disk
   page0 = bpm->FetchPage(0);
   EXPECT_EQ(0, strcmp(page0->GetData(), "Hello"));
 
   // Scenario: If we unpin page 0 and then make a new page, all the buffer pages should
   // now be pinned. Fetching page 0 should fail.
   EXPECT_EQ(true, bpm->UnpinPage(0, true));
-  // page_id 0
+  // page_id 14,evict page 0 then crate page 14
   EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
+  // can't fetch page0,because no more space
   EXPECT_EQ(nullptr, bpm->FetchPage(0));
 
   // Shutdown the disk manager and remove the temporary file we created.
@@ -156,9 +160,9 @@ TEST(BufferPoolManagerInstanceTest, UnitTestNewPgImp){
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
-
   auto *disk_manager = new DiskManager(db_name);
   auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
+  //
   for(int i=0;i<10;i++){
     page_id_t page_id_temp;
     bpm->NewPage(&page_id_temp);
@@ -169,8 +173,11 @@ TEST(BufferPoolManagerInstanceTest, UnitTestNewPgImp){
   auto* page = bpm->NewPage(&page_id_temp);
   EXPECT_EQ(nullptr, page);
   //evict page,then create new page
+  bpm->UnpinPage(0, true);
+  auto* page1 = bpm->NewPage(&page_id_temp);
+  EXPECT_NE(nullptr, page1);
+  EXPECT_EQ(10, page_id_temp);
 
-  
   disk_manager->ShutDown();
   remove("test.db");
 
@@ -178,4 +185,45 @@ TEST(BufferPoolManagerInstanceTest, UnitTestNewPgImp){
   delete disk_manager;
 }
 
+// NOLINTNEXTLINE
+TEST(BufferPoolManagerInstanceTest, DISABLED_UnitTestUnpinPgImp){
+  const std::string db_name = "test.db";
+  const size_t buffer_pool_size = 10;
+  const size_t k = 5;
+
+  auto *disk_manager = new DiskManager(db_name);
+  auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
+// no page id reutrn false
+  EXPECT_EQ(false,bpm->UnpinPage(0, true));
+// exzit page id
+  page_id_t page_id_temp;
+  bpm->NewPage(&page_id_temp);
+// pin cont is 1 ,be evictble
+// return true
+  EXPECT_EQ(true,bpm->UnpinPage(0, true));
+
+  disk_manager->ShutDown();
+  remove("test.db");
+
+  delete bpm;
+  delete disk_manager;
+}
+
+// NOLINTNEXTLINE
+TEST(BufferPoolManagerInstanceTest, UnitTestFetchPgImp){
+  const std::string db_name = "test.db";
+  const size_t buffer_pool_size = 10;
+  const size_t k = 5;
+
+  auto *disk_manager = new DiskManager(db_name);
+  auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
+//
+
+//
+  disk_manager->ShutDown();
+  remove("test.db");
+
+  delete bpm;
+  delete disk_manager;
+}
 }  // namespace bustub

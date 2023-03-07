@@ -39,63 +39,69 @@ BufferPoolManagerInstance::~BufferPoolManagerInstance() {
 }
 
 auto BufferPoolManagerInstance::NewPgImp(page_id_t *page_id) -> Page * {
-  //LOG_INFO("$0");
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
-  Page* page_ptr = nullptr;
+  Page* temp_page_ptr = nullptr;
+  Page** page_ptr = &temp_page_ptr;
   std::shared_ptr<frame_id_t> frame_id_ptr = std::make_shared<frame_id_t>();
   if(free_list_.empty()){
-    if(replacer_->Evict(frame_id_ptr.get())){
-      page_table_->Find(*frame_id_ptr, *page_id);
-      page_ptr=&pages_[*page_id];
-      if(page_ptr->IsDirty()){
-        disk_manager_->WritePage(*page_id, page_ptr->GetData());
-      }
-      ResetMemoryAndMetadata(page_ptr);
-    } else {
-      return nullptr;
-    }
+    if(GetReplacementPage(frame_id_ptr.get(),page_ptr)){
+      (*page_ptr)->page_id_ = next_page_id_++;
+      *page_id = (*page_ptr)->GetPageId();
+    } else { return nullptr; }
   } else {
-  //LOG_INFO("$1");
     *frame_id_ptr = free_list_.front();
-  //LOG_INFO("$10");
     free_list_.pop_front();
-  //LOG_INFO("$11");
     *page_id = AllocatePage();
-  //LOG_INFO("$100");
-  //LOG_INFO("%d", *frame_id_ptr);
-    page_table_->Insert(*frame_id_ptr,*page_id);
-  //LOG_INFO("$101");
-  //LOG_INFO("$110");
-    page_ptr = &pages_[*page_id];
-  //LOG_INFO("$111");
-  }
-  replacer_->RecordAccess(*frame_id_ptr);
-  replacer_->SetEvictable(*frame_id_ptr, false);
-  page_ptr->pin_count_++;
-  return page_ptr;
-}
+    *page_ptr = GetPageFromePageId(*page_id);
+  }// end else
+  page_table_->Insert(*page_id,*frame_id_ptr);
+  ResetPage(*page_ptr,*frame_id_ptr);
+  (*page_ptr)->pin_count_++;
+  return *page_ptr;
+}// end NewPgImp
 
-auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * { return nullptr; }
+auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * {
+  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+  Page* temp_ptr = nullptr;
+  Page** page_ptr_ptr = &temp_ptr;
+  frame_id_t frame_id = 0;
+  page_table_->Find(page_id, frame_id);
+  for(size_t i=0;i<pool_size_;++i){
+    if(pages_[i].page_id_ == page_id){
+      *page_ptr_ptr = &pages_[i];
+      replacer_->SetEvictable(frame_id, false);
+      replacer_->RecordAccess(frame_id);
+      break;
+    }// end if
+  }// end for
+  if(*page_ptr_ptr == nullptr){
+    if(free_list_.empty()){
+      if(!GetReplacementPage(&frame_id,page_ptr_ptr)){return nullptr;}
+    } else {
+      frame_id = free_list_.front();
+      free_list_.pop_front();
+      *page_ptr_ptr = GetPageFromePageId(INVALID_PAGE_ID);
+    }// end else
+    ResetPage(*page_ptr_ptr,frame_id);
+    (*page_ptr_ptr)->page_id_ = page_id;
+    page_table_->Insert(page_id,frame_id);
+    char* new_page_data = nullptr;
+    disk_manager_->ReadPage(page_id, new_page_data);
+    memcpy((*page_ptr_ptr)->GetData(), new_page_data, BUSTUB_PAGE_SIZE);
+  }
+  (*page_ptr_ptr)->pin_count_++;
+  return *page_ptr_ptr;
+}// end FetchPgImp
 
 auto BufferPoolManagerInstance::UnpinPgImp(page_id_t page_id, bool is_dirty) -> bool {
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
-  for(auto &page : pages_){
-    if(page.page_id_ == page_id){
-      if(page.pin_count_ == 0){
-        return false;
-      }
-      page.pin_count_--;
-      if(page.pin_count_ == 0){
-        replacer_->SetEvictable(page_id, true);
-      }
-      if(is_dirty){
-        page.is_dirty_ = true;
-      }
-      return true;
-    }
-  }
-  return false;
-}
+  auto page_ptr = GetPageFromePageId(page_id);
+  if(page_ptr == nullptr){return false;}
+  page_ptr->pin_count_--;
+  if(page_ptr->pin_count_ == 0){replacer_->SetEvictable(page_id, true);}
+  if(is_dirty){page_ptr->is_dirty_ = true;}
+  return true;
+}// end UnpinPgImp
 
 auto BufferPoolManagerInstance::FlushPgImp(page_id_t page_id) -> bool { return false; }
 
@@ -105,23 +111,47 @@ auto BufferPoolManagerInstance::DeletePgImp(page_id_t page_id) -> bool { return 
 
 auto BufferPoolManagerInstance::AllocatePage() -> page_id_t {
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
-  //遍历pages_
-  page_id_t page_id = INVALID_PAGE_ID;
-  for (size_t i = 0; i < pool_size_; ++i) {
-    if (pages_[i].page_id_ == INVALID_PAGE_ID) {
-      pages_[i].page_id_ = i;
-      page_id = i;
-      break;
-    }
-  }
-  return page_id;
-}
+  auto page_ptr = GetPageFromePageId(INVALID_PAGE_ID);
+  page_ptr->page_id_ = next_page_id_;
+  return next_page_id_++;
+}// end AllocatePage
 
-void BufferPoolManagerInstance::ResetMemoryAndMetadata(Page *page){
+void BufferPoolManagerInstance::ResetPage(Page *page,frame_id_t frame_id){
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
-  page->ResetMemory();
-  page->page_id_ = INVALID_PAGE_ID;
   page->pin_count_ = 0;
   page->is_dirty_ = false;
-}
+  replacer_->RecordAccess(frame_id);
+  replacer_->SetEvictable(frame_id, false);
+}// end ResetPage
+
+auto BufferPoolManagerInstance::GetPageFromFrameId(frame_id_t frame_id) -> Page*{
+  frame_id_t temp_frame_id;
+  Page* page_ptr = nullptr;
+  for(size_t i=0;i<pool_size_;++i){
+    page_table_->Find(pages_[i].page_id_, temp_frame_id);
+    if(temp_frame_id==frame_id){
+      page_ptr = &pages_[i];
+      break;
+    }// end if
+  }// end for
+  return page_ptr;
+}// end GetPageFromFrameId
+
+auto BufferPoolManagerInstance::GetReplacementPage(frame_id_t* frame_id_ptr,Page** page_ptr) -> bool{
+  if(replacer_->Evict(frame_id_ptr)){
+    *page_ptr = GetPageFromFrameId(*frame_id_ptr);
+    if((*page_ptr)->IsDirty()){ disk_manager_->WritePage((*page_ptr)->GetPageId(), (*page_ptr)->GetData()); }
+    page_table_->Remove((*page_ptr)->GetPageId());
+    //LOG_INFO("%p", page_ptr);
+    return 1;
+  }// end if
+  return 0; 
+}// end GetReplacementPage
+
+auto BufferPoolManagerInstance::GetPageFromePageId(page_id_t page_id) -> Page*{
+  for(size_t i=0;i<pool_size_;++i){
+    if(pages_[i].page_id_ == page_id){return &pages_[i];}
+  }// end for
+  return nullptr;
+}// end GetPageFromePageId
 }  // namespace bustub

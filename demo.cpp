@@ -16,8 +16,15 @@ class Ant{
     }
     int id;
 };
+void f1(int* a){
+    int* b = new int(3);
+    a=b;
+    cout<<a<<' '<<*a<<endl;
+}
 int main() {
-    Ant* ant=new Ant[5];
-    cout<<ant[3].id<<endl;
+    int *a = new int(10);
+    cout<<a<<' '<<*a<<endl;
+    f1(a);
+    cout<<a<<' '<<*a<<endl;
     return 0;
 }
