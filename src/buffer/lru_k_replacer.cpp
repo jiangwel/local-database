@@ -87,6 +87,7 @@ inline auto LRUKReplacer::GetNodeStatus(const std::shared_ptr<LRUKNode> &node_pt
 }
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+
   // no frame or no is_evictable frame
   std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_ptr =
       std::make_shared<std::pair<frame_id_t, size_t>>(MAX_FRAME_ID_T, 0);
@@ -98,7 +99,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     auto node_status = GetNodeStatus(frame, is_evict_had_k_timestamp_node, evict_frame_ptr);
     auto current_history_ptr = frame->GetHistoryPtr();
     auto current_frame_id = it.first;
-
+    //LOG_INFO("frame_id: %d ,is evcitble: %d",current_frame_id,frame->GetIsEvictable());
     switch (node_status) {
       case NodeStatus::Exst_k_Tmstmp_Node: {
         auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
@@ -137,6 +138,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
 void LRUKReplacer::PrintRecord(frame_id_t frame_id) {
   std::cout << frame_id << " ";
   auto frame_ptr = node_store_ptr_->find(frame_id)->second;
+  std::cout << "is_evictable: " << frame_ptr->GetIsEvictable() << " ";
   frame_ptr->PrintHistory();
   std::cout << std::endl;
 }

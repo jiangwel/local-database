@@ -22,7 +22,7 @@
 namespace bustub {
 // Check whether pages containing terminal characters can be recovered
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, DISABLED_BinaryDataTest) {
+TEST(BufferPoolManagerInstanceTest, BinaryDataTest) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
@@ -90,7 +90,7 @@ TEST(BufferPoolManagerInstanceTest, DISABLED_BinaryDataTest) {
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, DISABLED_SampleTest) {
+TEST(BufferPoolManagerInstanceTest, SampleTest) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
@@ -134,6 +134,7 @@ TEST(BufferPoolManagerInstanceTest, DISABLED_SampleTest) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
   }
 
+  //bug
   // Scenario: We should be able to fetch the data we wrote a while ago.
   // page0 ,get from disk
   page0 = bpm->FetchPage(0);
@@ -146,6 +147,7 @@ TEST(BufferPoolManagerInstanceTest, DISABLED_SampleTest) {
   EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
   // can't fetch page0,because no more space
   EXPECT_EQ(nullptr, bpm->FetchPage(0));
+  //bug
 
   // Shutdown the disk manager and remove the temporary file we created.
   disk_manager->ShutDown();
@@ -218,8 +220,44 @@ TEST(BufferPoolManagerInstanceTest, UnitTestFetchPgImp){
   auto *disk_manager = new DiskManager(db_name);
   auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
 //
+  for(int i=0;i<10;i++){
+    page_id_t page_id_temp;
+    bpm->NewPage(&page_id_temp);
+  }
+  auto page1 = bpm->FetchPage(0);
+  EXPECT_NE(nullptr, page1);
+  auto page2 = bpm->FetchPage(10);
+  EXPECT_EQ(nullptr, page2);
+  bpm->UnpinPage(1, false);
+  bpm->UnpinPage(2, false);
+  //auto page3 = bpm->FetchPage(101);
+  //EXPECT_NE(nullptr, page3);
 
 //
+  disk_manager->ShutDown();
+  remove("test.db");
+
+  delete bpm;
+  delete disk_manager;
+}
+
+// NOLINTNEXTLINE
+TEST(BufferPoolManagerInstanceTest, UnitTestDeletePgImp){
+  const std::string db_name = "test.db";
+  const size_t buffer_pool_size = 10;
+  const size_t k = 5;
+
+  auto *disk_manager = new DiskManager(db_name);
+  auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
+
+  EXPECT_EQ(1,bpm->DeletePage(0));
+  page_id_t page_id_temp;
+  bpm->NewPage(&page_id_temp);
+
+  EXPECT_EQ(0,bpm->DeletePage(0));
+  bpm->UnpinPage(0, true);
+  EXPECT_EQ(1,bpm->DeletePage(0));
+
   disk_manager->ShutDown();
   remove("test.db");
 
