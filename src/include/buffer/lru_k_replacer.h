@@ -35,7 +35,6 @@ class LRUKNode {
   ~LRUKNode() = default;
   void InsertCurrentTimeStamp(size_t current_timestamp);
   // Delete in the future
-  void PrintHistory();
   auto GetIsEvictable() -> bool;
   auto GetTimestampNum() -> size_t;
   auto GetK() -> size_t;
@@ -103,8 +102,6 @@ class LRUKReplacer {
    * @return true if a frame is evicted successfully, false if no frames can be evicted.
    */
   auto Evict(frame_id_t *frame_id) -> bool;
-
-  void PrintRecord(frame_id_t frame_id);
 
   /**
    * TODO(P1): Add implementation

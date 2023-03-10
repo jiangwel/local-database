@@ -140,13 +140,13 @@ class BufferPoolManagerInstance : public BufferPoolManager {
    */
   auto DeletePgImp(page_id_t page_id) -> bool override;
 
-  void ResetPage(Page *page,frame_id_t frame_id);
+  void ResetPage(Page *page, frame_id_t frame_id);
 
-  auto GetPageFromFrameId(frame_id_t frame_id) -> Page*;
+  auto GetPageFromFrameId(frame_id_t frame_id) -> Page *;
 
-  auto GetReplacementPage(frame_id_t* frame_id,Page** page_ptr) -> bool;
+  auto GetReplacementPage(frame_id_t *frame_id, Page **page_ptr) -> bool;
 
-  auto GetPageFromePageId(page_id_t page_id) -> Page*;
+  auto GetPageFromePageId(page_id_t page_id) -> Page *;
 
   /** Number of pages in the buffer pool. */
   const size_t pool_size_;
@@ -162,7 +162,7 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   /** Pointer to the log manager. Please ignore this for P1. */
   LogManager *log_manager_ __attribute__((__unused__));
   /** Page table for keeping track of buffer pool pages. */
-  ExtendibleHashTable<page_id_t,frame_id_t> *page_table_;
+  ExtendibleHashTable<page_id_t, frame_id_t> *page_table_;
   /** Replacer to find unpinned pages for replacement. */
   LRUKReplacer *replacer_;
   /** List of free frames that don't have any pages on them. */

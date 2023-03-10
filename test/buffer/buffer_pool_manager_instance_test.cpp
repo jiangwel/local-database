@@ -97,7 +97,7 @@ TEST(BufferPoolManagerInstanceTest, SampleTest) {
 
   auto *disk_manager = new DiskManager(db_name);
   auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
-  // init code 
+  // init code
   page_id_t page_id_temp;
   // page0 pin cont = 1
   auto *page0 = bpm->NewPage(&page_id_temp);
@@ -134,9 +134,9 @@ TEST(BufferPoolManagerInstanceTest, SampleTest) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
   }
 
-  //bug
-  // Scenario: We should be able to fetch the data we wrote a while ago.
-  // page0 ,get from disk
+  // bug
+  //  Scenario: We should be able to fetch the data we wrote a while ago.
+  //  page0 ,get from disk
   page0 = bpm->FetchPage(0);
   EXPECT_EQ(0, strcmp(page0->GetData(), "Hello"));
 
@@ -147,7 +147,7 @@ TEST(BufferPoolManagerInstanceTest, SampleTest) {
   EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
   // can't fetch page0,because no more space
   EXPECT_EQ(nullptr, bpm->FetchPage(0));
-  //bug
+  // bug
 
   // Shutdown the disk manager and remove the temporary file we created.
   disk_manager->ShutDown();
@@ -158,25 +158,25 @@ TEST(BufferPoolManagerInstanceTest, SampleTest) {
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, UnitTestNewPgImp){
+TEST(BufferPoolManagerInstanceTest, UnitTestNewPgImp) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
   auto *disk_manager = new DiskManager(db_name);
   auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
   //
-  for(int i=0;i<10;i++){
+  for (int i = 0; i < 10; i++) {
     page_id_t page_id_temp;
     bpm->NewPage(&page_id_temp);
   }
-  //test free_list_ is empty
-  //all page id pinned can't create new page
+  // test free_list_ is empty
+  // all page id pinned can't create new page
   page_id_t page_id_temp;
-  auto* page = bpm->NewPage(&page_id_temp);
+  auto *page = bpm->NewPage(&page_id_temp);
   EXPECT_EQ(nullptr, page);
-  //evict page,then create new page
+  // evict page,then create new page
   bpm->UnpinPage(0, true);
-  auto* page1 = bpm->NewPage(&page_id_temp);
+  auto *page1 = bpm->NewPage(&page_id_temp);
   EXPECT_NE(nullptr, page1);
   EXPECT_EQ(10, page_id_temp);
 
@@ -188,21 +188,21 @@ TEST(BufferPoolManagerInstanceTest, UnitTestNewPgImp){
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, DISABLED_UnitTestUnpinPgImp){
+TEST(BufferPoolManagerInstanceTest, DISABLED_UnitTestUnpinPgImp) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
 
   auto *disk_manager = new DiskManager(db_name);
   auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
-// no page id reutrn false
-  EXPECT_EQ(false,bpm->UnpinPage(0, true));
-// exzit page id
+  // no page id reutrn false
+  EXPECT_EQ(false, bpm->UnpinPage(0, true));
+  // exzit page id
   page_id_t page_id_temp;
   bpm->NewPage(&page_id_temp);
-// pin cont is 1 ,be evictble
-// return true
-  EXPECT_EQ(true,bpm->UnpinPage(0, true));
+  // pin cont is 1 ,be evictble
+  // return true
+  EXPECT_EQ(true, bpm->UnpinPage(0, true));
 
   disk_manager->ShutDown();
   remove("test.db");
@@ -212,15 +212,15 @@ TEST(BufferPoolManagerInstanceTest, DISABLED_UnitTestUnpinPgImp){
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, UnitTestFetchPgImp){
+TEST(BufferPoolManagerInstanceTest, UnitTestFetchPgImp) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
 
   auto *disk_manager = new DiskManager(db_name);
   auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
-//
-  for(int i=0;i<10;i++){
+  //
+  for (int i = 0; i < 10; i++) {
     page_id_t page_id_temp;
     bpm->NewPage(&page_id_temp);
   }
@@ -230,10 +230,10 @@ TEST(BufferPoolManagerInstanceTest, UnitTestFetchPgImp){
   EXPECT_EQ(nullptr, page2);
   bpm->UnpinPage(1, false);
   bpm->UnpinPage(2, false);
-  //auto page3 = bpm->FetchPage(101);
-  //EXPECT_NE(nullptr, page3);
+  // auto page3 = bpm->FetchPage(101);
+  // EXPECT_NE(nullptr, page3);
 
-//
+  //
   disk_manager->ShutDown();
   remove("test.db");
 
@@ -242,7 +242,7 @@ TEST(BufferPoolManagerInstanceTest, UnitTestFetchPgImp){
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, UnitTestDeletePgImp){
+TEST(BufferPoolManagerInstanceTest, UnitTestDeletePgImp) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
@@ -250,13 +250,13 @@ TEST(BufferPoolManagerInstanceTest, UnitTestDeletePgImp){
   auto *disk_manager = new DiskManager(db_name);
   auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
 
-  EXPECT_EQ(1,bpm->DeletePage(0));
+  EXPECT_EQ(1, bpm->DeletePage(0));
   page_id_t page_id_temp;
   bpm->NewPage(&page_id_temp);
 
-  EXPECT_EQ(0,bpm->DeletePage(0));
+  EXPECT_EQ(0, bpm->DeletePage(0));
   bpm->UnpinPage(0, true);
-  EXPECT_EQ(1,bpm->DeletePage(0));
+  EXPECT_EQ(1, bpm->DeletePage(0));
 
   disk_manager->ShutDown();
   remove("test.db");

@@ -33,12 +33,6 @@ void LRUKNode::InsertCurrentTimeStamp(size_t current_timestamp) {
   LRUKNode::timestamp_num_++;
 }
 
-void LRUKNode::PrintHistory() {
-  for (auto i : *history_ptr_) {
-    std::cout << " " << i << " ";
-  }
-}
-
 auto LRUKNode::GetIsEvictable() -> bool { return this->is_evictable_; }
 
 auto LRUKNode::GetTimestampNum() -> size_t { return this->timestamp_num_; }
@@ -99,7 +93,6 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     auto node_status = GetNodeStatus(frame, is_evict_had_k_timestamp_node, evict_frame_ptr);
     auto current_history_ptr = frame->GetHistoryPtr();
     auto current_frame_id = it.first;
-    //LOG_INFO("frame_id: %d ,is evcitble: %d",current_frame_id,frame->GetIsEvictable());
     switch (node_status) {
       case NodeStatus::Exst_k_Tmstmp_Node: {
         auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
@@ -133,14 +126,6 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   LRUKReplacer::node_store_ptr_->erase(*frame_id);
   this->curr_size_--;
   return true;
-}
-// Delete in the future
-void LRUKReplacer::PrintRecord(frame_id_t frame_id) {
-  std::cout << frame_id << " ";
-  auto frame_ptr = node_store_ptr_->find(frame_id)->second;
-  std::cout << "is_evictable: " << frame_ptr->GetIsEvictable() << " ";
-  frame_ptr->PrintHistory();
-  std::cout << std::endl;
 }
 
 void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
@@ -177,14 +162,10 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
     this->curr_size_++;
   }
   frame_ptr->SetIsEvictable(set_evictable);
-  // Use the three yuan expression. If set_evictable is true,
-  // the current replaceable frame number is added, otherwise
-  // one will be reduced by one
 }
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
   auto frameid_frame_pair = LRUKReplacer::node_store_ptr_->find(frame_id);
-  // 如果找不到frame_id对应的LRUKNode，退出函数
   if (frameid_frame_pair == LRUKReplacer::node_store_ptr_->end()) {
     return;
   }
