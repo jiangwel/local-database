@@ -68,4 +68,38 @@ TEST(ExtendibleHashTableTest, ConcurrentInsertTest) {
   }
 }
 
+TEST(ExtendibleHashTableTest, Test1){
+  auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(2);
+  std::vector<int> index_equl_0;
+  int start = 0;
+  while(index_equl_0.size()<3){
+    if(table->IndexOf(start)==0){
+      index_equl_0.push_back(start);
+    }
+    start++;
+  }
+  
+  table->Insert(index_equl_0[0], "a");
+  table->Insert(index_equl_0[1], "b");
+  table->Insert(index_equl_0[2], "c");
+  
+  int index_equl_0_int=0;
+  while(index_equl_0_int){
+    if(table->IndexOf(start)==0){
+      index_equl_0_int = start;
+    }
+    start++;
+  }
+  table->Insert(index_equl_0_int, "d");
+  int index_equl_1=0;
+  while(index_equl_1){
+    if(table->IndexOf(start)==1){
+      index_equl_1 = start;
+    }
+    start++;
+  }
+  table->Insert(index_equl_1, "e");
+  EXPECT_EQ(3,table->GetNumBuckets());
+}
+
 }  // namespace bustub

@@ -105,6 +105,9 @@ class ExtendibleHashTable : public HashTable<K, V> {
    */
   auto Remove(const K &key) -> bool override;
 
+  //move back to private in future
+  auto IndexOf(const K &key) -> size_t;
+
   /**
    * Bucket class for each hash table bucket that the directory points to.
    */
@@ -192,7 +195,7 @@ class ExtendibleHashTable : public HashTable<K, V> {
    * @param key The key to be hashed.
    * @return The entry index in the directory.
    */
-  auto IndexOf(const K &key) -> size_t;
+  //auto IndexOf(const K &key) -> size_t;
 
   auto GetGlobalDepthInternal() const -> int;
   auto GetLocalDepthInternal(int dir_index) const -> int;

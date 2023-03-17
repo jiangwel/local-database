@@ -91,8 +91,8 @@ void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
   // update value
   if (Find(key, temp)) {
     FindBucket(key, bucket);
-    // 在bucket里找到key，然后更新value
     bucket->Insert(key, value);
+    LOG_INFO("update value in bucket %zu,key is %p", IndexOf(key),&key);
   } else {  // insert value
     auto index_of_key = IndexOf(key);
     bucket = dir_[index_of_key];
@@ -100,15 +100,21 @@ void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
       ++global_depth_;
       for (int i = 0; i < num_buckets_; i++) {
         dir_.push_back(dir_[i]);
-      }
+      }// end for
       num_buckets_ *= 2;
       RedistributeBucket(bucket, index_of_key);
+      bucket->Insert(key, value);
+      LOG_INFO("Inert value ,doublue dir, in buckte %zu ,new global_depth is %d,key is %p", index_of_key, global_depth_,&key);
     } else if (bucket->IsFull() && bucket->GetDepth() + 1 == global_depth_) {
       RedistributeBucket(bucket, index_of_key);
+      bucket->Insert(key, value);
+      LOG_INFO("Inert value ,separate bucket, index_of_key=%zu,key is %p", index_of_key,&key);
+    } else {
+      bucket->Insert(key, value);
+      LOG_INFO("Inert value drectly, index_of_key=%zu,key is %p", index_of_key,&key);
     }
-    bucket->Insert(key, value);
-  }
-}
+  }// end if
+}// end Insert
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::FindBucket(const K &key, std::shared_ptr<Bucket> &bucket) -> bool {
@@ -167,6 +173,7 @@ auto ExtendibleHashTable<K, V>::Bucket::Remove(const K &key) -> bool {
   for (auto it = list_.begin(); it != list_.end(); it++) {
     if (it->first == key) {
       list_.erase(it);
+      LOG_INFO("remove element,key is %p",&key);
       return true;
     }
   }
