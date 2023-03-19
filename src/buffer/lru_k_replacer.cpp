@@ -93,6 +93,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     auto node_status = GetNodeStatus(frame, is_evict_had_k_timestamp_node, evict_frame_ptr);
     auto current_history_ptr = frame->GetHistoryPtr();
     auto current_frame_id = it.first;
+    
     switch (node_status) {
       case NodeStatus::Exst_k_Tmstmp_Node: {
         auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);

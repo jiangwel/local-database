@@ -7,6 +7,7 @@
 
 #include "container/hash/extendible_hash_table.h"
 #include "gtest/gtest.h"
+#include "common/logger.h"
 
 namespace bustub {
 
@@ -70,35 +71,35 @@ TEST(ExtendibleHashTableTest, ConcurrentInsertTest) {
 
 TEST(ExtendibleHashTableTest, Test1){
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(2);
-  std::vector<int> index_equl_0;
+  std::vector<int> index_vec;
   int start = 0;
-  while(index_equl_0.size()<3){
+  while(index_vec.size()<3){
     if(table->IndexOf(start)==0){
-      index_equl_0.push_back(start);
+      index_vec.push_back(start);
     }
     start++;
   }
+
+  table->Insert(index_vec[0], "a");
+  table->Insert(index_vec[1], "b");
+  table->Insert(index_vec[2], "c");
   
-  table->Insert(index_equl_0[0], "a");
-  table->Insert(index_equl_0[1], "b");
-  table->Insert(index_equl_0[2], "c");
-  
-  int index_equl_0_int=0;
-  while(index_equl_0_int){
+  int index=0;
+  while(index==0){
     if(table->IndexOf(start)==0){
-      index_equl_0_int = start;
+      index = start;
     }
     start++;
   }
-  table->Insert(index_equl_0_int, "d");
-  int index_equl_1=0;
-  while(index_equl_1){
+  table->Insert(index, "d");
+  int index2=0;
+  while(index2==0){
     if(table->IndexOf(start)==1){
-      index_equl_1 = start;
+      index2 = start;
     }
     start++;
   }
-  table->Insert(index_equl_1, "e");
+  table->Insert(index2, "e");
   EXPECT_EQ(3,table->GetNumBuckets());
 }
 
