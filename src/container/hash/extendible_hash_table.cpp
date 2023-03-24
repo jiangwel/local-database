@@ -92,22 +92,24 @@ void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
   if (Find(key, temp)) {
     FindBucket(key, bucket);
     bucket->Insert(key, value);
+
     LOG_INFO("update value in bucket %zu,key is %p", IndexOf(key),&key);
   } else {  // insert value
     auto index_of_key = IndexOf(key);
     bucket = dir_[index_of_key];
+    //Double size of dir_
     if (bucket->IsFull() && bucket->GetDepth() == global_depth_) {
-      ++global_depth_;
       for (int i = 0; i < pow(2,global_depth_); i++) {
         dir_.push_back(dir_[i]);
       }// end for
-      //num_buckets_ *= 2;
+      ++global_depth_;
       RedistributeBucket(bucket, index_of_key);
-      bucket->Insert(key, value);
+      //global_depth_ is changed, so we need to recompute index_of_key
+      dir_[IndexOf(key)]->Insert(key, value);
       LOG_INFO("Inert value doublue dir, buckte %zu ,new global_depth is %d,key is %p", index_of_key, global_depth_,&key);
     } else if (bucket->IsFull() && bucket->GetDepth() + 1 == global_depth_) {
       RedistributeBucket(bucket, index_of_key);
-      bucket->Insert(key, value);
+      dir_[IndexOf(key)]->Insert(key, value);
       LOG_INFO("Inert value separate bucket, buckte=%zu,key is %p", index_of_key,&key);
     } else {
       bucket->Insert(key, value);
@@ -130,20 +132,23 @@ template <typename K, typename V>
 void ExtendibleHashTable<K, V>::RedistributeBucket(std::shared_ptr<Bucket> bucket, size_t old_index) {
   bucket->IncrementDepth();
   std::vector<typename std::list<std::pair<K, V>>::iterator> to_be_moved;
+  // new index is old_index+pow(2,global_depth_-1) when local depth equals global depth,
+  // new index maybe equls to old_index when local depth less than global depth
+  auto new_index = old_index+pow(2,global_depth_-1)>=pow(2,global_depth_)?old_index:old_index+pow(2,global_depth_-1);
+  // old index alse need to change when new index equals to old index
+  old_index = new_index == old_index ? old_index-pow(2,global_depth_-1) : old_index;
+  std::shared_ptr<Bucket> new_bucket = std::make_shared<Bucket>(bucket_size_, GetGlobalDepthInternal());
+  dir_[new_index] = new_bucket;
+  num_buckets_++;
+  LOG_INFO("Bucket %zu split to %zu and %d", old_index, old_index, (int)new_index);
+
   // 仅仅遍历bucket
   for (auto it = bucket->GetItems().begin(); it != bucket->GetItems().end(); it++) {
-    auto new_index = IndexOf(it->first);
-    //In dir_ two index point to the same bucket,make a new bucket
-    if (new_index != old_index && dir_[new_index] == dir_[old_index]) {
-      std::shared_ptr<Bucket> new_bucket = std::make_shared<Bucket>(bucket_size_, GetGlobalDepthInternal());
-      dir_[new_index] = new_bucket;
-      num_buckets_++;
-      LOG_INFO("Bucket %zu split to %zu and %zu", old_index, old_index, new_index);
-    }
-    if (new_index != old_index) {
+    // Move the item to the new bucket
+    if (IndexOf(it->first) != old_index) {
       dir_[new_index]->GetItems().push_back(*it);
       to_be_moved.push_back(it);
-      LOG_INFO("Bucket %zu remove %p to bucket %zu", old_index, &it->first, new_index);
+      LOG_INFO("Bucket %zu remove %p to bucket %d pointer of bucket is %p", old_index, &it->first, (int)new_index,bucket.get());
     }
   }
   // Delate the item in the old bucket

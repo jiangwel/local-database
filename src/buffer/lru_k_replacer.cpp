@@ -68,13 +68,13 @@ inline auto LRUKReplacer::GetNodeStatus(const std::shared_ptr<LRUKNode> &node_pt
   NodeStatus ans = NodeStatus::Not_Evictable;
   if (node_ptr->GetIsEvictable()) {
     if (*is_evict_had_k_timestamp_node_p && node_ptr->GetTimestampNum() >= this->k_) {
-      ans = NodeStatus::Exst_k_Tmstmp_Node;
+      ans = NodeStatus::Exst_k_Timestmp;
     } else if (!*is_evict_had_k_timestamp_node_p && node_ptr->GetTimestampNum() < this->k_) {
-      ans = NodeStatus::Not_Exst_k_Tmstmp_Node;
+      ans = NodeStatus::Not_Exst_k_Timestmp;
     } else if (*is_evict_had_k_timestamp_node_p && node_ptr->GetTimestampNum() < this->k_) {
-      ans = NodeStatus::Exst_k_Tmstmp_Node_Curr_Lessthan_k_Tmstmp;
+      ans = NodeStatus::Exst_k_Timestmp_Curr_Lessthan_k_Timestmp;
     } else if (!*is_evict_had_k_timestamp_node_p && node_ptr->GetTimestampNum() >= this->k_) {
-      ans = NodeStatus::Not_Exst_k_Tmstmp_Node_Curr_Morethan_k_Tmstmp;
+      ans = NodeStatus::Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp;
     }
   }
   return ans;
@@ -95,7 +95,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     auto current_frame_id = it.first;
     
     switch (node_status) {
-      case NodeStatus::Exst_k_Tmstmp_Node: {
+      case NodeStatus::Exst_k_Timestmp: {
         auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
         if (backward_k_distance > evict_frame_ptr->second) {
           evict_frame_ptr->first = current_frame_id;
@@ -103,17 +103,17 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
         }
         break;
       }
-      case NodeStatus::Not_Exst_k_Tmstmp_Node: {
+      case NodeStatus::Not_Exst_k_Timestmp: {
         VctmIsLssThnKTmstmpErlrAccssd(frame, evict_frame_ptr, current_frame_id);
         break;
       }
-      case NodeStatus::Exst_k_Tmstmp_Node_Curr_Lessthan_k_Tmstmp: {
+      case NodeStatus::Exst_k_Timestmp_Curr_Lessthan_k_Timestmp: {
         *is_evict_had_k_timestamp_node = false;
         *evict_frame_ptr = {MAX_FRAME_ID_T, MAX_SIZE_T};
         VctmIsLssThnKTmstmpErlrAccssd(frame, evict_frame_ptr, current_frame_id);
         break;
       }
-      case NodeStatus::Not_Exst_k_Tmstmp_Node_Curr_Morethan_k_Tmstmp:
+      case NodeStatus::Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp:
       case NodeStatus::Not_Evictable: {
         break;
       }
@@ -126,6 +126,12 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   *frame_id = evict_frame_ptr->first;
   LRUKReplacer::node_store_ptr_->erase(*frame_id);
   this->curr_size_--;
+  LOG_INFO("Evict frame_id: %d,new size is: %zu", *frame_id, this->curr_size_);
+  //delete in future
+    for (const auto &it : *node_store_ptr_) {
+      LOG_INFO("frame_id: %d ,is_evictable: %d", it.first, it.second->GetIsEvictable());
+    }
+    //
   return true;
 }
 
@@ -139,9 +145,17 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
   this->current_timestamp_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   // insert a new frame to buffer pool
   if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end()) {
+    LOG_INFO("Insert a new frame, frame_id: %d", frame_id);
+
     std::shared_ptr<LRUKNode> node_ptr = std::make_shared<LRUKNode>(this->current_timestamp_, this->k_);
     LRUKReplacer::node_store_ptr_->insert(std::make_pair(frame_id, node_ptr));
-  } else {
+    //delete in future
+    for (const auto &it : *node_store_ptr_) {
+      LOG_INFO("frame_id: %d ,is_evictable: %d", it.first, it.second->GetIsEvictable());
+    }
+    //
+  } else { // update the timestamp of the old frame
+    LOG_INFO("Access old frame, frame_id: %d", frame_id);
     auto frame_ptr = LRUKReplacer::node_store_ptr_->find(frame_id)->second;
     frame_ptr->InsertCurrentTimeStamp(this->current_timestamp_);
   }
@@ -163,10 +177,12 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
     this->curr_size_++;
   }
   frame_ptr->SetIsEvictable(set_evictable);
+  LOG_INFO("Set frame_id: %d, is_evictable: %d, new size is: %zu", frame_id, set_evictable, this->curr_size_);
 }
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
   auto frameid_frame_pair = LRUKReplacer::node_store_ptr_->find(frame_id);
+  // frame to be removed does not exist
   if (frameid_frame_pair == LRUKReplacer::node_store_ptr_->end()) {
     return;
   }
@@ -174,6 +190,12 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
   if (frameid_frame_pair->second->GetIsEvictable()) {
     LRUKReplacer::node_store_ptr_->erase(frame_id);
     this->curr_size_ -= 1;
+    LOG_INFO("Remove frame_id: %d,new size is: %zu", frame_id, this->curr_size_);
+    //delete in future
+    for (const auto &it : *node_store_ptr_) {
+      LOG_INFO("frame_id: %d ,is_evictable: %d", it.first, it.second->GetIsEvictable());
+    }
+    //
   } else {
     throw Exception("Frame is not evictable!");
   }

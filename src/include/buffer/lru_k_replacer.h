@@ -180,10 +180,10 @@ class LRUKReplacer {
 
   enum class NodeStatus {
     Not_Evictable,
-    Exst_k_Tmstmp_Node,
-    Not_Exst_k_Tmstmp_Node,
-    Exst_k_Tmstmp_Node_Curr_Lessthan_k_Tmstmp,
-    Not_Exst_k_Tmstmp_Node_Curr_Morethan_k_Tmstmp
+    Exst_k_Timestmp,
+    Not_Exst_k_Timestmp,
+    Exst_k_Timestmp_Curr_Lessthan_k_Timestmp,
+    Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
   };
 
   inline auto GetNodeStatus(const std::shared_ptr<LRUKNode> &node_ptr, bool *is_evict_had_k_timestamp_node_p,

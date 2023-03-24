@@ -195,6 +195,7 @@ class ExtendibleHashTable : public HashTable<K, V> {
    * @param key The key to be hashed.
    * @return The entry index in the directory.
    */
+  //Declare Annotation in future
   //auto IndexOf(const K &key) -> size_t;
 
   auto GetGlobalDepthInternal() const -> int;
