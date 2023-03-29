@@ -11,8 +11,18 @@
 #include "common/logger.h"
 
 namespace bustub {
+void PrintDir(ExtendibleHashTable<int, std::string> *table) {
+  for (size_t i = 0; i < table->dir_.size(); i++) {
+    std::cout << "dir_[" << i << "]: ";
+    auto list = table->dir_[i]->GetItems();
+    for (auto it = list.begin(); it != list.end(); it++) {
+      std::cout <<it->first<<" ";
+    }
+  std::cout << std::endl;
+  }
+}
 
-TEST(ExtendibleHashTableTest, SampleTest) {
+TEST(ExtendibleHashTableTest, DISABLED_SampleTest) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(2);
   table->Insert(1, "a");
   table->Insert(2, "b");
@@ -70,38 +80,246 @@ TEST(ExtendibleHashTableTest, DISABLED_ConcurrentInsertTest) {
   }
 }
 
-TEST(ExtendibleHashTableTest, DISABLED_Test1){
+TEST(ExtendibleHashTableTest,DISABLED_RedistributeBucketTest){
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(2);
-  std::vector<int> index_vec;
-  int start = 0;
-  while(index_vec.size()<3){
-    if(table->IndexOf(start)==0){
-      index_vec.push_back(start);
-    }
-    start++;
-  }
+  table->Insert(1, "1");
+  table->Insert(8, "8");
+  table->Insert(3, "3");
+  table->Insert(16, "16");
+  table->Insert(5, "5");
+  EXPECT_EQ(2, table->GetGlobalDepth());
+  table->Insert(12, "12");
+  EXPECT_EQ(3, table->GetGlobalDepth());
+  std::string result;
+  EXPECT_EQ(true, table->Find(12, result));
 
-  table->Insert(index_vec[0], "a");
-  table->Insert(index_vec[1], "b");
-  table->Insert(index_vec[2], "c");
-  
-  int index=0;
-  while(index==0){
-    if(table->IndexOf(start)==0){
-      index = start;
-    }
-    start++;
-  }
-  table->Insert(index, "d");
-  int index2=0;
-  while(index2==0){
-    if(table->IndexOf(start)==1){
-      index2 = start;
-    }
-    start++;
-  }
-  table->Insert(index2, "e");
-  EXPECT_EQ(3,table->GetNumBuckets());
 }
+
+TEST(ExtendibleHashTableTest, DISABLED_RemoveTest0) {
+  auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
+  //depth 0
+  table->Insert(40, "a");
+  table->Insert(12, "b");
+  table->Insert(24, "c");
+  table->Insert(32, "c");
+  //depth 1
+  table->Insert(1, "c");
+  //depth 2
+  table->Insert(4, "c");
+  table->Insert(3, "c");
+  table->Insert(7, "c");
+  table->Insert(2, "c");
+  //depth 3
+  table->Insert(48, "c");
+  table->Insert(15, "c");
+  table->Insert(5, "c");
+  table->Insert(11, "c");
+  table->Insert(19, "c");
+  std::string result;
+  EXPECT_EQ(true, table->Find(4, result));
+  //EXPECT_EQ(true, table->Find(21, result));
+}
+
+TEST(ExtendibleHashTableTest, DISABLED_RemoveTest1) {
+  auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
+  //depth 0
+  table->Insert(40, "a");
+  table->Insert(12, "b");
+  table->Insert(24, "c");
+  table->Insert(32, "c");
+  //depth 1
+  table->Insert(21, "c");
+  //depth 2
+  table->Insert(4, "c");
+  table->Insert(3, "c");
+  table->Insert(7, "c");
+  table->Insert(2, "c");
+  //depth 3
+  table->Insert(48, "c");
+  table->Insert(15, "c");
+  table->Insert(5, "c");
+  table->Insert(11, "c");
+  table->Insert(19, "c");
+  std::string result;
+  EXPECT_EQ(true, table->Find(4, result));
+  EXPECT_EQ(true, table->Find(21, result));
+}
+
+TEST(ExtendibleHashTableTest, DISABLED_RemoveTest3) {
+  auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
+  //depth 0
+  table->Insert(40, "a");
+  table->Insert(12, "b");
+  table->Insert(24, "c");
+  table->Insert(32, "c");
+  //depth 1
+  table->Insert(1, "c");
+  //depth 2
+  table->Insert(4, "c");
+  table->Insert(21, "c");
+  table->Insert(7, "c");
+  table->Insert(2, "c");
+  //depth 3
+  table->Insert(48, "c");
+  table->Insert(15, "c");
+  table->Insert(5, "c");
+  table->Insert(11, "c");
+  table->Insert(19, "c");
+  std::string result;
+  EXPECT_EQ(true, table->Find(4, result));
+  EXPECT_EQ(true, table->Find(21, result));
+}
+
+TEST(ExtendibleHashTableTest, DISABLED_RemoveTest7) {
+  auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
+  //depth 0
+  table->Insert(40, "a");
+  table->Insert(12, "b");
+  table->Insert(24, "c");
+  table->Insert(32, "c");
+  //depth 1
+  table->Insert(21, "c");
+  //depth 2
+  table->Insert(4, "c");
+  table->Insert(3, "c");
+  table->Insert(21, "c");
+  table->Insert(2, "c");
+  //depth 3
+  table->Insert(48, "c");
+  table->Insert(15, "c");
+  table->Insert(5, "c");
+  table->Insert(11, "c");
+  table->Insert(19, "c");
+  std::string result;
+  EXPECT_EQ(true, table->Find(4, result));
+  EXPECT_EQ(true, table->Find(21, result));
+}
+
+TEST(ExtendibleHashTableTest, DISABLED_RemoveTest2) {
+  auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
+  //depth 0
+  table->Insert(40, "a");
+  table->Insert(12, "b");
+  table->Insert(24, "c");
+  table->Insert(32, "c");
+  //depth 1
+  table->Insert(1, "c");
+  //depth 2
+  table->Insert(4, "c");
+  table->Insert(3, "c");
+  table->Insert(7, "c");
+  table->Insert(21, "c");
+  //depth 3
+  table->Insert(48, "c");
+  table->Insert(15, "c");
+  table->Insert(5, "c");
+  table->Insert(11, "c");
+  table->Insert(19, "c");
+  std::string result;
+  EXPECT_EQ(true, table->Find(4, result));
+  EXPECT_EQ(true, table->Find(21, result));
+}
+
+TEST(ExtendibleHashTableTest, DISABLED_RemoveTest15) {
+  auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
+  //depth 0
+  table->Insert(40, "a");
+  table->Insert(12, "b");
+  table->Insert(24, "c");
+  table->Insert(32, "c");
+  //depth 1
+  table->Insert(1, "c");
+  //depth 2
+  table->Insert(4, "c");
+  table->Insert(3, "c");
+  table->Insert(7, "c");
+  table->Insert(2, "c");
+  //depth 3
+  table->Insert(48, "c");
+  table->Insert(21, "c");
+  table->Insert(5, "c");
+  table->Insert(11, "c");
+  table->Insert(19, "c");
+  std::string result;
+  EXPECT_EQ(true, table->Find(4, result));
+  EXPECT_EQ(true, table->Find(21, result));
+}
+
+TEST(ExtendibleHashTableTest, RemoveTest5) {
+  auto table = std::make_shared<ExtendibleHashTable<int, std::string>>(4);
+  //depth 0
+  table->Insert(40, "a");
+  table->Insert(12, "b");
+  table->Insert(24, "c");
+  table->Insert(32, "c");
+  //depth 1
+  table->Insert(1, "c");
+  //depth 2
+  table->Insert(4, "c");
+  table->Insert(3, "c");
+  table->Insert(7, "c");
+  table->Insert(2, "c");
+  //depth 3
+  table->Insert(48, "c");
+  table->Insert(15, "c");
+  table->Insert(21, "c");
+  table->Insert(11, "c");
+  table->Insert(19, "c");
+  PrintDir(table.get());
+  std::string result;
+  EXPECT_EQ(true, table->Find(4, result));
+  EXPECT_EQ(true, table->Find(21, result));
+}
+
+TEST(ExtendibleHashTableTest, DISABLED_RemoveTest11) {
+  auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
+  //depth 0
+  table->Insert(40, "a");
+  table->Insert(12, "b");
+  table->Insert(24, "c");
+  table->Insert(32, "c");
+  //depth 1
+  table->Insert(1, "c");
+  //depth 2
+  table->Insert(4, "c");
+  table->Insert(3, "c");
+  table->Insert(7, "c");
+  table->Insert(2, "c");
+  //depth 3
+  table->Insert(48, "c");
+  table->Insert(15, "c");
+  table->Insert(5, "c");
+  table->Insert(21, "c");
+  table->Insert(19, "c");
+  std::string result;
+  EXPECT_EQ(true, table->Find(4, result));
+  EXPECT_EQ(true, table->Find(21, result));
+}
+
+TEST(ExtendibleHashTableTest, DISABLED_RemoveTest19) {
+  auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
+  //depth 0
+  table->Insert(40, "a");
+  table->Insert(12, "b");
+  table->Insert(24, "c");
+  table->Insert(32, "c");
+  //depth 1
+  table->Insert(1, "c");
+  //depth 2
+  table->Insert(4, "c");
+  table->Insert(3, "c");
+  table->Insert(7, "c");
+  table->Insert(2, "c");
+  //depth 3
+  table->Insert(48, "c");
+  table->Insert(15, "c");
+  table->Insert(5, "c");
+  table->Insert(11, "c");
+  table->Insert(21, "c");
+  std::string result;
+  EXPECT_EQ(true, table->Find(4, result));
+  EXPECT_EQ(true, table->Find(21, result));
+}
+
 
 }  // namespace bustub

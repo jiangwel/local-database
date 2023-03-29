@@ -1,0 +1,44 @@
+Inert value drectly, buckte=0 40
+Inert value drectly, buckte=0 12
+Inert value drectly, buckte=0 24
+Inert value drectly, buckte=0 32
+Bucket 0 split to 0 and 1
+Inert value doublue dir, buckte 0 ,new global_depth is 1 ,1
+Bucket 0 split to 0 and 2
+Inert value doublue dir, buckte 0 ,new global_depth is 2 ,4
+Inert value drectly, buckte=3
+Inert value drectly, buckte=3
+Inert value drectly, buckte=2
+Inert value doublue dir, buckte 0 ,new global_depth is 3
+Bucket 0 split to 0 and 4
+Bucket 0 remove 0x606000001d70 to bucket 4
+Bucket 0 remove 0x606000001dd0 to bucket 4
+
+Inert value drectly, buckte=0
+Inert value drectly, buckte=0
+Inert value drectly, buckte=0
+Inert value drectly, buckte=0
+Bucket 0 split to 0 and 1
+Inert value doublue dir, buckte 0 ,new global_depth is 1
+Bucket 0 split to 0 and 2
+Inert value doublue dir, buckte 0 ,new global_depth is 2
+Inert value drectly, buckte=3
+Inert value drectly, buckte=3
+Inert value drectly, buckte=2
+Bucket 0 split to 0 and 4
+Bucket 0 remove to bucket 4
+Successful remove element
+Inert value doublue dir, buckte 0 ,new global_depth is 3
+
+Inert value drectly, buckte=0
+Inert value drectly, buckte=0
+Inert value drectly, buckte=0
+Inert value drectly, buckte=0
+Inert value double dir, buckte=0
+dir_[0]: 40 12 24 32 
+Inert value double dir, buckte=0
+dir_[0]: 40 12 24 32 
+Inert value double dir, buckte=0
+Inert value double dir, buckte=0
+Inert value double dir, buckte=0
+Inert value double dir, buckte=0

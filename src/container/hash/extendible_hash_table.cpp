@@ -84,6 +84,25 @@ auto ExtendibleHashTable<K, V>::Remove(const K &key) -> bool {
 }
 
 template <typename K, typename V>
+void ExtendibleHashTable<K, V>::DoubleDirectory(){
+  for (int i = 0; i < pow(2,global_depth_); i++) {
+    dir_.push_back(dir_[i]);
+  }// end for
+  ++global_depth_;
+}// end DoubleDirectory
+
+template <typename K, typename V>
+void ExtendibleHashTable<K, V>::InsertByDoubleDir(std::shared_ptr<Bucket> bucket,const K &key){
+  while(bucket->IsFull()){
+    DoubleDirectory();
+    RedistributeBucket(bucket);
+    //global_depth_ is changed, so we need to recompute index_of_key
+    LOG_INFO("Doublue dir,new global_depth is %d", global_depth_);
+    bucket = dir_[IndexOf(key)];
+  }
+}// end InsertByDoubleDir
+
+template <typename K, typename V>
 void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   V temp;
@@ -92,36 +111,47 @@ void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
   if (Find(key, temp)) {
     FindBucket(key, bucket);
     bucket->Insert(key, value);
-
     LOG_INFO("update value in bucket %zu,key is %p", IndexOf(key),&key);
   } else {  // insert value
-    auto index_of_key = IndexOf(key);
-    bucket = dir_[index_of_key];
-    //Double size of dir_
+    bucket = dir_[IndexOf(key)];
+    //Double size of dir_ and redistribute bucket
     if (bucket->IsFull() && bucket->GetDepth() == global_depth_) {
-      for (int i = 0; i < pow(2,global_depth_); i++) {
-        dir_.push_back(dir_[i]);
-      }// end for
-      ++global_depth_;
-      RedistributeBucket(bucket, index_of_key);
-      //global_depth_ is changed, so we need to recompute index_of_key
-      dir_[IndexOf(key)]->Insert(key, value);
-      LOG_INFO("Inert value doublue dir, buckte %zu ,new global_depth is %d,key is %p", index_of_key, global_depth_,&key);
-    } else if (bucket->IsFull() && bucket->GetDepth() + 1 == global_depth_) {
-      RedistributeBucket(bucket, index_of_key);
-      dir_[IndexOf(key)]->Insert(key, value);
-      LOG_INFO("Inert value separate bucket, buckte=%zu,key is %p", index_of_key,&key);
+        InsertByDoubleDir(bucket,key);
+        if(dir_[IndexOf(key)]->Insert(key, value)){
+          LOG_INFO("Inert value doublue dir, buckte %zu ,new global_depth is %d", IndexOf(key), global_depth_);
+        } else {
+          LOG_DEBUG("Falid to insert value doublue dir, buckte %zu ,new global_depth is %d", IndexOf(key), global_depth_);
+        }
+    } else if (bucket->IsFull() && bucket->GetDepth() < global_depth_) {
+      // Redistribute bucket
+      RedistributeBucket(bucket);
+      while(bucket->IsFull()){
+        if(bucket->GetDepth() < global_depth_){
+          RedistributeBucket(bucket);
+        }else{
+          InsertByDoubleDir(bucket,key);
+        }
+      }// end third if
+      if(dir_[IndexOf(key)]->Insert(key, value)){
+        LOG_INFO("Inert value separate bucket, buckte=%zu", IndexOf(key));
+      } else {
+        LOG_DEBUG("Falid to insert value separate bucket, buckte=%zu", IndexOf(key));
+      }
     } else {
-      bucket->Insert(key, value);
-      LOG_INFO("Inert value drectly, buckte=%zu,key is %p", index_of_key,&key);
-    }
-  }// end if
+      if(bucket->Insert(key, value)){
+        LOG_INFO("Inert value drectly, buckte=%zu", IndexOf(key));
+      } else {
+        LOG_DEBUG("Falid to insert value drectly, buckte=%zu", IndexOf(key));
+      }
+    }// end second if
+  }// end first if
 }// end Insert
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::FindBucket(const K &key, std::shared_ptr<Bucket> &bucket) -> bool {
-  int index = IndexOf(key);
-  if (index >= num_buckets_) {
+  auto index = IndexOf(key);
+  if (index > dir_.size()) {
+    LOG_INFO("index of key is out of range");
     return false;
   }
   bucket = dir_[index];
@@ -129,32 +159,40 @@ auto ExtendibleHashTable<K, V>::FindBucket(const K &key, std::shared_ptr<Bucket>
 }
 
 template <typename K, typename V>
-void ExtendibleHashTable<K, V>::RedistributeBucket(std::shared_ptr<Bucket> bucket, size_t old_index) {
-  bucket->IncrementDepth();
-  std::vector<typename std::list<std::pair<K, V>>::iterator> to_be_moved;
-  // new index is old_index+pow(2,global_depth_-1) when local depth equals global depth,
-  // new index maybe equls to old_index when local depth less than global depth
-  auto new_index = old_index+pow(2,global_depth_-1)>=pow(2,global_depth_)?old_index:old_index+pow(2,global_depth_-1);
-  // old index alse need to change when new index equals to old index
-  old_index = new_index == old_index ? old_index-pow(2,global_depth_-1) : old_index;
-  std::shared_ptr<Bucket> new_bucket = std::make_shared<Bucket>(bucket_size_, GetGlobalDepthInternal());
-  dir_[new_index] = new_bucket;
-  num_buckets_++;
+void ExtendibleHashTable<K, V>::RedistributeBucket(std::shared_ptr<Bucket> bucket) {
+  std::vector<K> to_be_moved;
+  auto global_depth_register = GetGlobalDepthInternal();
+  global_depth_ = bucket->GetDepth();
+  auto old_index = IndexOf(bucket->GetItems().begin()->first);
+  auto new_index = old_index+pow(2,bucket->GetDepth());
   LOG_INFO("Bucket %zu split to %zu and %d", old_index, old_index, (int)new_index);
+  bucket->IncrementDepth();
+  global_depth_ = bucket->GetDepth();
+  std::shared_ptr<Bucket> new_bucket = std::make_shared<Bucket>(bucket_size_, bucket->GetDepth());
+  num_buckets_++;
 
-  // 仅仅遍历bucket
   for (auto it = bucket->GetItems().begin(); it != bucket->GetItems().end(); it++) {
     // Move the item to the new bucket
     if (IndexOf(it->first) != old_index) {
-      dir_[new_index]->GetItems().push_back(*it);
-      to_be_moved.push_back(it);
-      LOG_INFO("Bucket %zu remove %p to bucket %d pointer of bucket is %p", old_index, &it->first, (int)new_index,bucket.get());
+      if(new_bucket->Insert(it->first, it->second)){
+        to_be_moved.push_back(it->first);
+        LOG_INFO("Bucket %zu remove to bucket %d", old_index, (int)new_index);
+      } else {
+        LOG_DEBUG("Failed to insert key frome bucket %zu to bucket %d", old_index, (int)new_index);
+      }
     }
   }
   // Delate the item in the old bucket
   for (auto it : to_be_moved) {
-    bucket->GetItems().erase(it);
+    if(!bucket->Remove(it)){
+      LOG_INFO("Failed to remove element failed!");
+    }
   }
+  while(new_index<dir_.size()){
+    dir_[new_index] = new_bucket;
+    new_index += pow(2,bucket->GetDepth());
+  }
+  global_depth_ = global_depth_register;
 }
 
 //===--------------------------------------------------------------------===//
@@ -182,7 +220,7 @@ auto ExtendibleHashTable<K, V>::Bucket::Remove(const K &key) -> bool {
   for (auto it = list_.begin(); it != list_.end(); it++) {
     if (it->first == key) {
       list_.erase(it);
-      LOG_INFO("remove element,key is %p",&key);
+      LOG_INFO("Successful remove element");
       return true;
     }
   }

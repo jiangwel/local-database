@@ -105,9 +105,6 @@ class ExtendibleHashTable : public HashTable<K, V> {
    */
   auto Remove(const K &key) -> bool override;
 
-  //move back to private in future
-  auto IndexOf(const K &key) -> size_t;
-
   /**
    * Bucket class for each hash table bucket that the directory points to.
    */
@@ -167,6 +164,8 @@ class ExtendibleHashTable : public HashTable<K, V> {
     std::list<std::pair<K, V>> list_;
   };
 
+  // future delete
+  std::vector<std::shared_ptr<Bucket>> dir_; 
  private:
   // TODO(student): You may add additional private members and helper functions and remove the ones
   // you don't need.
@@ -175,7 +174,8 @@ class ExtendibleHashTable : public HashTable<K, V> {
   size_t bucket_size_;  // The size of a bucket
   int num_buckets_;     // The number of buckets in the hash table
   mutable std::mutex latch_;
-  std::vector<std::shared_ptr<Bucket>> dir_;  // The directory of the hash table
+  // future
+  //std::vector<std::shared_ptr<Bucket>> dir_;  // The directory of the hash table
 
   // The following functions are completely optional, you can delete them if you have your own ideas.
 
@@ -183,8 +183,10 @@ class ExtendibleHashTable : public HashTable<K, V> {
    * @brief Redistribute the kv pairs in a full bucket.
    * @param bucket The bucket to be redistributed.
    */
-  void RedistributeBucket(std::shared_ptr<Bucket> bucket, size_t old_index);
+  void RedistributeBucket(std::shared_ptr<Bucket> bucket);
   auto FindBucket(const K &key, std::shared_ptr<Bucket> &bucket) -> bool;
+  void DoubleDirectory();
+  void InsertByDoubleDir(std::shared_ptr<Bucket> bucket,const K &key);
 
   /*****************************************************************
    * Must acquire latch_ first before calling the below functions. *
@@ -195,8 +197,7 @@ class ExtendibleHashTable : public HashTable<K, V> {
    * @param key The key to be hashed.
    * @return The entry index in the directory.
    */
-  //Declare Annotation in future
-  //auto IndexOf(const K &key) -> size_t;
+  auto IndexOf(const K &key) -> size_t;
 
   auto GetGlobalDepthInternal() const -> int;
   auto GetLocalDepthInternal(int dir_index) const -> int;
