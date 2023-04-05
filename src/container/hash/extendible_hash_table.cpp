@@ -110,8 +110,11 @@ void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
   // update value
   if (Find(key, temp)) {
     FindBucket(key, bucket);
-    bucket->Insert(key, value);
-    LOG_INFO("update value in bucket %zu,key is %p", IndexOf(key),&key);
+    if(bucket->Insert(key, value)){
+      LOG_INFO("update value in bucket %zu", IndexOf(key));
+    } else {
+      LOG_DEBUG("Falid to update value in bucket %zu", IndexOf(key));
+    }
   } else {  // insert value
     bucket = dir_[IndexOf(key)];
     //Double size of dir_ and redistribute bucket
@@ -125,11 +128,11 @@ void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
     } else if (bucket->IsFull() && bucket->GetDepth() < global_depth_) {
       // Redistribute bucket
       RedistributeBucket(bucket);
-      while(bucket->IsFull()){
-        if(bucket->GetDepth() < global_depth_){
-          RedistributeBucket(bucket);
+      while(dir_[IndexOf(key)]->IsFull()){
+        if(dir_[IndexOf(key)]->GetDepth() < global_depth_){
+          RedistributeBucket(dir_[IndexOf(key)]);
         }else{
-          InsertByDoubleDir(bucket,key);
+          InsertByDoubleDir(dir_[IndexOf(key)],key);
         }
       }// end third if
       if(dir_[IndexOf(key)]->Insert(key, value)){

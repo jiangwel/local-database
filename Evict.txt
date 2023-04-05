@@ -1,0 +1,22 @@
+Insert a new frame, frame_id: 2
+frame_id: 2 ,is_evictable: 0
+Set frame_id: 2, is_evictable: 0, new size is: 0
+Set frame_id: 2, is_evictable: 1, new size is: 1
+Evict frame_id: 2,new size is: 0
+Insert a new frame, frame_id: 1
+frame_id: 1 ,is_evictable: 0
+Access old frame, frame_id: 1
+Insert a new frame, frame_id: 2
+frame_id: 2 ,is_evictable: 0
+frame_id: 1 ,is_evictable: 0
+Access old frame, frame_id: 1
+Set frame_id: 2, is_evictable: 1, new size is: 1
+Set frame_id: 1, is_evictable: 1, new size is: 2
+Evict frame_id: 2,new size is: 1
+frame_id: 1 ,is_evictable: 1
+
+19: /autograder/source/bustub/test/buffer/grading_lru_k_replacer_test.cpp:135: Failure
+19: Expected equality of these values:
+19:   true
+19:   lru_replacer.Evict(&result)
+19:     Which is: false
