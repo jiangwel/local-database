@@ -33,9 +33,7 @@ ExtendibleHashTable<K, V>::ExtendibleHashTable(size_t bucket_size)
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::IndexOf(const K &key) -> size_t {
-  latch_.lock();
   int mask = (1 << global_depth_) - 1;
-  latch_.unlock();
   return std::hash<K>()(key) & mask;
 }
 
@@ -89,17 +87,14 @@ auto ExtendibleHashTable<K, V>::Remove(const K &key) -> bool {
 
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::DoubleDirectory(){
-  latch_.lock();
   for (int i = 0; i < pow(2,global_depth_); i++) {
     dir_.push_back(dir_[i]);
   }// end for
   ++global_depth_;
-  latch_.unlock();
 }// end DoubleDirectory
 
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::InsertByDoubleDir(std::shared_ptr<Bucket> bucket,const K &key){
-  latch_.lock();
   while(bucket->IsFull()){
     DoubleDirectory();
     RedistributeBucket(bucket);
@@ -107,23 +102,25 @@ void ExtendibleHashTable<K, V>::InsertByDoubleDir(std::shared_ptr<Bucket> bucket
     LOG_INFO("Doublue dir,new global_depth is %d", global_depth_);
     bucket = dir_[IndexOf(key)];
   }
-  latch_.unlock();
 }// end InsertByDoubleDir
 
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
-  latch_.lock();
   V temp;
   std::shared_ptr<bustub::ExtendibleHashTable<K, V>::Bucket> bucket;
+  
   // update value
   if (Find(key, temp)) {
+    latch_.lock();
     FindBucket(key, bucket);
     if(bucket->Insert(key, value)){
       LOG_INFO("update value in bucket %zu", IndexOf(key));
     } else {
       LOG_DEBUG("Falid to update value in bucket %zu", IndexOf(key));
     }
+    latch_.unlock();
   } else {  // insert value
+    latch_.lock();
     bucket = dir_[IndexOf(key)];
     //Double size of dir_ and redistribute bucket
     if (bucket->IsFull() && bucket->GetDepth() == global_depth_) {
@@ -155,27 +152,24 @@ void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
         LOG_DEBUG("Falid to insert value drectly, buckte=%zu", IndexOf(key));
       }
     }// end second if
+    latch_.unlock();
   }// end first if
-  latch_.unlock();
+  
 }// end Insert
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::FindBucket(const K &key, std::shared_ptr<Bucket> &bucket) -> bool {
-  latch_.lock();
   auto index = IndexOf(key);
   if (index > dir_.size()) {
     LOG_INFO("index of key is out of range");
-    latch_.unlock();
     return false;
   }
   bucket = dir_[index];
-  latch_.unlock();
   return true;
 }
 
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::RedistributeBucket(std::shared_ptr<Bucket> bucket) {
-  latch_.lock();
   std::vector<K> to_be_moved;
   auto global_depth_register = GetGlobalDepthInternal();
   global_depth_ = bucket->GetDepth();
@@ -209,7 +203,6 @@ void ExtendibleHashTable<K, V>::RedistributeBucket(std::shared_ptr<Bucket> bucke
     new_index += pow(2,bucket->GetDepth());
   }
   global_depth_ = global_depth_register;
-  latch_.unlock();
 }
 
 //===--------------------------------------------------------------------===//
