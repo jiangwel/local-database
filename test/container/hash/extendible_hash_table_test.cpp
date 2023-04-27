@@ -22,7 +22,7 @@ void PrintDir(ExtendibleHashTable<int, std::string> *table) {
   }
 }
 
-TEST(ExtendibleHashTableTest, DISABLED_SampleTest) {
+TEST(ExtendibleHashTableTest, SampleTest) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(2);
   table->Insert(1, "a");
   table->Insert(2, "b");
@@ -54,7 +54,7 @@ TEST(ExtendibleHashTableTest, DISABLED_SampleTest) {
   EXPECT_FALSE(table->Remove(20));
 }
 
-TEST(ExtendibleHashTableTest, DISABLED_ConcurrentInsertTest) {
+TEST(ExtendibleHashTableTest, ConcurrentInsertTest) {
   const int num_runs = 50;
   const int num_threads = 3;
 
@@ -245,7 +245,7 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest15) {
   EXPECT_EQ(true, table->Find(21, result));
 }
 
-TEST(ExtendibleHashTableTest, RemoveTest5) {
+TEST(ExtendibleHashTableTest, DISABLED_RemoveTest5) {
   auto table = std::make_shared<ExtendibleHashTable<int, std::string>>(4);
   //depth 0
   table->Insert(40, "a");

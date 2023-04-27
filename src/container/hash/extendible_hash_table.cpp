@@ -25,80 +25,81 @@ namespace bustub {
 template <typename K, typename V>
 ExtendibleHashTable<K, V>::ExtendibleHashTable(size_t bucket_size)
     : global_depth_(0), bucket_size_(bucket_size), num_buckets_(1) {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+  latch_.lock();
   std::shared_ptr<Bucket> first_bucket = std::make_shared<Bucket>(bucket_size_, global_depth_);
   dir_.push_back(first_bucket);
+  latch_.unlock();
 }
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::IndexOf(const K &key) -> size_t {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+  latch_.lock();
   int mask = (1 << global_depth_) - 1;
+  latch_.unlock();
   return std::hash<K>()(key) & mask;
 }
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::GetGlobalDepth() const -> int {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   return GetGlobalDepthInternal();
 }
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::GetGlobalDepthInternal() const -> int {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   return global_depth_;
 }
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::GetLocalDepth(int dir_index) const -> int {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   return GetLocalDepthInternal(dir_index);
 }
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::GetLocalDepthInternal(int dir_index) const -> int {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   return dir_[dir_index]->GetDepth();
 }
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::GetNumBuckets() const -> int {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   return GetNumBucketsInternal();
 }
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::GetNumBucketsInternal() const -> int {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   return num_buckets_;
 }
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::Find(const K &key, V &value) -> bool {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+  latch_.lock();
   std::shared_ptr<Bucket> bucket;
-  return (FindBucket(key, bucket) && bucket->Find(key, value)) ? 1 : 0;
+  bool result = (FindBucket(key, bucket) && bucket->Find(key, value)) ? 1 : 0;
+  latch_.unlock();
+  return result;
 }
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::Remove(const K &key) -> bool {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+  latch_.lock();
   std::shared_ptr<bustub::ExtendibleHashTable<K, V>::Bucket> bucket;
-  return (FindBucket(key, bucket) && bucket->Remove(key)) ? 1 : 0;
+  bool result = (FindBucket(key, bucket) && bucket->Remove(key)) ? 1 : 0;
+  latch_.unlock();
+  return result;
 }
 
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::DoubleDirectory(){
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+  latch_.lock();
   for (int i = 0; i < pow(2,global_depth_); i++) {
     dir_.push_back(dir_[i]);
   }// end for
   ++global_depth_;
+  latch_.unlock();
 }// end DoubleDirectory
 
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::InsertByDoubleDir(std::shared_ptr<Bucket> bucket,const K &key){
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+  latch_.lock();
   while(bucket->IsFull()){
     DoubleDirectory();
     RedistributeBucket(bucket);
@@ -106,11 +107,12 @@ void ExtendibleHashTable<K, V>::InsertByDoubleDir(std::shared_ptr<Bucket> bucket
     LOG_INFO("Doublue dir,new global_depth is %d", global_depth_);
     bucket = dir_[IndexOf(key)];
   }
+  latch_.unlock();
 }// end InsertByDoubleDir
 
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+  latch_.lock();
   V temp;
   std::shared_ptr<bustub::ExtendibleHashTable<K, V>::Bucket> bucket;
   // update value
@@ -154,23 +156,26 @@ void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
       }
     }// end second if
   }// end first if
+  latch_.unlock();
 }// end Insert
 
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::FindBucket(const K &key, std::shared_ptr<Bucket> &bucket) -> bool {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+  latch_.lock();
   auto index = IndexOf(key);
   if (index > dir_.size()) {
     LOG_INFO("index of key is out of range");
+    latch_.unlock();
     return false;
   }
   bucket = dir_[index];
+  latch_.unlock();
   return true;
 }
 
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::RedistributeBucket(std::shared_ptr<Bucket> bucket) {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
+  latch_.lock();
   std::vector<K> to_be_moved;
   auto global_depth_register = GetGlobalDepthInternal();
   global_depth_ = bucket->GetDepth();
@@ -204,6 +209,7 @@ void ExtendibleHashTable<K, V>::RedistributeBucket(std::shared_ptr<Bucket> bucke
     new_index += pow(2,bucket->GetDepth());
   }
   global_depth_ = global_depth_register;
+  latch_.unlock();
 }
 
 //===--------------------------------------------------------------------===//
