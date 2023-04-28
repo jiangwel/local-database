@@ -164,8 +164,7 @@ class ExtendibleHashTable : public HashTable<K, V> {
     std::list<std::pair<K, V>> list_;
   };
 
-  // future delete
-  std::vector<std::shared_ptr<Bucket>> dir_; 
+
  private:
   // TODO(student): You may add additional private members and helper functions and remove the ones
   // you don't need.
@@ -174,8 +173,7 @@ class ExtendibleHashTable : public HashTable<K, V> {
   size_t bucket_size_;  // The size of a bucket
   int num_buckets_;     // The number of buckets in the hash table
   mutable std::mutex latch_;
-  // future
-  //std::vector<std::shared_ptr<Bucket>> dir_;  // The directory of the hash table
+  std::vector<std::shared_ptr<Bucket>> dir_;  // The directory of the hash table
 
   // The following functions are completely optional, you can delete them if you have your own ideas.
 
