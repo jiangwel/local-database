@@ -16,6 +16,19 @@
 
 namespace bustub {
 
+void PrintAllNode(LRUKReplacer &lru_replacer){
+  auto nodes = lru_replacer.GetNodeStorePtr();
+  //遍历nodes
+  for (auto &node : *nodes) {
+    std::cout << "fid: " << node.first << " is_evictable: " << node.second->GetIsEvictable() << " timestamp_num: " << node.second->GetTimestampNum() << " k: " << node.second->GetK() << std::endl;
+    auto history_ptr = node.second->GetHistoryPtr();
+    for (auto &timestamp : *history_ptr) {
+      std::cout << timestamp << " ";
+    }
+    std::cout << std::endl;
+  }
+
+}
 TEST(LRUKReplacerTest, SampleTest) {
   LRUKReplacer lru_replacer(7, 2);
 
@@ -84,7 +97,7 @@ TEST(LRUKReplacerTest, SampleTest) {
   lru_replacer.SetEvictable(1, true);
   ASSERT_EQ(2, lru_replacer.Size());
   ASSERT_EQ(true, lru_replacer.Evict(&value));
-  ASSERT_EQ(value, 4);
+  ASSERT_EQ(value, 4); //说是1，但是实际上是4
 
   ASSERT_EQ(1, lru_replacer.Size());
   lru_replacer.Evict(&value);
@@ -96,5 +109,25 @@ TEST(LRUKReplacerTest, SampleTest) {
   ASSERT_EQ(0, lru_replacer.Size());
   lru_replacer.Remove(1);
   ASSERT_EQ(0, lru_replacer.Size());
+}
+
+TEST(LRUKReplacerTest,EvictTest){
+  LRUKReplacer lru_replacer(7, 3);
+  int value;
+
+  lru_replacer.RecordAccess(2);
+  lru_replacer.SetEvictable(2,false);
+  lru_replacer.SetEvictable(2,true);
+  lru_replacer.Evict(&value);
+  lru_replacer.RecordAccess(1);
+  lru_replacer.RecordAccess(1);
+  lru_replacer.RecordAccess(2);
+  lru_replacer.RecordAccess(1);
+  lru_replacer.SetEvictable(2,true);
+  lru_replacer.SetEvictable(1,true);
+  lru_replacer.Evict(&value);
+  PrintAllNode(lru_replacer);
+
+  ASSERT_EQ(true, lru_replacer.Evict(&value));
 }
 }  // namespace bustub

@@ -89,6 +89,7 @@ auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * {
   // Get page by evicting other page
     if (free_list_.empty()) {
       if (!GetReplacementPage(&frame_id, page_ptr_ptr)) {
+        latch_.unlock();
         return nullptr;
       }
     } else { // Get page from free list
@@ -128,9 +129,11 @@ auto BufferPoolManagerInstance::UnpinPgImp(page_id_t page_id, bool is_dirty) -> 
   }// end if
   page_ptr->pin_count_--;
   frame_id_t frame_id;
+  latch_.unlock();
   if(!page_table_->Find(page_id, frame_id)){
     LOG_DEBUG("[UnpinPgImp()] page_id %d not found in page_table_", page_id);
   }// end if
+  latch_.lock();
   if (page_ptr->pin_count_ == 0) {
     latch_.unlock();
     replacer_->SetEvictable(frame_id, true);
@@ -139,7 +142,7 @@ auto BufferPoolManagerInstance::UnpinPgImp(page_id_t page_id, bool is_dirty) -> 
   if (is_dirty) {
     page_ptr->is_dirty_ = true;
   }// end if
-  latch_.lock();
+  latch_.unlock();
   return true;
 }  // end UnpinPgImp
 
@@ -158,6 +161,7 @@ auto BufferPoolManagerInstance::FlushPgImp(page_id_t page_id) -> bool {
     latch_.unlock();
     return true;
   }  // end if
+  latch_.unlock();
   return false;
 }  // end FlushPgImp
 

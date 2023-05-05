@@ -1,18 +1,18 @@
 Insert a new frame, frame_id: 2
 frame_id: 2 ,is_evictable: 0
-Set frame_id: 2, is_evictable: 0, new size is: 0
+Set frame_id: 2, is_evictable: 0, new size is: 0 
 Set frame_id: 2, is_evictable: 1, new size is: 1
 Evict frame_id: 2,new size is: 0
 Insert a new frame, frame_id: 1
 frame_id: 1 ,is_evictable: 0
-Access old frame, frame_id: 1
+Access old frame, frame_id: 1 
 Insert a new frame, frame_id: 2
 frame_id: 2 ,is_evictable: 0
 frame_id: 1 ,is_evictable: 0
-Access old frame, frame_id: 1
-Set frame_id: 2, is_evictable: 1, new size is: 1
-Set frame_id: 1, is_evictable: 1, new size is: 2
-Evict frame_id: 2,new size is: 1
+Access old frame, frame_id: 1 
+Set frame_id: 2, is_evictable: 1, new size is: 1 
+Set frame_id: 1, is_evictable: 1, new size is: 2 
+Evict frame_id: 2,new size is: 1 
 frame_id: 1 ,is_evictable: 1
 
 19: /autograder/source/bustub/test/buffer/grading_lru_k_replacer_test.cpp:135: Failure
@@ -20,3 +20,7 @@ frame_id: 1 ,is_evictable: 1
 19:   true
 19:   lru_replacer.Evict(&result)
 19:     Which is: false
+-----------------------------------------------
+frame_id: 1 ,is_evictable: 1
+fid: 1 is_evictable: 1 timestamp_num: 3 k: 3
+1683284590 1683284590 1683284590 0 0 0 0 0 0 
