@@ -1,4 +1,3 @@
-
 //===----------------------------------------------------------------------===//
 //
 //                         BusTub
@@ -92,6 +91,11 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   bool init_bool = true;
   bool *is_evict_had_k_timestamp_node = &init_bool;
 
+  //get nsec level current time
+  std::timespec ts;
+  timespec_get(&ts, TIME_UTC);
+  size_t current_time = ts.tv_sec*ADD_ZERO_9_TIME+ts.tv_nsec;
+
   for (const auto &it : *node_store_ptr_) {
     const auto &frame = it.second;
     auto node_status = GetNodeStatus(frame, is_evict_had_k_timestamp_node, evict_frame_ptr);
@@ -100,7 +104,8 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     
     switch (node_status) {
       case NodeStatus::Exst_k_Timestmp: {
-        auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
+        // auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
+        size_t backward_k_distance = current_time - current_history_ptr->at(this->k_ - 1);
         LOG_INFO("LOGSTATE Exst_k_Timestmp,backward_k_distance is: %zu",backward_k_distance);
         if (backward_k_distance > evict_frame_ptr->second) {
           evict_frame_ptr->first = current_frame_id;
