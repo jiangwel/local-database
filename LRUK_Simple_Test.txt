@@ -1,0 +1,122 @@
+LRUKReplacer size is: 2,k is: 7
+Insert a new frame, frame_id: 1
+frame_id: 1 ,is_evictable: 0
+Insert a new frame, frame_id: 2
+frame_id: 2 ,is_evictable: 0
+frame_id: 1 ,is_evictable: 0
+Insert a new frame, frame_id: 3
+frame_id: 3 ,is_evictable: 0
+frame_id: 2 ,is_evictable: 0
+frame_id: 1 ,is_evictable: 0
+Insert a new frame, frame_id: 4
+frame_id: 4 ,is_evictable: 0
+frame_id: 3 ,is_evictable: 0
+frame_id: 2 ,is_evictable: 0
+frame_id: 1 ,is_evictable: 0
+Insert a new frame, frame_id: 5
+frame_id: 5 ,is_evictable: 0
+frame_id: 4 ,is_evictable: 0
+frame_id: 3 ,is_evictable: 0
+frame_id: 2 ,is_evictable: 0
+frame_id: 1 ,is_evictable: 0
+Insert a new frame, frame_id: 6
+frame_id: 6 ,is_evictable: 0
+frame_id: 5 ,is_evictable: 0
+frame_id: 4 ,is_evictable: 0
+frame_id: 3 ,is_evictable: 0
+frame_id: 2 ,is_evictable: 0
+frame_id: 1 ,is_evictable: 0
+Set frame_id: 1, is_evictable: 1, new size is: 1
+Set frame_id: 2, is_evictable: 1, new size is: 2
+Set frame_id: 3, is_evictable: 1, new size is: 3
+Set frame_id: 4, is_evictable: 1, new size is: 4
+Set frame_id: 5, is_evictable: 1, new size is: 5
+Set frame_id: 6, is_evictable: 0, new size is: 5
+Access old frame, frame_id: 1
+Not_Evictable
+Exst_k_Timestmp_Curr_Lessthan_k_Timestmp
+Not_Exst_k_Timestmp
+Not_Exst_k_Timestmp
+Not_Exst_k_Timestmp
+Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Evict frame_id: 2,new size is: 4
+frame_id: 6 ,is_evictable: 0
+frame_id: 5 ,is_evictable: 1
+frame_id: 4 ,is_evictable: 1
+frame_id: 3 ,is_evictable: 1
+frame_id: 1 ,is_evictable: 1
+Not_Evictable
+Exst_k_Timestmp_Curr_Lessthan_k_Timestmp
+Not_Exst_k_Timestmp
+Not_Exst_k_Timestmp
+Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Evict frame_id: 3,new size is: 3
+frame_id: 6 ,is_evictable: 0
+frame_id: 5 ,is_evictable: 1
+frame_id: 4 ,is_evictable: 1
+frame_id: 1 ,is_evictable: 1
+Not_Evictable
+Exst_k_Timestmp_Curr_Lessthan_k_Timestmp
+Not_Exst_k_Timestmp
+Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Evict frame_id: 4,new size is: 2
+frame_id: 6 ,is_evictable: 0
+frame_id: 5 ,is_evictable: 1
+frame_id: 1 ,is_evictable: 1
+Insert a new frame, frame_id: 3
+frame_id: 3 ,is_evictable: 0
+frame_id: 6 ,is_evictable: 0
+frame_id: 5 ,is_evictable: 1
+frame_id: 1 ,is_evictable: 1
+Insert a new frame, frame_id: 4
+frame_id: 4 ,is_evictable: 0
+frame_id: 3 ,is_evictable: 0
+frame_id: 6 ,is_evictable: 0
+frame_id: 5 ,is_evictable: 1
+frame_id: 1 ,is_evictable: 1
+Access old frame, frame_id: 5
+Access old frame, frame_id: 4
+Set frame_id: 3, is_evictable: 1, new size is: 3
+Set frame_id: 4, is_evictable: 1, new size is: 4
+Exst_k_Timestmp,backward_k_distance is: 0
+Exst_k_Timestmp_Curr_Lessthan_k_Timestmp
+Not_Evictable
+Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Evict frame_id: 3,new size is: 3
+frame_id: 4 ,is_evictable: 1
+frame_id: 6 ,is_evictable: 0
+frame_id: 5 ,is_evictable: 1
+frame_id: 1 ,is_evictable: 1
+Set frame_id: 6, is_evictable: 1, new size is: 4
+Exst_k_Timestmp,backward_k_distance is: 0
+Exst_k_Timestmp_Curr_Lessthan_k_Timestmp
+Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Evict frame_id: 6,new size is: 3
+frame_id: 4 ,is_evictable: 1
+frame_id: 5 ,is_evictable: 1
+frame_id: 1 ,is_evictable: 1
+Set frame_id: 1, is_evictable: 0, new size is: 2
+Exst_k_Timestmp,backward_k_distance is: 0
+Exst_k_Timestmp,backward_k_distance is: 0
+Not_Evictable
+Evict frame_id: 5,new size is: 1
+frame_id: 4 ,is_evictable: 1
+frame_id: 1 ,is_evictable: 0
+Access old frame, frame_id: 1
+Access old frame, frame_id: 1
+Set frame_id: 1, is_evictable: 1, new size is: 2
+Exst_k_Timestmp,backward_k_distance is: 0
+Exst_k_Timestmp,backward_k_distance is: 0
+Evict frame_id: 1,new size is: 1
+
+frame_id: 4 ,is_evictable: 1
+fid: 4 is_evictable: 1 timestamp_num: 2 k: 2
+1683287151 1683287151 0 0 0 0 
+
+/workspaces/bustub-jiangwei/test/buffer/lru_k_replacer_test.cpp:101: Failure
+Expected equality of these values:
+  value
+    Which is: 1
+  4

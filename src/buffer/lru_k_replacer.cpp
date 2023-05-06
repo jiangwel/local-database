@@ -18,6 +18,7 @@
 #define Bckwrd_k_dstnc_grp std::priority_queue<std::pair<size_t, frame_id_t>>
 #define MAX_FRAME_ID_T std::numeric_limits<int>::max()
 #define MAX_SIZE_T std::numeric_limits<size_t>::max()
+#define ADD_ZERO_9_TIME 1000000000
 
 namespace bustub {
 // LRUKNode
@@ -100,7 +101,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
       case NodeStatus::Exst_k_Timestmp: {
         auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
         LOG_INFO("Exst_k_Timestmp,backward_k_distance is: %zu",backward_k_distance);
-        if (backward_k_distance >= evict_frame_ptr->second) {
+        if (backward_k_distance > evict_frame_ptr->second) {
           evict_frame_ptr->first = current_frame_id;
           evict_frame_ptr->second = backward_k_distance;
         }
@@ -150,8 +151,14 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
       LRUKReplacer::curr_size_ == LRUKReplacer::replacer_size_) {
     throw Exception("Buffer pool is fulled,can't add frame any more!");
   }
+  
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
-  this->current_timestamp_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+  //get nsec level current time
+  std::timespec ts;
+  timespec_get(&ts, TIME_UTC);
+  this->current_timestamp_ = ts.tv_sec*ADD_ZERO_9_TIME+ts.tv_nsec;
+
   // insert a new frame to buffer pool
   if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end()) {
     LOG_INFO("Insert a new frame, frame_id: %d", frame_id);
