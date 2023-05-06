@@ -49,7 +49,7 @@ LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) {
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   LRUKReplacer::k_ = k;
   LRUKReplacer::replacer_size_ = num_frames;
-  LOG_INFO("LRUKReplacer size is: %zu,k is: %zu",k,num_frames);
+  LOG_INFO("LOGCREAT LRUKReplacer size is: %zu,k is: %zu",num_frames,k);
   LRUKReplacer::node_store_ptr_ = std::make_unique<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>();
 }
 
@@ -87,7 +87,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
 
   // first is frame is,second is backward_k_distance
   std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_ptr =
-      std::make_shared<std::pair<frame_id_t, size_t>>(MAX_FRAME_ID_T, 0);
+      std::make_shared<std::pair<frame_id_t, size_t>>(MAX_FRAME_ID_T, MAX_SIZE_T);
   bool init_bool = true;
   bool *is_evict_had_k_timestamp_node = &init_bool;
 
@@ -99,32 +99,32 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     
     switch (node_status) {
       case NodeStatus::Exst_k_Timestmp: {
-        auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
-        LOG_INFO("Exst_k_Timestmp,backward_k_distance is: %zu",backward_k_distance);
-        if (backward_k_distance > evict_frame_ptr->second) {
+        // auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
+        LOG_INFO("LOGSTATE Exst_k_Timestmp,backward_k_distance is: %zu",current_history_ptr->at(this->k_ - 1));
+        if (current_history_ptr->at(this->k_ - 1) < evict_frame_ptr->second) {
           evict_frame_ptr->first = current_frame_id;
-          evict_frame_ptr->second = backward_k_distance;
+          evict_frame_ptr->second = current_history_ptr->at(this->k_ - 1);
         }
         break;
       }
       case NodeStatus::Not_Exst_k_Timestmp: {
-        LOG_INFO("Not_Exst_k_Timestmp");
+        LOG_INFO("LOGSTATE Not_Exst_k_Timestmp");
         VctmIsLssThnKTmstmpErlrAccssd(frame, evict_frame_ptr, current_frame_id);
         break;
       }
       //this case we don't need consider that k timestmp frame any more.
       case NodeStatus::Exst_k_Timestmp_Curr_Lessthan_k_Timestmp: {
-        LOG_INFO("Exst_k_Timestmp_Curr_Lessthan_k_Timestmp");
+        LOG_INFO("LOGSTATE Exst_k_Timestmp_Curr_Lessthan_k_Timestmp");
         *is_evict_had_k_timestamp_node = false;
         *evict_frame_ptr = {MAX_FRAME_ID_T, MAX_SIZE_T};
         VctmIsLssThnKTmstmpErlrAccssd(frame, evict_frame_ptr, current_frame_id);
         break;
       }
       case NodeStatus::Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp:
-        LOG_INFO("Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp");
+        LOG_INFO("LOGSTATE Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp");
         break;
       case NodeStatus::Not_Evictable: {
-        LOG_INFO("Not_Evictable");
+        LOG_INFO("LOGSTATE Not_Evictable");
         break;
       }
     }
@@ -139,7 +139,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   LOG_INFO("Evict frame_id: %d,new size is: %zu", *frame_id, this->curr_size_);
   //delete in future
     for (const auto &it : *node_store_ptr_) {
-      LOG_INFO("frame_id: %d ,is_evictable: %d", it.first, it.second->GetIsEvictable());
+      LOG_INFO("    frame_id: %d ,is_evictable: %d", it.first, it.second->GetIsEvictable());
     }
   //
   return true;
@@ -180,6 +180,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   // If the frame_id to be set does not exist, throw an exception
   if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end()) {
+    LOG_DEBUG("LOGBUG Frame_id: %d is not exist!", frame_id);
     throw Exception("Frame_id is not exist!");
   }
   std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());

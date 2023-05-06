@@ -1,26 +1,131 @@
+LRUKReplacer size is: 2,k is: 10
+LRUKReplacer size is: 2,k is: 10
 Insert a new frame, frame_id: 2
-frame_id: 2 ,is_evictable: 0
-Set frame_id: 2, is_evictable: 0, new size is: 0 
+Set frame_id: 2, is_evictable: 0, new size is: 0
 Set frame_id: 2, is_evictable: 1, new size is: 1
 Evict frame_id: 2,new size is: 0
+LRUKReplacer size is: 3,k is: 10
 Insert a new frame, frame_id: 1
-frame_id: 1 ,is_evictable: 0
-Access old frame, frame_id: 1 
+    frame_id: 1 ,is_evictable: 0
+Access old frame, frame_id: 1
 Insert a new frame, frame_id: 2
-frame_id: 2 ,is_evictable: 0
-frame_id: 1 ,is_evictable: 0
-Access old frame, frame_id: 1 
-Set frame_id: 2, is_evictable: 1, new size is: 1 
-Set frame_id: 1, is_evictable: 1, new size is: 2 
-Evict frame_id: 2,new size is: 1 
+    frame_id: 2 ,is_evictable: 0
+    frame_id: 1 ,is_evictable: 0
+Access old frame, frame_id: 1
+Set frame_id: 2, is_evictable: 1, new size is: 1
+Set frame_id: 1, is_evictable: 1, new size is: 2
+Exst_k_Timestmp_Curr_Lessthan_k_Timestmp
+Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Evict frame_id: 2,new size is: 1
 frame_id: 1 ,is_evictable: 1
+Exst_k_Timestmp,backward_k_distance is: 70988
+Evict frame_id: 1,new size is: 0
+LRUKReplacer size is: 3,k is: 10
+Insert a new frame, frame_id: 1
+    frame_id: 1 ,is_evictable: 0
+Insert a new frame, frame_id: 2
+    frame_id: 2 ,is_evictable: 0
+    frame_id: 1 ,is_evictable: 0
+Insert a new frame, frame_id: 3
+    frame_id: 3 ,is_evictable: 0
+    frame_id: 2 ,is_evictable: 0
+    frame_id: 1 ,is_evictable: 0
+Access old frame, frame_id: 3
+Access old frame, frame_id: 3
+Access old frame, frame_id: 2
+Access old frame, frame_id: 2
+Access old frame, frame_id: 1
+Access old frame, frame_id: 1
+Access old frame, frame_id: 3
+Access old frame, frame_id: 2
+Access old frame, frame_id: 1
+Set frame_id: 2, is_evictable: 1, new size is: 1
+Set frame_id: 1, is_evictable: 1, new size is: 2
+Set frame_id: 3, is_evictable: 1, new size is: 3
+    Exst_k_Timestmp,backward_k_distance is: 33350
+    Exst_k_Timestmp,backward_k_distance is: 28050
+    Exst_k_Timestmp,backward_k_distance is: 23142
+Evict frame_id: 3,new size is: 2
+    frame_id: 2 ,is_evictable: 1
+    frame_id: 1 ,is_evictable: 1
+    Exst_k_Timestmp,backward_k_distance is: 28050
+    Exst_k_Timestmp,backward_k_distance is: 23142
+Evict frame_id: 2,new size is: 1
+    frame_id: 1 ,is_evictable: 1
+    Exst_k_Timestmp,backward_k_distance is: 23142
+Evict frame_id: 1,new size is: 0
 
-19: /autograder/source/bustub/test/buffer/grading_lru_k_replacer_test.cpp:135: Failure
+LRUKReplacer size is: 3,k is: 10
+Insert a new frame, frame_id: 2
+    frame_id: 2 ,is_evictable: 0
+Access old frame, frame_id: 2
+Access old frame, frame_id: 2
+Insert a new frame, frame_id: 1
+    frame_id: 1 ,is_evictable: 0
+    frame_id: 2 ,is_evictable: 0
+Access old frame, frame_id: 1
+Set frame_id: 2, is_evictable: 1, new size is: 1
+Set frame_id: 1, is_evictable: 1, new size is: 2
+    Exst_k_Timestmp_Curr_Lessthan_k_Timestmp
+    Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Evict frame_id: 1,new size is: 1
+    frame_id: 2 ,is_evictable: 1
+Insert a new frame, frame_id: 1
+    frame_id: 1 ,is_evictable: 0
+    frame_id: 2 ,is_evictable: 1
+Set frame_id: 1, is_evictable: 1, new size is: 2
+    Exst_k_Timestmp_Curr_Lessthan_k_Timestmp
+    Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Evict frame_id: 1,new size is: 1
+    frame_id: 2 ,is_evictable: 1
+    
+LRUKReplacer size is: 3,k is: 10
+Insert a new frame, frame_id: 1
+    frame_id: 1 ,is_evictable: 0
+Insert a new frame, frame_id: 2
+    frame_id: 2 ,is_evictable: 0
+    frame_id: 1 ,is_evictable: 0
+Insert a new frame, frame_id: 3
+    frame_id: 3 ,is_evictable: 0
+    frame_id: 2 ,is_evictable: 0
+    frame_id: 1 ,is_evictable: 0
+Insert a new frame, frame_id: 4
+    frame_id: 4 ,is_evictable: 0
+    frame_id: 3 ,is_evictable: 0
+    frame_id: 2 ,is_evictable: 0
+    frame_id: 1 ,is_evictable: 0
+Access old frame, frame_id: 1
+Access old frame, frame_id: 2
+Access old frame, frame_id: 3
+Access old frame, frame_id: 1
+Access old frame, frame_id: 2
+Set frame_id: 1, is_evictable: 1, new size is: 1
+Set frame_id: 2, is_evictable: 1, new size is: 2
+Set frame_id: 3, is_evictable: 1, new size is: 3
+Set frame_id: 4, is_evictable: 1, new size is: 4
+    Exst_k_Timestmp_Curr_Lessthan_k_Timestmp
+    Not_Exst_k_Timestmp
+    Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+    Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+Evict frame_id: 3,new size is: 3
+    frame_id: 4 ,is_evictable: 1
+    frame_id: 2 ,is_evictable: 1
+    frame_id: 1 ,is_evictable: 1
+Access old frame, frame_id: 4
+Access old frame, frame_id: 4
+    Exst_k_Timestmp,backward_k_distance is: 173456
+    Exst_k_Timestmp,backward_k_distance is: 140389
+    Exst_k_Timestmp,backward_k_distance is: 178993
+Evict frame_id: 1,new size is: 2
+    frame_id: 4 ,is_evictable: 1
+    frame_id: 2 ,is_evictable: 1
+    Exst_k_Timestmp,backward_k_distance is: 173456
+    Exst_k_Timestmp,backward_k_distance is: 140389
+Evict frame_id: 4,new size is: 1
+    frame_id: 2 ,is_evictable: 1
+
+19: /autograder/source/bustub/test/buffer/grading_lru_k_replacer_test.cpp:220: Failure
 19: Expected equality of these values:
-19:   true
-19:   lru_replacer.Evict(&result)
-19:     Which is: false
------------------------------------------------
-frame_id: 1 ,is_evictable: 1
-fid: 1 is_evictable: 1 timestamp_num: 3 k: 3
-1683284590 1683284590 1683284590 0 0 0 0 0 0 
+19:   2
+19:   result
+19:     Which is: 4
