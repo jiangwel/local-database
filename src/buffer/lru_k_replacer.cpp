@@ -1,3 +1,4 @@
+
 //===----------------------------------------------------------------------===//
 //
 //                         BusTub
@@ -87,7 +88,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
 
   // first is frame is,second is backward_k_distance
   std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_ptr =
-      std::make_shared<std::pair<frame_id_t, size_t>>(MAX_FRAME_ID_T, MAX_SIZE_T);
+      std::make_shared<std::pair<frame_id_t, size_t>>(MAX_FRAME_ID_T, 0);
   bool init_bool = true;
   bool *is_evict_had_k_timestamp_node = &init_bool;
 
@@ -99,11 +100,11 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     
     switch (node_status) {
       case NodeStatus::Exst_k_Timestmp: {
-        // auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
-        LOG_INFO("LOGSTATE Exst_k_Timestmp,backward_k_distance is: %zu",current_history_ptr->at(this->k_ - 1));
-        if (current_history_ptr->at(this->k_ - 1) < evict_frame_ptr->second) {
+        auto backward_k_distance = current_history_ptr->at(0) - current_history_ptr->at(this->k_ - 1);
+        LOG_INFO("LOGSTATE Exst_k_Timestmp,backward_k_distance is: %zu",backward_k_distance);
+        if (backward_k_distance > evict_frame_ptr->second) {
           evict_frame_ptr->first = current_frame_id;
-          evict_frame_ptr->second = current_history_ptr->at(this->k_ - 1);
+          evict_frame_ptr->second = backward_k_distance;
         }
         break;
       }
