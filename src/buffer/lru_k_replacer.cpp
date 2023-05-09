@@ -9,7 +9,7 @@
 // Copyright (c) 2015-2022, Carnegie Mellon University Database Group
 //
 //===----------------------------------------------------------------------===//
-
+//update:lrukrplacment mutex
 #include "buffer/lru_k_replacer.h"
 #include "common/exception.h"
 #include "common/logger.h"
@@ -23,7 +23,6 @@
 namespace bustub {
 // LRUKNode
 LRUKNode::LRUKNode(size_t current_timestamp, size_t k) {
-  std::unique_lock<std::mutex> lock(latch_, std::try_to_lock_t());
   LRUKNode::k_ = k;
   LRUKNode::history_ptr_ = std::make_shared<std::deque<size_t>>(2 * k);
   InsertCurrentTimeStamp(current_timestamp);
@@ -149,13 +148,15 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
 }
 
 void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
+  latch_.lock();
   // want to insert new frame but buffer pool is fulled.
   if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end() &&
       LRUKReplacer::curr_size_ == LRUKReplacer::replacer_size_) {
+    latch_.unlock();
     throw Exception("Buffer pool is fulled,can't add frame any more!");
   }
   
-  latch_.lock();
+  
 
   //get nsec level current time
   std::timespec ts;
@@ -182,12 +183,12 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
 }
 
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
+  latch_.lock();
   // If the frame_id to be set does not exist, throw an exception
   if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end()) {
     LOG_DEBUG("LOGBUG Frame_id: %d is not exist!", frame_id);
     // throw Exception("Frame_id is not exist!");
   }
-  latch_.lock();
   // Find the corresponding lruknode through Frame_id,
   // then set its IS_EVICTABLE_ attribute, and finally change the
   // number of current replaceable frames
