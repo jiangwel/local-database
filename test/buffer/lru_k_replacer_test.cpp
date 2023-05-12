@@ -20,9 +20,9 @@ namespace bustub {
 //   auto nodes = lru_replacer.GetNodeStorePtr();
 //   //遍历nodes
 //   for (auto &node : *nodes) {
-//     std::cout << "fid: " << node.first << " is_evictable: " << node.second->GetIsEvictable() << " timestamp_num: " << node.second->GetTimestampNum() << " k: " << node.second->GetK() << std::endl;
-//     auto history_ptr = node.second->GetHistoryPtr();
-//     for (auto &timestamp : *history_ptr) {
+//     std::cout << "fid: " << node.first << " is_evictable: " << node.second->GetIsEvictable() << " timestamp_num: " <<
+//     node.second->GetTimestampNum() << " k: " << node.second->GetK() << std::endl; auto history_ptr =
+//     node.second->GetHistoryPtr(); for (auto &timestamp : *history_ptr) {
 //       std::cout << timestamp << " ";
 //     }
 //     std::cout << std::endl;
@@ -97,7 +97,7 @@ TEST(LRUKReplacerTest, SampleTest) {
   lru_replacer.SetEvictable(1, true);
   ASSERT_EQ(2, lru_replacer.Size());
   ASSERT_EQ(true, lru_replacer.Evict(&value));
-  ASSERT_EQ(value, 4); //说是1，但是实际上是4
+  ASSERT_EQ(value, 4);  // 说是1，但是实际上是4
 
   ASSERT_EQ(1, lru_replacer.Size());
   lru_replacer.Evict(&value);
@@ -111,50 +111,48 @@ TEST(LRUKReplacerTest, SampleTest) {
   ASSERT_EQ(0, lru_replacer.Size());
 }
 
-TEST(LRUKReplacerTest,DISABLED_EvictTest1){
+TEST(LRUKReplacerTest, DISABLED_EvictTest1) {
   LRUKReplacer lru_replacer(7, 3);
   int value;
 
   lru_replacer.RecordAccess(2);
-  lru_replacer.SetEvictable(2,false);
-  lru_replacer.SetEvictable(2,true);
+  lru_replacer.SetEvictable(2, false);
+  lru_replacer.SetEvictable(2, true);
   lru_replacer.Evict(&value);
   lru_replacer.RecordAccess(1);
   lru_replacer.RecordAccess(1);
   lru_replacer.RecordAccess(2);
   lru_replacer.RecordAccess(1);
-  lru_replacer.SetEvictable(2,true);
-  lru_replacer.SetEvictable(1,true);
+  lru_replacer.SetEvictable(2, true);
+  lru_replacer.SetEvictable(1, true);
   lru_replacer.Evict(&value);
 
   ASSERT_EQ(true, lru_replacer.Evict(&value));
 }
-TEST(LRUKReplacerTest,EvictTest2){
+TEST(LRUKReplacerTest, EvictTest2) {
   LRUKReplacer lru_replacer(7, 3);
   int value;
 
   lru_replacer.RecordAccess(1);
-  lru_replacer.RecordAccess(2);//2
+  lru_replacer.RecordAccess(2);  // 2
   lru_replacer.RecordAccess(3);
-  lru_replacer.RecordAccess(4);//4
+  lru_replacer.RecordAccess(4);  // 4
   lru_replacer.RecordAccess(1);
-  lru_replacer.RecordAccess(2);//2
+  lru_replacer.RecordAccess(2);  // 2
   lru_replacer.RecordAccess(3);
   lru_replacer.RecordAccess(1);
-  lru_replacer.RecordAccess(2);//2
-  lru_replacer.SetEvictable(1,true);
-  lru_replacer.SetEvictable(2,true);
-  lru_replacer.SetEvictable(3,true);
-  lru_replacer.SetEvictable(4,true);
+  lru_replacer.RecordAccess(2);  // 2
+  lru_replacer.SetEvictable(1, true);
+  lru_replacer.SetEvictable(2, true);
+  lru_replacer.SetEvictable(3, true);
+  lru_replacer.SetEvictable(4, true);
   lru_replacer.Evict(&value);
-  ASSERT_EQ(3,value);
-  lru_replacer.RecordAccess(4);//4
-  lru_replacer.RecordAccess(4);//4
+  ASSERT_EQ(3, value);
+  lru_replacer.RecordAccess(4);  // 4
+  lru_replacer.RecordAccess(4);  // 4
   lru_replacer.Evict(&value);
-  ASSERT_EQ(1,value);
+  ASSERT_EQ(1, value);
   lru_replacer.Evict(&value);
-  ASSERT_EQ(2,value);
-
-
+  ASSERT_EQ(2, value);
 }
 }  // namespace bustub

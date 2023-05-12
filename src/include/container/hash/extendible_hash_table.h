@@ -17,6 +17,10 @@
 
 #pragma once
 
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <functional>
 #include <list>
 #include <memory>
 #include <mutex>  // NOLINT
@@ -164,14 +168,13 @@ class ExtendibleHashTable : public HashTable<K, V> {
     std::list<std::pair<K, V>> list_;
   };
 
-
  private:
   // TODO(student): You may add additional private members and helper functions and remove the ones
   // you don't need.
 
-  int global_depth_;    // The global depth of the directory
-  size_t bucket_size_;  // The size of a bucket
-  int num_buckets_;     // The number of buckets in the hash table
+  int global_depth_{-1};  // The global depth of the directory
+  size_t bucket_size_;    // The size of a bucket
+  int num_buckets_{-1};   // The number of buckets in the hash table
   mutable std::mutex latch_;
   std::vector<std::shared_ptr<Bucket>> dir_;  // The directory of the hash table
 
@@ -184,7 +187,7 @@ class ExtendibleHashTable : public HashTable<K, V> {
   void RedistributeBucket(std::shared_ptr<Bucket> bucket);
   auto FindBucket(const K &key, std::shared_ptr<Bucket> &bucket) -> bool;
   void DoubleDirectory();
-  void InsertByDoubleDir(std::shared_ptr<Bucket> bucket,const K &key);
+  void InsertByDoubleDir(std::shared_ptr<Bucket> bucket, const K &key);
 
   /*****************************************************************
    * Must acquire latch_ first before calling the below functions. *

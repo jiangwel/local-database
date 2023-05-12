@@ -2,13 +2,13 @@
  * extendible_hash_test.cpp
  */
 
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <thread>  // NOLINT
 
+#include "common/logger.h"
 #include "container/hash/extendible_hash_table.h"
 #include "gtest/gtest.h"
-#include "common/logger.h"
 
 namespace bustub {
 // void PrintDir(ExtendibleHashTable<int, std::string> *table) {
@@ -80,7 +80,7 @@ TEST(ExtendibleHashTableTest, ConcurrentInsertTest) {
   }
 }
 
-TEST(ExtendibleHashTableTest,DISABLED_RedistributeBucketTest){
+TEST(ExtendibleHashTableTest, DISABLED_RedistributeBucketTest) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(2);
   table->Insert(1, "1");
   table->Insert(8, "8");
@@ -92,24 +92,23 @@ TEST(ExtendibleHashTableTest,DISABLED_RedistributeBucketTest){
   EXPECT_EQ(3, table->GetGlobalDepth());
   std::string result;
   EXPECT_EQ(true, table->Find(12, result));
-
 }
 
 TEST(ExtendibleHashTableTest, DISABLED_RemoveTest0) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
-  //depth 0
+  // depth 0
   table->Insert(40, "a");
   table->Insert(12, "b");
   table->Insert(24, "c");
   table->Insert(32, "c");
-  //depth 1
+  // depth 1
   table->Insert(1, "c");
-  //depth 2
+  // depth 2
   table->Insert(4, "c");
   table->Insert(3, "c");
   table->Insert(7, "c");
   table->Insert(2, "c");
-  //depth 3
+  // depth 3
   table->Insert(48, "c");
   table->Insert(15, "c");
   table->Insert(5, "c");
@@ -117,24 +116,24 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest0) {
   table->Insert(19, "c");
   std::string result;
   EXPECT_EQ(true, table->Find(4, result));
-  //EXPECT_EQ(true, table->Find(21, result));
+  // EXPECT_EQ(true, table->Find(21, result));
 }
 
 TEST(ExtendibleHashTableTest, DISABLED_RemoveTest1) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
-  //depth 0
+  // depth 0
   table->Insert(40, "a");
   table->Insert(12, "b");
   table->Insert(24, "c");
   table->Insert(32, "c");
-  //depth 1
+  // depth 1
   table->Insert(21, "c");
-  //depth 2
+  // depth 2
   table->Insert(4, "c");
   table->Insert(3, "c");
   table->Insert(7, "c");
   table->Insert(2, "c");
-  //depth 3
+  // depth 3
   table->Insert(48, "c");
   table->Insert(15, "c");
   table->Insert(5, "c");
@@ -147,19 +146,19 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest1) {
 
 TEST(ExtendibleHashTableTest, DISABLED_RemoveTest3) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
-  //depth 0
+  // depth 0
   table->Insert(40, "a");
   table->Insert(12, "b");
   table->Insert(24, "c");
   table->Insert(32, "c");
-  //depth 1
+  // depth 1
   table->Insert(1, "c");
-  //depth 2
+  // depth 2
   table->Insert(4, "c");
   table->Insert(21, "c");
   table->Insert(7, "c");
   table->Insert(2, "c");
-  //depth 3
+  // depth 3
   table->Insert(48, "c");
   table->Insert(15, "c");
   table->Insert(5, "c");
@@ -172,19 +171,19 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest3) {
 
 TEST(ExtendibleHashTableTest, DISABLED_RemoveTest7) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
-  //depth 0
+  // depth 0
   table->Insert(40, "a");
   table->Insert(12, "b");
   table->Insert(24, "c");
   table->Insert(32, "c");
-  //depth 1
+  // depth 1
   table->Insert(21, "c");
-  //depth 2
+  // depth 2
   table->Insert(4, "c");
   table->Insert(3, "c");
   table->Insert(21, "c");
   table->Insert(2, "c");
-  //depth 3
+  // depth 3
   table->Insert(48, "c");
   table->Insert(15, "c");
   table->Insert(5, "c");
@@ -197,19 +196,19 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest7) {
 
 TEST(ExtendibleHashTableTest, DISABLED_RemoveTest2) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
-  //depth 0
+  // depth 0
   table->Insert(40, "a");
   table->Insert(12, "b");
   table->Insert(24, "c");
   table->Insert(32, "c");
-  //depth 1
+  // depth 1
   table->Insert(1, "c");
-  //depth 2
+  // depth 2
   table->Insert(4, "c");
   table->Insert(3, "c");
   table->Insert(7, "c");
   table->Insert(21, "c");
-  //depth 3
+  // depth 3
   table->Insert(48, "c");
   table->Insert(15, "c");
   table->Insert(5, "c");
@@ -222,19 +221,19 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest2) {
 
 TEST(ExtendibleHashTableTest, DISABLED_RemoveTest15) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
-  //depth 0
+  // depth 0
   table->Insert(40, "a");
   table->Insert(12, "b");
   table->Insert(24, "c");
   table->Insert(32, "c");
-  //depth 1
+  // depth 1
   table->Insert(1, "c");
-  //depth 2
+  // depth 2
   table->Insert(4, "c");
   table->Insert(3, "c");
   table->Insert(7, "c");
   table->Insert(2, "c");
-  //depth 3
+  // depth 3
   table->Insert(48, "c");
   table->Insert(21, "c");
   table->Insert(5, "c");
@@ -247,19 +246,19 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest15) {
 
 TEST(ExtendibleHashTableTest, DISABLED_RemoveTest5) {
   auto table = std::make_shared<ExtendibleHashTable<int, std::string>>(4);
-  //depth 0
+  // depth 0
   table->Insert(40, "a");
   table->Insert(12, "b");
   table->Insert(24, "c");
   table->Insert(32, "c");
-  //depth 1
+  // depth 1
   table->Insert(1, "c");
-  //depth 2
+  // depth 2
   table->Insert(4, "c");
   table->Insert(3, "c");
   table->Insert(7, "c");
   table->Insert(2, "c");
-  //depth 3
+  // depth 3
   table->Insert(48, "c");
   table->Insert(15, "c");
   table->Insert(21, "c");
@@ -273,19 +272,19 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest5) {
 
 TEST(ExtendibleHashTableTest, DISABLED_RemoveTest11) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
-  //depth 0
+  // depth 0
   table->Insert(40, "a");
   table->Insert(12, "b");
   table->Insert(24, "c");
   table->Insert(32, "c");
-  //depth 1
+  // depth 1
   table->Insert(1, "c");
-  //depth 2
+  // depth 2
   table->Insert(4, "c");
   table->Insert(3, "c");
   table->Insert(7, "c");
   table->Insert(2, "c");
-  //depth 3
+  // depth 3
   table->Insert(48, "c");
   table->Insert(15, "c");
   table->Insert(5, "c");
@@ -298,19 +297,19 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest11) {
 
 TEST(ExtendibleHashTableTest, DISABLED_RemoveTest19) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(4);
-  //depth 0
+  // depth 0
   table->Insert(40, "a");
   table->Insert(12, "b");
   table->Insert(24, "c");
   table->Insert(32, "c");
-  //depth 1
+  // depth 1
   table->Insert(1, "c");
-  //depth 2
+  // depth 2
   table->Insert(4, "c");
   table->Insert(3, "c");
   table->Insert(7, "c");
   table->Insert(2, "c");
-  //depth 3
+  // depth 3
   table->Insert(48, "c");
   table->Insert(15, "c");
   table->Insert(5, "c");
@@ -320,6 +319,5 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest19) {
   EXPECT_EQ(true, table->Find(4, result));
   EXPECT_EQ(true, table->Find(21, result));
 }
-
 
 }  // namespace bustub

@@ -186,10 +186,10 @@ class LRUKReplacer {
     Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
   };
 
-  inline auto GetNodeStatus(const std::shared_ptr<LRUKNode> &node_ptr, bool *is_evict_had_k_timestamp_node_p,
-                            std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_p) -> NodeStatus;
+  inline auto GetNodeStatus(const std::shared_ptr<LRUKNode> &node_ptr, const bool *is_evict_had_k_timestamp_node_p,
+                            const std::shared_ptr<std::pair<frame_id_t, size_t>> &evict_frame_p) -> NodeStatus;
   inline void VctmIsLssThnKTmstmpErlrAccssd(const std::shared_ptr<LRUKNode> &frame_p,
-                                            std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_p,
+                                            const std::shared_ptr<std::pair<frame_id_t, size_t>> &evict_frame_p,
                                             frame_id_t current_frame_id_p);
 };
 
