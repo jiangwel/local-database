@@ -11,16 +11,16 @@
 #include "common/logger.h"
 
 namespace bustub {
-void PrintDir(ExtendibleHashTable<int, std::string> *table) {
-  for (size_t i = 0; i < table->dir_.size(); i++) {
-    std::cout << "dir_[" << i << "]: ";
-    auto list = table->dir_[i]->GetItems();
-    for (auto it = list.begin(); it != list.end(); it++) {
-      std::cout <<it->first<<" ";
-    }
-  std::cout << std::endl;
-  }
-}
+// void PrintDir(ExtendibleHashTable<int, std::string> *table) {
+//   for (size_t i = 0; i < table->dir_.size(); i++) {
+//     std::cout << "dir_[" << i << "]: ";
+//     auto list = table->dir_[i]->GetItems();
+//     for (auto it = list.begin(); it != list.end(); it++) {
+//       std::cout <<it->first<<" ";
+//     }
+//   std::cout << std::endl;
+//   }
+// }
 
 TEST(ExtendibleHashTableTest, SampleTest) {
   auto table = std::make_unique<ExtendibleHashTable<int, std::string>>(2);
@@ -265,7 +265,7 @@ TEST(ExtendibleHashTableTest, DISABLED_RemoveTest5) {
   table->Insert(21, "c");
   table->Insert(11, "c");
   table->Insert(19, "c");
-  PrintDir(table.get());
+  // PrintDir(table.get());
   std::string result;
   EXPECT_EQ(true, table->Find(4, result));
   EXPECT_EQ(true, table->Find(21, result));

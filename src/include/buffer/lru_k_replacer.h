@@ -165,7 +165,7 @@ class LRUKReplacer {
    */
   auto Size() -> size_t;
   // Delete in the future
-  auto GetNodeStorePtr() -> std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>;
+  // auto GetNodeStorePtr() -> std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>;
 
  private:
   // TODO(student): implement me! You can replace these member variables as you like.

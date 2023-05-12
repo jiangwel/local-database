@@ -1,16 +1,72 @@
-#0 0x510852 in std::__shared_ptr<bustub::LRUKNode, (__gnu_cxx::_Lock_policy)2>::__shared_ptr(std::__shared_ptr<bustub::LRUKNode, (__gnu_cxx::_Lock_policy)2> const&) /usr/bin/../lib/gcc/x86_64-linux-gnu/12/../../../../include/c++/12/bits/shared_ptr_base.h:1522:7
-20:     #1 0x50fabc in std::shared_ptr<bustub::LRUKNode>::shared_ptr(std::shared_ptr<bustub::LRUKNode> const&) /usr/bin/../lib/gcc/x86_64-linux-gnu/12/../../../../include/c++/12/bits/shared_ptr.h:204:7
-20:     #2 0x50c908 in bustub::LRUKReplacer::SetEvictable(int, bool) /autograder/source/bustub/src/buffer/lru_k_replacer.cpp:186:20
-20:     #3 0x4eee6c in bustub::LRUKReplacerTest_Size_Test::TestBody() /autograder/source/bustub/test/buffer/grading_lru_k_replacer_test.cpp:441:18
-20:     #4 0x5a2cf2 in void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2657:12
-20:     #5 0x556f7c in testing::Test::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2674:5
-20:     #6 0x558c44 in testing::TestInfo::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2853:11
-20:     #7 0x55a2ea in testing::TestSuite::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:3012:30
-20:     #8 0x57dc2c in testing::internal::UnitTestImpl::RunAllTests() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:5870:44
-20:     #9 0x5a8ce9 in bool testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*) /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2657:12
-20:     #10 0x57cf68 in testing::UnitTest::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:5444:10
-20:     #11 0x602740 in RUN_ALL_TESTS() /autograder/source/bustub/third_party/googletest/googletest/include/gtest/gtest.h:2293:73
-20:     #12 0x602691 in main /autograder/source/bustub/third_party/googletest/googlemock/src/gmock_main.cc:70:10
-20:     #13 0x7f6827e92d8f in __libc_start_call_main csu/../sysdeps/nptl/libc_start_call_main.h:58:16
-20:     #14 0x7f6827e92e3f in __libc_start_main csu/../csu/libc-start.c:392:3
-20:     #15 0x4299c4 in _start (/autograder/source/bustub/build/test/grading_lru_k_replacer_test+0x4299c4)
+ WARNING: ThreadSanitizer: data race (pid=6384)
+16:   Write of size 4 at 0x7fae5cc251f8 by thread T2 (mutexes: write M53):
+16:     #0 bustub::BufferPoolManagerInstance::DeletePgImp(int) /autograder/source/bustub/src/buffer/buffer_pool_manager_instance.cpp:171:22 (grading_buffer_pool_manager_instance_test+0x5019c4)
+16:     #1 bustub::BufferPoolManager::DeletePage(int, void (*)(bustub::BufferPoolManager::CallbackType, int)) /autograder/source/bustub/src/include/buffer/buffer_pool_manager.h:75:19 (grading_buffer_pool_manager_instance_test+0x4f09fb)
+16:     #3 void std::__invoke_impl<void, bustub::BufferPoolManagerInstanceTest_HardTest_4_Test::TestBody()::$_3>(std::__invoke_other, bustub::BufferPoolManagerInstanceTest_HardTest_4_Test::TestBody()::$_3&&) /usr/bin/../lib/gcc/x86_64-linux-gnu/12/../../../../include/c++/12/bits/invoke.h:61:14 (grading_buffer_pool_manager_instance_test+0x4ec4bd)
+16: 
+16:   Previous read of size 4 at 0x7fae5cc251f8 by thread T5:
+16:     #0 bustub::BufferPoolManagerInstance::GetPageFromePageId(int) /autograder/source/bustub/src/buffer/buffer_pool_manager_instance.cpp:228:19 (grading_buffer_pool_manager_instance_test+0x5007cc)
+16:     #1 bustub::BufferPoolManagerInstance::FlushPgImp(int) /autograder/source/bustub/src/buffer/buffer_pool_manager_instance.cpp:135:17 (grading_buffer_pool_manager_instance_test+0x50150b)
+16:     #2 bustub::BufferPoolManager::FlushPage(int, void (*)(bustub::BufferPoolManager::CallbackType, int)) /autograder/source/bustub/src/include/buffer/buffer_pool_manager.h:59:19 
+16: 
+16:   Location is heap block of size 208400 at 0x7fae5cc1d000 allocated by main thread:
+16:     #0 operator new[](unsigned long) <null> (grading_buffer_pool_manager_instance_test+0x4c5bc6)
+16:     #1 bustub::BufferPoolManagerInstance::BufferPoolManagerInstance(unsigned long, bustub::DiskManager*, unsigned long, bustub::LogManager*) /autograder/source/bustub/src/buffer/buffer_pool_manager_instance.cpp:27:12 (grading_buffer_pool_manager_instance_test+0x4ffa82)
+16:     #2 bustub::BufferPoolManagerInstanceTest_HardTest_4_Test::TestBody() /autograder/source/bustub/test/buffer/grading_buffer_pool_manager_instance_test.cpp:829:56 (grading_buffer_pool_manager_instance_test+0x4e4473)
+16:     #3 void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2657:12 (grading_buffer_pool_manager_instance_test+0x58ca0d)
+16:     #4 testing::Test::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2674:5 (grading_buffer_pool_manager_instance_test+0x55da07)
+16:     #5 testing::TestInfo::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2853:11 (grading_buffer_pool_manager_instance_test+0x55eb09)
+16:     #6 testing::TestSuite::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:3012:30 (grading_buffer_pool_manager_instance_test+0x55f7e1)
+16:     #7 testing::internal::UnitTestImpl::RunAllTests() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:5870:44 (grading_buffer_pool_manager_instance_test+0x576ebd)
+16:     #8 bool testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*) /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2657:12 (grading_buffer_pool_manager_instance_test+0x590834)
+16:     #9 testing::UnitTest::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:5444:10 (grading_buffer_pool_manager_instance_test+0x576703)
+16:     #10 RUN_ALL_TESTS() /autograder/source/bustub/third_party/googletest/googletest/include/gtest/gtest.h:2293:73 (grading_buffer_pool_manager_instance_test+0x5ce0ba)
+16:     #11 main /autograder/source/bustub/third_party/googletest/googlemock/src/gmock_main.cc:70:10 (grading_buffer_pool_manager_instance_test+0x5ce054)
+16: 
+16:   Mutex M53 (0x7b2400000060) created at:
+16:     #0 pthread_mutex_lock <null> (grading_buffer_pool_manager_instance_test+0x472476)
+16:     #1 __gthread_mutex_lock(pthread_mutex_t*) /usr/bin/../lib/gcc/x86_64-linux-gnu/12/../../../../include/x86_64-linux-gnu/c++/12/bits/gthr-default.h:749:12 (grading_buffer_pool_manager_instance_test+0x501d53)
+16:     #2 std::mutex::lock() /usr/bin/../lib/gcc/x86_64-linux-gnu/12/../../../../include/c++/12/bits/std_mutex.h:100:17 (grading_buffer_pool_manager_instance_test+0x504d15)
+16:     #3 std::scoped_lock<std::mutex>::scoped_lock(std::mutex&) /usr/bin/../lib/gcc/x86_64-linux-gnu/12/../../../../include/c++/12/mutex:731:19 (grading_buffer_pool_manager_instance_test+0x502179)
+16:     #4 bustub::BufferPoolManagerInstance::NewPgImp(int*) /autograder/source/bustub/src/buffer/buffer_pool_manager_instance.cpp:44:32 (grading_buffer_pool_manager_instance_test+0x4ffea0)
+16:     #5 bustub::BufferPoolManager::NewPage(int*, void (*)(bustub::BufferPoolManager::CallbackType, int)) /autograder/source/bustub/src/include/buffer/buffer_pool_manager.h:67:20 (grading_buffer_pool_manager_instance_test+0x4ef863)
+16:     #6 bustub::BufferPoolManagerInstanceTest_HardTest_4_Test::TestBody() /autograder/source/bustub/test/buffer/grading_buffer_pool_manager_instance_test.cpp:835:29 (grading_buffer_pool_manager_instance_test+0x4e44d5)
+16:     #7 void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2657:12 (grading_buffer_pool_manager_instance_test+0x58ca0d)
+16:     #8 testing::Test::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2674:5 (grading_buffer_pool_manager_instance_test+0x55da07)
+16:     #9 testing::TestInfo::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2853:11 (grading_buffer_pool_manager_instance_test+0x55eb09)
+16:     #10 testing::TestSuite::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:3012:30 (grading_buffer_pool_manager_instance_test+0x55f7e1)
+16:     #11 testing::internal::UnitTestImpl::RunAllTests() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:5870:44 (grading_buffer_pool_manager_instance_test+0x576ebd)
+16:     #12 bool testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*) /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2657:12 (grading_buffer_pool_manager_instance_test+0x590834)
+16:     #13 testing::UnitTest::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:5444:10 (grading_buffer_pool_manager_instance_test+0x576703)
+16:     #14 RUN_ALL_TESTS() /autograder/source/bustub/third_party/googletest/googletest/include/gtest/gtest.h:2293:73 (grading_buffer_pool_manager_instance_test+0x5ce0ba)
+16:     #15 main /autograder/source/bustub/third_party/googletest/googlemock/src/gmock_main.cc:70:10 (grading_buffer_pool_manager_instance_test+0x5ce054)
+16: 
+16:   Thread T2 (tid=6387, running) created by main thread at:
+16:     #0 pthread_create <null> (grading_buffer_pool_manager_instance_test+0x4546cb)
+16:     #1 std::thread::_M_start_thread(std::unique_ptr<std::thread::_State, std::default_delete<std::thread::_State> >, void (*)()) <null> (libstdc++.so.6+0xdc388)
+16:     #2 bustub::BufferPoolManagerInstanceTest_HardTest_4_Test::TestBody() /autograder/source/bustub/test/buffer/grading_buffer_pool_manager_instance_test.cpp:877:25 (grading_buffer_pool_manager_instance_test+0x4e6613)
+16:     #3 void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2657:12 (grading_buffer_pool_manager_instance_test+0x58ca0d)
+16:     #4 testing::Test::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2674:5 (grading_buffer_pool_manager_instance_test+0x55da07)
+16:     #5 testing::TestInfo::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2853:11 (grading_buffer_pool_manager_instance_test+0x55eb09)
+16:     #6 testing::TestSuite::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:3012:30 (grading_buffer_pool_manager_instance_test+0x55f7e1)
+16:     #7 testing::internal::UnitTestImpl::RunAllTests() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:5870:44 (grading_buffer_pool_manager_instance_test+0x576ebd)
+16:     #8 bool testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*) /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2657:12 (grading_buffer_pool_manager_instance_test+0x590834)
+16:     #9 testing::UnitTest::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:5444:10 (grading_buffer_pool_manager_instance_test+0x576703)
+16:     #10 RUN_ALL_TESTS() /autograder/source/bustub/third_party/googletest/googletest/include/gtest/gtest.h:2293:73 (grading_buffer_pool_manager_instance_test+0x5ce0ba)
+16:     #11 main /autograder/source/bustub/third_party/googletest/googlemock/src/gmock_main.cc:70:10 (grading_buffer_pool_manager_instance_test+0x5ce054)
+16: 
+16:   Thread T5 (tid=6390, running) created by main thread at:
+16:     #0 pthread_create <null> (grading_buffer_pool_manager_instance_test+0x4546cb)
+16:     #1 std::thread::_M_start_thread(std::unique_ptr<std::thread::_State, std::default_delete<std::thread::_State> >, void (*)()) <null> (libstdc++.so.6+0xdc388)
+16:     #2 bustub::BufferPoolManagerInstanceTest_HardTest_4_Test::TestBody() /autograder/source/bustub/test/buffer/grading_buffer_pool_manager_instance_test.cpp:877:25 (grading_buffer_pool_manager_instance_test+0x4e6613)
+16:     #3 void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2657:12 (grading_buffer_pool_manager_instance_test+0x58ca0d)
+16:     #4 testing::Test::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2674:5 (grading_buffer_pool_manager_instance_test+0x55da07)
+16:     #5 testing::TestInfo::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2853:11 (grading_buffer_pool_manager_instance_test+0x55eb09)
+16:     #6 testing::TestSuite::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:3012:30 (grading_buffer_pool_manager_instance_test+0x55f7e1)
+16:     #7 testing::internal::UnitTestImpl::RunAllTests() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:5870:44 (grading_buffer_pool_manager_instance_test+0x576ebd)
+16:     #8 bool testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*) /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:2657:12 (grading_buffer_pool_manager_instance_test+0x590834)
+16:     #9 testing::UnitTest::Run() /autograder/source/bustub/third_party/googletest/googletest/src/gtest.cc:5444:10 (grading_buffer_pool_manager_instance_test+0x576703)
+16:     #10 RUN_ALL_TESTS() /autograder/source/bustub/third_party/googletest/googletest/include/gtest/gtest.h:2293:73 (grading_buffer_pool_manager_instance_test+0x5ce0ba)
+16:     #11 main /autograder/source/bustub/third_party/googletest/googlemock/src/gmock_main.cc:70:10 (grading_buffer_pool_manager_instance_test+0x5ce054)
+16: 
+16: SUMMARY: ThreadSanitizer: data race /autograder/source/bustub/src/buffer/buffer_pool_manager_instance.cpp:171:22 in bustub::BufferPoolManagerInstance::DeletePgImp(int)

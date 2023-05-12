@@ -45,12 +45,12 @@ void LRUKNode::SetIsEvictable(bool set_evictable_) { this->is_evictable_ = set_e
 
 // LRUKReplacer
 LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) {
-  latch_.lock();
+  // latch_.lock();
   LRUKReplacer::k_ = k;
   LRUKReplacer::replacer_size_ = num_frames;
-  LOG_INFO("LOGCREAT LRUKReplacer size is: %zu,k is: %zu",num_frames,k);
+  // LOG_INFO("LOGCREAT LRUKReplacer size is: %zu,k is: %zu",num_frames,k);
   LRUKReplacer::node_store_ptr_ = std::make_unique<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>>();
-  latch_.unlock();
+  // latch_.unlock();
 }
 
 inline void LRUKReplacer::VctmIsLssThnKTmstmpErlrAccssd(const std::shared_ptr<LRUKNode> &frame_p,
@@ -83,7 +83,8 @@ inline auto LRUKReplacer::GetNodeStatus(const std::shared_ptr<LRUKNode> &node_pt
 }
 
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
-  latch_.lock();
+  std::scoped_lock<std::mutex> lock(latch_);
+  // latch_.lock();
 
   // first is frame is,second is backward_k_distance
   std::shared_ptr<std::pair<frame_id_t, size_t>> evict_frame_ptr =
@@ -131,33 +132,34 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   }
   // no evictable frame
   if (evict_frame_ptr->first == MAX_FRAME_ID_T) {
-    latch_.unlock();
+    // latch_.unlock();
     return false;
   }
   *frame_id = evict_frame_ptr->first;
   LRUKReplacer::node_store_ptr_->erase(*frame_id);
   this->curr_size_--;
-  LOG_INFO("Evict frame_id: %d,new size is: %zu", *frame_id, this->curr_size_);
+  // LOG_INFO("Evict frame_id: %d,new size is: %zu", *frame_id, this->curr_size_);
   //delete in future
     // for (const auto &it : *node_store_ptr_) {
       // LOG_INFO("    frame_id: %d ,is_evictable: %d", it.first, it.second->GetIsEvictable());
     // }
   //
-  latch_.unlock();
+  // latch_.unlock();
   return true;
 }
 
 void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
-  latch_.lock();
+  std::scoped_lock<std::mutex> lock(latch_);
+  // latch_.lock();
   //frame id is invaild
   if (frame_id > static_cast<int>(replacer_size_)) {
-    latch_.unlock();
+    // latch_.unlock();
     throw Exception("Frame_id is invaild!");
   }
   // want to insert new frame but buffer pool is fulled.
   if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end() &&
       LRUKReplacer::curr_size_ == LRUKReplacer::replacer_size_) {
-    latch_.unlock();
+    // latch_.unlock();
     throw Exception("Buffer pool is fulled,can't add frame any more!");
   }
   
@@ -168,7 +170,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
 
   // insert a new frame to buffer pool
   if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end()) {
-    LOG_INFO("Insert a new frame, frame_id: %d", frame_id);
+    // LOG_INFO("Insert a new frame, frame_id: %d", frame_id);
     std::shared_ptr<LRUKNode> node_ptr = std::make_shared<LRUKNode>(this->current_timestamp_, this->k_);
     LRUKReplacer::node_store_ptr_->insert(std::make_pair(frame_id, node_ptr));
     //delete in future
@@ -177,23 +179,24 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
     // }
     //
   } else { // update the timestamp of the old frame
-    LOG_INFO("Access old frame, frame_id: %d", frame_id);
+    // LOG_INFO("Access old frame, frame_id: %d", frame_id);
     auto frame_ptr = LRUKReplacer::node_store_ptr_->find(frame_id)->second;
     frame_ptr->InsertCurrentTimeStamp(this->current_timestamp_);
   }
-  latch_.unlock();
+  // latch_.unlock();
 }
 
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
-  latch_.lock();
+  std::scoped_lock<std::mutex> lock(latch_);
+  // latch_.lock();
   if (frame_id > static_cast<int>(replacer_size_)) {
-    latch_.unlock();
+    // latch_.unlock();
     throw Exception("Frame_id is invaild!");
   }
   // If the frame_id to be set does not exist, throw an exception
   if (LRUKReplacer::node_store_ptr_->find(frame_id) == LRUKReplacer::node_store_ptr_->end()) {
-    LOG_DEBUG("LOGBUG Frame_id: %d is not exist!", frame_id);
-    latch_.unlock();
+    // LOG_DEBUG("LOGBUG Frame_id: %d is not exist!", frame_id);
+    // latch_.unlock();
     return;
   }
   // Find the corresponding lruknode through Frame_id,
@@ -206,41 +209,42 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
     this->curr_size_++;
   }
   frame_ptr->SetIsEvictable(set_evictable);
-  LOG_INFO("Set frame_id: %d, is_evictable: %d, new size is: %zu", frame_id, set_evictable, this->curr_size_);
-  latch_.unlock();
+  // LOG_INFO("Set frame_id: %d, is_evictable: %d, new size is: %zu", frame_id, set_evictable, this->curr_size_);
+  // latch_.unlock();
 }
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
-  latch_.lock();
+  std::scoped_lock<std::mutex> lock(latch_);
+  // latch_.lock();
   auto frameid_frame_pair = LRUKReplacer::node_store_ptr_->find(frame_id);
   // frame to be removed does not exist
   if (frameid_frame_pair == LRUKReplacer::node_store_ptr_->end()) {
-    latch_.unlock();
+    // latch_.unlock();
     return;
   }
   if (frameid_frame_pair->second->GetIsEvictable()) {
     LRUKReplacer::node_store_ptr_->erase(frame_id);
     this->curr_size_ -= 1;
-    LOG_INFO("Remove frame_id: %d,new size is: %zu", frame_id, this->curr_size_);
+    // LOG_INFO("Remove frame_id: %d,new size is: %zu", frame_id, this->curr_size_);
     //delete in future
     // for (const auto &it : *node_store_ptr_) {
       // LOG_INFO("frame_id: %d ,is_evictable: %d", it.first, it.second->GetIsEvictable());
     // }
     //
   } else {
-    latch_.unlock();
+    // latch_.unlock();
     throw Exception("Frame is not evictable!");
   }
-  latch_.unlock();
+  // latch_.unlock();
 }
 
 auto LRUKReplacer::Size() -> size_t { 
-  LOG_INFO("curr_size_ is %zu",this->curr_size_);
+  // LOG_INFO("curr_size_ is %zu",this->curr_size_);
   return this->curr_size_; 
 }
 // Delete in the future
-auto LRUKReplacer::GetNodeStorePtr() -> std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>> {
-  return LRUKReplacer::node_store_ptr_;
-}
+// auto LRUKReplacer::GetNodeStorePtr() -> std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>> {
+//   return LRUKReplacer::node_store_ptr_;
+// }
 
 }  // namespace bustub
