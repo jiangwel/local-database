@@ -111,7 +111,7 @@ TEST(LRUKReplacerTest, SampleTest) {
   ASSERT_EQ(0, lru_replacer.Size());
 }
 
-TEST(LRUKReplacerTest, DISABLED_EvictTest1) {
+TEST(LRUKReplacerTest, EvictTest1) {
   LRUKReplacer lru_replacer(7, 3);
   int value;
 
