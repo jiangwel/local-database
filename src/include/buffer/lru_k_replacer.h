@@ -27,33 +27,6 @@
 #include "common/macros.h"
 
 namespace bustub {
-
-class LRUKNode {
- public:
-  explicit LRUKNode(size_t current_timestamp, size_t k);
-  DISALLOW_COPY_AND_MOVE(LRUKNode);
-  ~LRUKNode() = default;
-  void InsertCurrentTimeStamp(size_t current_timestamp);
-  // Delete in the future
-  auto GetIsEvictable() -> bool;
-  auto GetTimestampNum() -> size_t;
-  auto GetK() -> size_t;
-  auto GetHistoryPtr() -> std::shared_ptr<std::deque<size_t>>;
-  void SetIsEvictable(bool set_evictable_);
-
- private:
-  /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
-  // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
-
-  [[maybe_unused]] std::vector<size_t> history_;
-  size_t k_;
-  [[maybe_unused]] frame_id_t fid_;
-  bool is_evictable_{false};
-  std::shared_ptr<std::deque<size_t>> history_ptr_;
-  size_t timestamp_num_{0};
-  std::mutex latch_;
-};
-
 /**
  * LRUKReplacer implements the LRU-k replacement policy.
  *
@@ -170,27 +143,18 @@ class LRUKReplacer {
  private:
   // TODO(student): implement me! You can replace these member variables as you like.
   // Remove maybe_unused if you start using them.
-  [[maybe_unused]] std::unordered_map<frame_id_t, LRUKNode> node_store_;
-  size_t current_timestamp_{0};
-  size_t curr_size_{0};
-  size_t replacer_size_;
+  size_t evictable_num_{0};
   size_t k_;
-  std::mutex latch_;
-  std::shared_ptr<std::unordered_map<frame_id_t, std::shared_ptr<LRUKNode>>> node_store_ptr_;
-
-  enum class NodeStatus {
-    Not_Evictable,
-    Exst_k_Timestmp,
-    Not_Exst_k_Timestmp,
-    Exst_k_Timestmp_Curr_Lessthan_k_Timestmp,
-    Not_Exst_k_Timestmp_Curr_Morethan_k_Timestmp
+  size_t replacer_size_;
+  struct Frame{
+    size_t access_time;
+    bool evictable;
   };
+  std::unordered_map<frame_id_t, Frame> frame_info;
+  std::list<frame_id_t> access_k_frame;
+  std::list<frame_id_t> access_less_k;
+  std::mutex latch_;
 
-  inline auto GetNodeStatus(const std::shared_ptr<LRUKNode> &node_ptr, const bool *is_evict_had_k_timestamp_node_p,
-                            const std::shared_ptr<std::pair<frame_id_t, size_t>> &evict_frame_p) -> NodeStatus;
-  inline void VctmIsLssThnKTmstmpErlrAccssd(const std::shared_ptr<LRUKNode> &frame_p,
-                                            const std::shared_ptr<std::pair<frame_id_t, size_t>> &evict_frame_p,
-                                            frame_id_t current_frame_id_p);
 };
 
 }  // namespace bustub
