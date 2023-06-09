@@ -37,13 +37,12 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
 
 void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
   std::scoped_lock<std::mutex> lock(latch_);
+  if(frame_id > static_cast<int>(replacer_size_)) {
+    throw Exception("Can't insert frame any more!");
+  }
   if (frame_info_.find(frame_id) == frame_info_.end()) {
-    if (access_k_frame_.size() + access_less_k_.size() < replacer_size_) {
       frame_info_[frame_id] = {1, false};
       access_less_k_.push_back(frame_id);
-    } else {
-      throw Exception("Can't insert frame any more!");
-    }
   } else {
     if (frame_info_[frame_id].access_time_ < k_) {
       if (++frame_info_[frame_id].access_time_ == k_) {
@@ -72,6 +71,8 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
   std::scoped_lock<std::mutex> lock(latch_);
   if (frame_info_.find(frame_id) != frame_info_.end()) {
     if (frame_info_[frame_id].evictable_) {
+      std::list<frame_id_t> &frame_id_list = frame_info_[frame_id].access_time_ == k_ ? access_k_frame_ : access_less_k_;
+      frame_id_list.remove(frame_id);
       frame_info_.erase(frame_id);
       evictable_num_--;
     } else {
