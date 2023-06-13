@@ -1,15 +1,802 @@
 LRUKReplacer: replacer_size_: 10, k: 2
-RecordAccess: frame_id: 1 [1][]
-  insert
-SetEvictable: frame_id: 1, set_evictable: 1
-RecordAccess: frame_id: 2 [1,2][]
-  insert
+Evict
+  no evictable frame!
+LRUKReplacer: replacer_size_: 10, k: 2
+RecordAccess: frame_id: 2
+  Insert
+SetEvictable: frame_id: 2, set_evictable: 0
+Evict
+  no evictable frame!
 SetEvictable: frame_id: 2, set_evictable: 1
-RecordAccess: frame_id: 3 [1,2,3][]
-  insert
-SetEvictable: frame_id: 3, set_evictable: 1
-Remove: frame_id: 1 [2,3]
+Evict
+  success frame_id: 2
+LRUKReplacer: replacer_size_: 10, k: 3
+RecordAccess: frame_id: 1
+  Insert
+RecordAccess: frame_id: 1
+  Less k update
+RecordAccess: frame_id: 2
+  Insert
+RecordAccess: frame_id: 1
+  Frame transition
+SetEvictable: frame_id: 2, set_evictable: 1
 SetEvictable: frame_id: 1, set_evictable: 1
-20: Message :: frame_id is invalid!
-20: terminate called after throwing an instance of 'bustub::Exception'
-20:   what():  frame_id is invalid!
+Evict
+  success frame_id: 2
+Evict
+  success frame_id: 1
+LRUKReplacer: replacer_size_: 10, k: 3
+RecordAccess: frame_id: 1
+  Insert
+RecordAccess: frame_id: 2
+  Insert
+RecordAccess: frame_id: 3
+  Insert
+RecordAccess: frame_id: 3
+  Less k update
+RecordAccess: frame_id: 3
+  Frame transition
+RecordAccess: frame_id: 2
+  Less k update
+RecordAccess: frame_id: 2
+  Frame transition
+RecordAccess: frame_id: 1
+  Less k update
+RecordAccess: frame_id: 1
+  Frame transition
+RecordAccess: frame_id: 3
+  More k update
+RecordAccess: frame_id: 2
+  More k update
+RecordAccess: frame_id: 1
+  More k update
+SetEvictable: frame_id: 2, set_evictable: 1
+SetEvictable: frame_id: 1, set_evictable: 1
+SetEvictable: frame_id: 3, set_evictable: 1
+Evict
+  success frame_id: 3
+Evict
+  success frame_id: 2
+Evict
+  success frame_id: 1
+LRUKReplacer: replacer_size_: 10, k: 3
+RecordAccess: frame_id: 2
+  Insert
+RecordAccess: frame_id: 2
+  Less k update
+RecordAccess: frame_id: 2
+  Frame transition
+RecordAccess: frame_id: 1
+  Insert
+RecordAccess: frame_id: 1
+  Less k update
+SetEvictable: frame_id: 2, set_evictable: 1
+SetEvictable: frame_id: 1, set_evictable: 1
+Evict
+  success frame_id: 1
+RecordAccess: frame_id: 1
+  Insert
+SetEvictable: frame_id: 1, set_evictable: 1
+Evict
+  success frame_id: 1
+LRUKReplacer: replacer_size_: 10, k: 3
+RecordAccess: frame_id: 1
+  Insert
+RecordAccess: frame_id: 2
+  Insert
+RecordAccess: frame_id: 3
+  Insert
+RecordAccess: frame_id: 4
+  Insert
+RecordAccess: frame_id: 1
+  Less k update
+RecordAccess: frame_id: 2
+  Less k update
+RecordAccess: frame_id: 3
+  Less k update
+RecordAccess: frame_id: 1
+  Frame transition
+RecordAccess: frame_id: 2
+  Frame transition
+SetEvictable: frame_id: 1, set_evictable: 1
+SetEvictable: frame_id: 2, set_evictable: 1
+SetEvictable: frame_id: 3, set_evictable: 1
+SetEvictable: frame_id: 4, set_evictable: 1
+Evict
+  success frame_id: 3
+RecordAccess: frame_id: 4
+  Less k update
+RecordAccess: frame_id: 4
+  Frame transition
+Evict
+  success frame_id: 1
+Evict
+  success frame_id: 2
+Evict
+  success frame_id: 4
+LRUKReplacer: replacer_size_: 10, k: 2
+RecordAccess: frame_id: 1
+  Insert
+RecordAccess: frame_id: 2
+  Insert
+RecordAccess: frame_id: 3
+  Insert
+RecordAccess: frame_id: 4
+  Insert
+RecordAccess: frame_id: 1
+  Frame transition
+RecordAccess: frame_id: 2
+  Frame transition
+RecordAccess: frame_id: 3
+  Frame transition
+RecordAccess: frame_id: 4
+  Frame transition
+SetEvictable: frame_id: 2, set_evictable: 1
+SetEvictable: frame_id: 1, set_evictable: 1
+Evict
+  success frame_id: 1
+RecordAccess: frame_id: 5
+  Insert
+SetEvictable: frame_id: 5, set_evictable: 1
+Evict
+  success frame_id: 5
+LRUKReplacer: replacer_size_: 1000, k: 3
+RecordAccess: frame_id: 0
+  Insert
+SetEvictable: frame_id: 0, set_evictable: 1
+RecordAccess: frame_id: 1
+  Insert
+SetEvictable: frame_id: 1, set_evictable: 1
+RecordAccess: frame_id: 2
+  Insert
+SetEvictable: frame_id: 2, set_evictable: 1
+RecordAccess: frame_id: 3
+  Insert
+SetEvictable: frame_id: 3, set_evictable: 1
+RecordAccess: frame_id: 4
+  Insert
+SetEvictable: frame_id: 4, set_evictable: 1
+RecordAccess: frame_id: 5
+  Insert
+SetEvictable: frame_id: 5, set_evictable: 1
+RecordAccess: frame_id: 6
+  Insert
+SetEvictable: frame_id: 6, set_evictable: 1
+RecordAccess: frame_id: 7
+  Insert
+SetEvictable: frame_id: 7, set_evictable: 1
+RecordAccess: frame_id: 8
+  Insert
+SetEvictable: frame_id: 8, set_evictable: 1
+RecordAccess: frame_id: 9
+  Insert
+SetEvictable: frame_id: 9, set_evictable: 1
+RecordAccess: frame_id: 10
+  Insert
+SetEvictable: frame_id: 10, set_evictable: 1
+RecordAccess: frame_id: 11
+  Insert
+SetEvictable: frame_id: 11, set_evictable: 1
+RecordAccess: frame_id: 12
+  Insert
+SetEvictable: frame_id: 12, set_evictable: 1
+RecordAccess: frame_id: 13
+  Insert
+SetEvictable: frame_id: 13, set_evictable: 1
+RecordAccess: frame_id: 14
+  Insert
+SetEvictable: frame_id: 14, set_evictable: 1
+RecordAccess: frame_id: 15
+  Insert
+SetEvictable: frame_id: 15, set_evictable: 1
+RecordAccess: frame_id: 16
+  Insert
+SetEvictable: frame_id: 16, set_evictable: 1
+RecordAccess: frame_id: 17
+  Insert
+SetEvictable: frame_id: 17, set_evictable: 1
+RecordAccess: frame_id: 18
+  Insert
+SetEvictable: frame_id: 18, set_evictable: 1
+RecordAccess: frame_id: 19
+  Insert
+SetEvictable: frame_id: 19, set_evictable: 1
+RecordAccess: frame_id: 20
+  Insert
+SetEvictable: frame_id: 20, set_evictable: 1
+RecordAccess: frame_id: 21
+  Insert
+SetEvictable: frame_id: 21, set_evictable: 1
+RecordAccess: frame_id: 22
+  Insert
+SetEvictable: frame_id: 22, set_evictable: 1
+RecordAccess: frame_id: 23
+  Insert
+SetEvictable: frame_id: 23, set_evictable: 1
+RecordAccess: frame_id: 24
+  Insert
+SetEvictable: frame_id: 24, set_evictable: 1
+RecordAccess: frame_id: 25
+  Insert
+SetEvictable: frame_id: 25, set_evictable: 1
+RecordAccess: frame_id: 26
+  Insert
+SetEvictable: frame_id: 26, set_evictable: 1
+RecordAccess: frame_id: 27
+  Insert
+SetEvictable: frame_id: 27, set_evictable: 1
+RecordAccess: frame_id: 28
+  Insert
+SetEvictable: frame_id: 28, set_evictable: 1
+RecordAccess: frame_id: 29
+  Insert
+SetEvictable: frame_id: 29, set_evictable: 1
+RecordAccess: frame_id: 30
+  Insert
+SetEvictable: frame_id: 30, set_evictable: 1
+RecordAccess: frame_id: 31
+  Insert
+SetEvictable: frame_id: 31, set_evictable: 1
+RecordAccess: frame_id: 32
+  Insert
+SetEvictable: frame_id: 32, set_evictable: 1
+RecordAccess: frame_id: 33
+  Insert
+SetEvictable: frame_id: 33, set_evictable: 1
+RecordAccess: frame_id: 34
+  Insert
+SetEvictable: frame_id: 34, set_evictable: 1
+RecordAccess: frame_id: 35
+  Insert
+SetEvictable: frame_id: 35, set_evictable: 1
+RecordAccess: frame_id: 36
+  Insert
+SetEvictable: frame_id: 36, set_evictable: 1
+RecordAccess: frame_id: 37
+  Insert
+SetEvictable: frame_id: 37, set_evictable: 1
+RecordAccess: frame_id: 38
+  Insert
+SetEvictable: frame_id: 38, set_evictable: 1
+RecordAccess: frame_id: 39
+  Insert
+SetEvictable: frame_id: 39, set_evictable: 1
+RecordAccess: frame_id: 40
+  Insert
+SetEvictable: frame_id: 40, set_evictable: 1
+RecordAccess: frame_id: 41
+  Insert
+SetEvictable: frame_id: 41, set_evictable: 1
+RecordAccess: frame_id: 42
+  Insert
+SetEvictable: frame_id: 42, set_evictable: 1
+RecordAccess: frame_id: 43
+  Insert
+SetEvictable: frame_id: 43, set_evictable: 1
+RecordAccess: frame_id: 44
+  Insert
+SetEvictable: frame_id: 44, set_evictable: 1
+RecordAccess: frame_id: 45
+  Insert
+SetEvictable: frame_id: 45, set_evictable: 1
+RecordAccess: frame_id: 46
+  Insert
+SetEvictable: frame_id: 46, set_evictable: 1
+RecordAccess: frame_id: 47
+  Insert
+SetEvictable: frame_id: 47, set_evictable: 1
+RecordAccess: frame_id: 48
+  Insert
+SetEvictable: frame_id: 48, set_evictable: 1
+RecordAccess: frame_id: 49
+  Insert
+SetEvictable: frame_id: 49, set_evictable: 1
+RecordAccess: frame_id: 50
+  Insert
+SetEvictable: frame_id: 50, set_evictable: 1
+RecordAccess: frame_id: 51
+  Insert
+SetEvictable: frame_id: 51, set_evictable: 1
+RecordAccess: frame_id: 52
+  Insert
+SetEvictable: frame_id: 52, set_evictable: 1
+RecordAccess: frame_id: 53
+  Insert
+SetEvictable: frame_id: 53, set_evictable: 1
+RecordAccess: frame_id: 54
+  Insert
+SetEvictable: frame_id: 54, set_evictable: 1
+RecordAccess: frame_id: 55
+  Insert
+SetEvictable: frame_id: 55, set_evictable: 1
+RecordAccess: frame_id: 56
+  Insert
+SetEvictable: frame_id: 56, set_evictable: 1
+RecordAccess: frame_id: 57
+  Insert
+SetEvictable: frame_id: 57, set_evictable: 1
+RecordAccess: frame_id: 58
+  Insert
+SetEvictable: frame_id: 58, set_evictable: 1
+RecordAccess: frame_id: 59
+  Insert
+SetEvictable: frame_id: 59, set_evictable: 1
+RecordAccess: frame_id: 60
+  Insert
+SetEvictable: frame_id: 60, set_evictable: 1
+RecordAccess: frame_id: 61
+  Insert
+SetEvictable: frame_id: 61, set_evictable: 1
+RecordAccess: frame_id: 62
+  Insert
+SetEvictable: frame_id: 62, set_evictable: 1
+RecordAccess: frame_id: 63
+  Insert
+SetEvictable: frame_id: 63, set_evictable: 1
+RecordAccess: frame_id: 64
+  Insert
+SetEvictable: frame_id: 64, set_evictable: 1
+RecordAccess: frame_id: 65
+  Insert
+SetEvictable: frame_id: 65, set_evictable: 1
+RecordAccess: frame_id: 66
+  Insert
+SetEvictable: frame_id: 66, set_evictable: 1
+RecordAccess: frame_id: 67
+  Insert
+SetEvictable: frame_id: 67, set_evictable: 1
+RecordAccess: frame_id: 68
+  Insert
+SetEvictable: frame_id: 68, set_evictable: 1
+RecordAccess: frame_id: 69
+  Insert
+SetEvictable: frame_id: 69, set_evictable: 1
+RecordAccess: frame_id: 70
+  Insert
+SetEvictable: frame_id: 70, set_evictable: 1
+RecordAccess: frame_id: 71
+  Insert
+SetEvictable: frame_id: 71, set_evictable: 1
+RecordAccess: frame_id: 72
+  Insert
+SetEvictable: frame_id: 72, set_evictable: 1
+RecordAccess: frame_id: 73
+  Insert
+SetEvictable: frame_id: 73, set_evictable: 1
+RecordAccess: frame_id: 74
+  Insert
+SetEvictable: frame_id: 74, set_evictable: 1
+RecordAccess: frame_id: 75
+  Insert
+SetEvictable: frame_id: 75, set_evictable: 1
+RecordAccess: frame_id: 76
+  Insert
+SetEvictable: frame_id: 76, set_evictable: 1
+RecordAccess: frame_id: 77
+  Insert
+SetEvictable: frame_id: 481, set_evictable: 0
+SetEvictable: frame_id: 482, set_evictable: 0
+SetEvictable: frame_id: 483, set_evictable: 0
+SetEvictable: frame_id: 484, set_evictable: 0
+SetEvictable: frame_id: 485, set_evictable: 0
+SetEvictable: frame_id: 486, set_evictable: 0
+SetEvictable: frame_id: 487, set_evictable: 0
+SetEvictable: frame_id: 488, set_evictable: 0
+SetEvictable: frame_id: 489, set_evictable: 0
+SetEvictable: frame_id: 490, set_evictable: 0
+SetEvictable: frame_id: 491, set_evictable: 0
+SetEvictable: frame_id: 492, set_evictable: 0
+SetEvictable: frame_id: 493, set_evictable: 0
+SetEvictable: frame_id: 494, set_evictable: 0
+SetEvictable: frame_id: 495, set_evictable: 0
+SetEvictable: frame_id: 496, set_evictable: 0
+SetEvictable: frame_id: 497, set_evictable: 0
+SetEvictable: frame_id: 498, set_evictable: 0
+SetEvictable: frame_id: 499, set_evictable: 0
+Remove: frame_id: 0
+Remove: frame_id: 1
+Remove: frame_id: 2
+Remove: frame_id: 3
+Remove: frame_id: 4
+Remove: frame_id: 5
+Remove: frame_id: 6
+Remove: frame_id: 7
+Remove: frame_id: 8
+Remove: frame_id: 9
+Remove: frame_id: 10
+Remove: frame_id: 11
+Remove: frame_id: 12
+Remove: frame_id: 13
+Remove: frame_id: 14
+Remove: frame_id: 15
+Remove: frame_id: 16
+Remove: frame_id: 17
+Remove: frame_id: 18
+Remove: frame_id: 19
+Remove: frame_id: 20
+Remove: frame_id: 21
+Remove: frame_id: 22
+Remove: frame_id: 23
+Remove: frame_id: 24
+Remove: frame_id: 25
+Remove: frame_id: 26
+Remove: frame_id: 27
+Remove: frame_id: 28
+Remove: frame_id: 29
+Remove: frame_id: 30
+Remove: frame_id: 31
+Remove: frame_id: 32
+Remove: frame_id: 33
+Remove: frame_id: 34
+Remove: frame_id: 35
+Remove: frame_id: 36
+Remove: frame_id: 37
+Remove: frame_id: 38
+Remove: frame_id: 39
+Remove: frame_id: 40
+Remove: frame_id: 41
+Remove: frame_id: 42
+Remove: frame_id: 43
+Remove: frame_id: 44
+Remove: frame_id: 45
+Remove: frame_id: 46
+Remove: frame_id: 47
+Remove: frame_id: 48
+Remove: frame_id: 49
+Remove: frame_id: 50
+Remove: frame_id: 51
+Remove: frame_id: 52
+Remove: frame_id: 53
+Remove: frame_id: 54
+Remove: frame_id: 55
+Remove: frame_id: 56
+Remove: frame_id: 57
+Remove: frame_id: 58
+Remove: frame_id: 59
+Remove: frame_id: 60
+Remove: frame_id: 61
+Remove: frame_id: 62
+Remove: frame_id: 63
+Remove: frame_id: 64
+Remove: frame_id: 65
+Remove: frame_id: 66
+Remove: frame_id: 67
+Remove: frame_id: 68
+Remove: frame_id: 69
+Remove: frame_id: 70
+Remove: frame_id: 71
+Remove: frame_id: 72
+Remove: frame_id: 73
+Remove: frame_id: 74
+Remove: frame_id: 75
+Remove: frame_id: 76
+Remove: frame_id: 77
+Remove: frame_id: 78
+Remove: frame_id: 79
+Remove: frame_id: 80
+Remove: frame_id: 81
+Remove: frame_id: 82
+Remove: frame_id: 83
+Remove: frame_id: 84
+Remove: frame_id: 85
+Remove: frame_id: 86
+Remove: frame_id: 87
+Remove: frame_id: 88
+Remove: frame_id: 89
+Remove: frame_id: 90
+Remove: frame_id: 91
+Remove: frame_id: 92
+Remove: frame_id: 93
+Remove: frame_id: 94
+Remove: frame_id: 95
+Remove: frame_id: 96
+Remove: frame_id: 97
+Remove: frame_id: 98
+Remove: frame_id: 99
+Evict
+  success frame_id: 100
+Evict
+  success frame_id: 101
+Evict
+  success frame_id: 102
+Evict
+  success frame_id: 103
+Evict
+  success frame_id: 104
+Evict
+  success frame_id: 105
+Evict
+  success frame_id: 106
+Evict
+  success frame_id: 107
+Evict
+  success frame_id: 108
+Evict
+  success frame_id: 109
+Evict
+  success frame_id: 110
+Evict
+  success frame_id: 111
+Evict
+  success frame_id: 112
+Evict
+  success frame_id: 113
+Evict
+  success frame_id: 114
+Evict
+  success frame_id: 115
+Evict
+  success frame_id: 116
+Evict
+  success frame_id: 117
+Evict
+  success frame_id: 118
+Evict
+  success frame_id: 119
+Evict
+  success frame_id: 120
+Evict
+  success frame_id: 121
+Evict
+  success frame_id: 122
+Evict
+  success frame_id: 123
+Evict
+  success frame_id: 124
+Evict
+  success frame_id: 125
+Evict
+  success frame_id: 126
+Evict
+  success frame_id: 127
+Evict
+  success frame_id: 128
+Evict
+  success frame_id: 129
+Evict
+  success frame_id: 130
+Evict
+  success frame_id: 131
+Evict
+  success frame_id: 132
+Evict
+  success frame_id: 133
+Evict
+  success frame_id: 134
+Evict
+  success frame_id: 135
+Evict
+  success frame_id: 136
+Evict
+  success frame_id: 137
+Evict
+  success frame_id: 138
+Evict
+  success frame_id: 139
+Evict
+  success frame_id: 140
+Evict
+  success frame_id: 141
+Evict
+  success frame_id: 142
+Evict
+  success frame_id: 143
+Evict
+  success frame_id: 144
+Evict
+  success frame_id: 145
+Evict
+  success frame_id: 146
+Evict
+  success frame_id: 147
+Evict
+  success frame_id: 148
+Evict
+  success frame_id: 149
+Evict
+  success frame_id: 150
+Evict
+  success frame_id: 151
+Evict
+  success frame_id: 152
+Evict
+  success frame_id: 153
+Evict
+  success frame_id: 154
+Evict
+  success frame_id: 155
+Evict
+  success frame_id: 156
+Evict
+  success frame_id: 157
+Evict
+  success frame_id: 158
+Evict
+  success frame_id: 159
+Evict
+  success frame_id: 160
+Evict
+  success frame_id: 161
+Evict
+  success frame_id: 162
+Evict
+  success frame_id: 163
+Evict
+  success frame_id: 164
+Evict
+  success frame_id: 165
+Evict
+  success frame_id: 166
+Evict
+  success frame_id: 167
+Evict
+  success frame_id: 168
+Evict
+  success frame_id: 169
+Evict
+  success frame_id: 170
+Evict
+  success frame_id: 171
+Evict
+  success frame_id: 172
+Evict
+  success frame_id: 173
+Evict
+  success frame_id: 174
+Evict
+  success frame_id: 175
+Evict
+  success frame_id: 176
+Evict
+  success frame_id: 177
+Evict
+  success frame_id: 178
+Evict
+  success frame_id: 179
+Evict
+  success frame_id: 180
+Evict
+  success frame_id: 181
+Evict
+  success frame_id: 182
+Evict
+  success frame_id: 183
+Evict
+  success frame_id: 184
+Evict
+  success frame_id: 185
+Evict
+  success frame_id: 186
+Evict
+  success frame_id: 187
+Evict
+  success frame_id: 188
+Evict
+  success frame_id: 189
+Evict
+  success frame_id: 190
+Evict
+  success frame_id: 191
+Evict
+  success frame_id: 192
+Evict
+  success frame_id: 193
+Evict
+  success frame_id: 194
+Evict
+  success frame_id: 195
+Evict
+  success frame_id: 196
+Evict
+  success frame_id: 197
+Evict
+  success frame_id: 198
+Evict
+  success frame_id: 199
+Evict
+  success frame_id: 200
+Evict
+  success frame_id: 201
+Evict
+  success frame_id: 202
+Evict
+  success frame_id: 203
+Evict
+  success frame_id: 204
+Evict
+  success frame_id: 205
+Evict
+  success frame_id: 206
+Evict
+  success frame_id: 207
+Evict
+  success frame_id: 208
+Evict
+  success frame_id: 209
+Evict
+  success frame_id: 210
+Evict
+  success frame_id: 211
+Evict
+  success frame_id: 212
+Evict
+  success frame_id: 213
+Evict
+  success frame_id: 214
+Evict
+  success frame_id: 215
+Evict
+  success frame_id: 216
+Evict
+  success frame_id: 217
+Evict
+  success frame_id: 218
+Evict
+  success frame_id: 219
+Evict
+  success frame_id: 220
+Evict
+  success frame_id: 221
+Evict
+  success frame_id: 222
+Evict
+  success frame_id: 223
+Evict
+  success frame_id: 224
+Evict
+  success frame_id: 225
+Evict
+  success frame_id: 226
+Evict
+  success frame_id: 227
+Evict
+  success frame_id: 228
+Evict
+  success frame_id: 229
+Evict
+  success frame_id: 230
+Evict
+  success frame_id: 231
+Evict
+  success frame_id: 232
+Evict
+  success frame_id: 233
+Evict
+  success frame_id: 234
+Evict
+  success frame_id: 235
+Evict
+  success frame_id: 236
+Evict
+  success frame_id: 237
+Evict
+  success frame_id: 238
+Evict
+  success frame_id: 239
+Evict
+  success frame_id: 240
+Evict
+  success frame_id: 241
+Evict
+  success frame_id: 242
+Evict
+  success frame_id: 243
+Evict
+  success frame_id: 244
+Evict
+  success frame_id: 245
+Evict
+  success frame_id: 246
+Evict
+  success frame_id: 247
+Evict
+  success frame_id: 248
+Evict
+  success frame_id: 249
+Evict
+19: /autograder/source/bustub/test/buffer/grading_lru_k_replacer_test.cpp:277: Failure
+19: Expected equality of these values:
+19:   true
+19:   lru_replacer.Evict(&result)
+19:     Which is: false
+19: Check your return value behavior for LRUKReplacer::Evict

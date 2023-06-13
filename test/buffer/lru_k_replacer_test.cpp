@@ -155,4 +155,69 @@ TEST(LRUKReplacerTest, EvictTest2) {
   lru_replacer.Evict(&value);
   ASSERT_EQ(2, value);
 }
+TEST(LRUKReplacerTest, ConcurrencyTest) {
+  LRUKReplacer lru_replacer(1000, 3);
+
+  lru_replacer.RecordAccess(100);
+  lru_replacer.SetEvictable(100, true);
+  lru_replacer.RecordAccess(101);
+  lru_replacer.SetEvictable(101, true);
+  lru_replacer.RecordAccess(102);
+  lru_replacer.SetEvictable(102, true);
+  lru_replacer.RecordAccess(103);
+  lru_replacer.SetEvictable(103, true);
+  lru_replacer.RecordAccess(104);
+  lru_replacer.SetEvictable(104, true);
+  lru_replacer.RecordAccess(105);
+  lru_replacer.SetEvictable(105, true);
+  lru_replacer.RecordAccess(106);
+  lru_replacer.SetEvictable(106, true);
+  lru_replacer.RecordAccess(107);
+  lru_replacer.SetEvictable(107, true);
+  lru_replacer.RecordAccess(108);
+  lru_replacer.SetEvictable(108, true);
+  lru_replacer.RecordAccess(109);
+
+  for (int i = 0; i < 100; i++) {
+    lru_replacer.RecordAccess(i);
+    lru_replacer.SetEvictable(i, true);
+  }
+  lru_replacer.SetEvictable(109, true);
+  for (int i = 110; i <= 121; i++) {
+    lru_replacer.RecordAccess(i);
+    lru_replacer.SetEvictable(i, true);
+  }
+  lru_replacer.RecordAccess(122);
+  for (int i = 446; i <= 499; i++) {
+    lru_replacer.Remove(i);
+  }
+  for (int i = 400; i <= 499; i++) {
+    lru_replacer.Remove(i);
+  }
+  for (int i = 250; i <= 499; i++) {
+    lru_replacer.Remove(i);
+  }
+  lru_replacer.Remove(0);
+}
+TEST(LRUKReplacerTest, DISABLE_EvictTest3) {
+  LRUKReplacer lru_replacer(1000, 3);
+  int value;
+  // add 0-82
+  for (int i = 0; i <= 250; i++) {
+    lru_replacer.RecordAccess(i);
+    lru_replacer.SetEvictable(i, true);
+  }
+  lru_replacer.RecordAccess(82);
+  for (int i = 374; i <= 499; i++) {
+    lru_replacer.SetEvictable(i, 0);
+  }
+  // remove 0-99
+  for (int i = 0; i <= 99; i++) {
+    lru_replacer.Remove(i);
+  }
+  for (int i = 100; i <= 249; i++) {
+    ASSERT_EQ(1, lru_replacer.Evict(&value));
+  }
+  ASSERT_EQ(1, lru_replacer.Evict(&value));
+}
 }  // namespace bustub
