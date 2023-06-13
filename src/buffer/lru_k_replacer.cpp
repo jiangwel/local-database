@@ -16,39 +16,19 @@
 
 namespace bustub {
 // LRUKReplacer
-LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : k_(k), replacer_size_(num_frames) {
-  LOG_INFO("LRUKReplacer: replacer_size_: %zu, k: %zu", num_frames, k);
-}
+LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : k_(k), replacer_size_(num_frames){}
 
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   std::scoped_lock<std::mutex> lock(latch_);
-  LOG_INFO("Evict");
   if (evictable_num_ == 0) {
-    LOG_INFO("  no evictable frame!");
     return false;
   }
-  // delete
-  //  if(access_less_k_.empty()){
-  //    // LOG_INFO("  access_k_frame_!");
-  //  } else {
-  //    // LOG_INFO("  access_less_k_!");
-  //  }
   for (auto it = access_less_k_.rbegin(); it != access_less_k_.rend(); it++) {
     if (frame_info_[*it].evictable_) {
       *frame_id = *it;
       frame_info_.erase(*it);
       access_less_k_.remove(*it);
       evictable_num_--;
-      // delete
-      //  for(auto it = frame_id_list.begin(); it != frame_id_list.end(); it++){
-      //    // LOG_INFO("    %d", *it);
-      //  }
-      //  // LOG_INFO("  frame_info_");
-      //  for(auto it = frame_info_.begin(); it != frame_info_.end(); it++){
-      //    // LOG_INFO("    id: %d,access time: %zu,evictable: %d ", it->first, it->second.access_time_,
-      //    it->second.evictable_);
-      //  }
-      LOG_INFO("  success frame_id: %d", *frame_id);
       return true;
     }
   }
@@ -66,13 +46,11 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
 
 void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
   std::scoped_lock<std::mutex> lock(latch_);
-  LOG_INFO("RecordAccess: frame_id: %d", frame_id);
   if (frame_id > static_cast<int>(replacer_size_)) {
     throw Exception("Can't insert frame any more!");
   }
   if (frame_info_.find(frame_id) == frame_info_.end()) {
     if (frame_info_.count(frame_id) == 0U) {
-      LOG_INFO("  Insert");
       frame_info_[frame_id] = {1, false};
       access_less_k_.push_front(frame_id);
       return;
@@ -80,11 +58,9 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
   }
   ++frame_info_[frame_id].access_time_;
   if (frame_info_[frame_id].access_time_ == k_) {
-    LOG_INFO("  Frame transition");
     access_k_frame_.push_front(frame_id);
     access_less_k_.remove(frame_id);
   } else if (frame_info_[frame_id].access_time_ > k_) {
-    LOG_INFO("  More k update");
     if (frame_info_.count(frame_id) != 0U) {
       access_k_frame_.remove(frame_id);
     }
@@ -94,7 +70,6 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
 
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   std::scoped_lock<std::mutex> lock(latch_);
-  LOG_INFO("SetEvictable: frame_id: %d, set_evictable: %d", frame_id, set_evictable);
   if (frame_id > static_cast<int>(replacer_size_)) {
     throw Exception("SetEvictable:frame_id is invalid!");
   }
@@ -109,7 +84,6 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
   std::scoped_lock<std::mutex> lock(latch_);
-  LOG_INFO("Remove: frame_id: %d", frame_id);
   if (frame_id > static_cast<int>(replacer_size_)) {
     throw Exception("Remove:frame_id is invalid!");
   }
