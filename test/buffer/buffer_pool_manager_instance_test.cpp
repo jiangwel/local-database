@@ -188,7 +188,7 @@ TEST(BufferPoolManagerInstanceTest, UnitTestNewPgImp) {
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, DISABLED_UnitTestUnpinPgImp) {
+TEST(BufferPoolManagerInstanceTest, UnitTestUnpinPgImp) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;

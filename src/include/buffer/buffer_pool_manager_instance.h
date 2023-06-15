@@ -142,11 +142,7 @@ class BufferPoolManagerInstance : public BufferPoolManager {
 
   void ResetPage(Page *page, frame_id_t frame_id);
 
-  auto GetPageFromFrameId(frame_id_t frame_id) -> Page *;
-
   auto GetReplacementPage(frame_id_t *frame_id, Page **page_ptr) -> bool;
-
-  auto GetPageFromePageId(page_id_t page_id) -> Page *;
 
   /** Number of pages in the buffer pool. */
   const size_t pool_size_;

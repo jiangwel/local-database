@@ -23,7 +23,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   if (evictable_num_ == 0) {
     return false;
   }
-  for (auto it = access_less_k_.rbegin(); it != access_less_k_.rend(); it++) {
+  for (auto it = access_less_k_.begin(); it != access_less_k_.end(); it++) {
     if (frame_info_[*it].evictable_) {
       *frame_id = *it;
       frame_info_.erase(*it);
@@ -32,7 +32,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
       return true;
     }
   }
-  for (auto it = access_k_frame_.rbegin(); it != access_k_frame_.rend(); it++) {
+  for (auto it = access_k_frame_.begin(); it != access_k_frame_.end(); it++) {
     if (frame_info_[*it].evictable_) {
       *frame_id = *it;
       frame_info_.erase(*it);
@@ -50,21 +50,17 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id) {
     throw Exception("Can't insert frame any more!");
   }
   if (frame_info_.find(frame_id) == frame_info_.end()) {
-    if (frame_info_.count(frame_id) == 0U) {
-      frame_info_[frame_id] = {1, false};
-      access_less_k_.push_front(frame_id);
-      return;
-    }
+    frame_info_[frame_id] = {1, false};
+    access_less_k_.push_back(frame_id);
+    return;
   }
   ++frame_info_[frame_id].access_time_;
   if (frame_info_[frame_id].access_time_ == k_) {
-    access_k_frame_.push_front(frame_id);
+    access_k_frame_.push_back(frame_id);
     access_less_k_.remove(frame_id);
   } else if (frame_info_[frame_id].access_time_ > k_) {
-    if (frame_info_.count(frame_id) != 0U) {
-      access_k_frame_.remove(frame_id);
-    }
-    access_k_frame_.push_front(frame_id);
+    access_k_frame_.remove(frame_id);
+    access_k_frame_.push_back(frame_id);
   }
 }
 
