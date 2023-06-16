@@ -124,7 +124,7 @@ void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
     } else {
       bucket->Insert(key, value);
     }  // end second if
-  }  // end first if
+  }    // end first if
 }  // end Insert
 
 template <typename K, typename V>

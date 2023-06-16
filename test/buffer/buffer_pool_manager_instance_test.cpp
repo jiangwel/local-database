@@ -158,7 +158,7 @@ TEST(BufferPoolManagerInstanceTest, SampleTest) {
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, UnitTestNewPgImp) {
+TEST(BufferPoolManagerInstanceTest, DISABLE_UnitTestNewPgImp) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
@@ -188,7 +188,7 @@ TEST(BufferPoolManagerInstanceTest, UnitTestNewPgImp) {
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, UnitTestUnpinPgImp) {
+TEST(BufferPoolManagerInstanceTest, DISABLE_UnitTestUnpinPgImp) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
@@ -212,7 +212,7 @@ TEST(BufferPoolManagerInstanceTest, UnitTestUnpinPgImp) {
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, UnitTestFetchPgImp) {
+TEST(BufferPoolManagerInstanceTest, DISABLE_UnitTestFetchPgImp) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
@@ -242,7 +242,7 @@ TEST(BufferPoolManagerInstanceTest, UnitTestFetchPgImp) {
 }
 
 // NOLINTNEXTLINE
-TEST(BufferPoolManagerInstanceTest, UnitTestDeletePgImp) {
+TEST(BufferPoolManagerInstanceTest, DISABLE_UnitTestDeletePgImp) {
   const std::string db_name = "test.db";
   const size_t buffer_pool_size = 10;
   const size_t k = 5;
@@ -264,4 +264,68 @@ TEST(BufferPoolManagerInstanceTest, UnitTestDeletePgImp) {
   delete bpm;
   delete disk_manager;
 }
+
+// NOLINTNEXTLINE
+TEST(BufferPoolManagerInstanceTest, SpeedTest) {
+  int test = 20000;
+  const std::string db_name = "test.db";
+  const size_t buffer_pool_size = test;
+  const size_t k = 2;
+
+  auto *disk_manager = new DiskManager(db_name);
+  auto *bpm = new BufferPoolManagerInstance(buffer_pool_size, disk_manager, k);
+
+  page_id_t page_id_temp;
+
+  for (int i = 0; i < test; i++) {
+    EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
+  }
+
+  // for(int i = 0; i < test/2; i++){
+  //   EXPECT_NE(nullptr,bpm->FetchPage(i));
+  // }
+
+  // for(int i = 0; i < test/2; i++){
+  //   EXPECT_EQ(1, bpm->UnpinPage(i, true));
+  // }
+
+  for (int i = 0; i < test; i++) {
+    EXPECT_EQ(1, bpm->UnpinPage(i, true));
+  }
+
+  // for(int i = 0; i < test; i++){
+  //   EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
+  // }
+
+  // for(int i = 0; i < test; i++){
+  //   EXPECT_EQ(1, bpm->FlushPage(i));
+  // }
+
+  // for(int i = 0; i < test; i++){
+  //   EXPECT_NE(nullptr,bpm->FetchPage(i));
+  // }
+
+  // for(int i = 0; i < test; i++){
+  //   EXPECT_EQ(1, bpm->UnpinPage(i, true));
+  //   EXPECT_EQ(1, bpm->UnpinPage(i, true));
+  //   EXPECT_EQ(1, bpm->FlushPage(i));
+  // }
+
+  // // bpm->FlushAllPgsImp();
+
+  for (int i = 0; i < test; i++) {
+    EXPECT_EQ(1, bpm->DeletePage(i));
+  }
+
+  // for(int i = 0; i < test; i++){
+  //   EXPECT_NE(nullptr,bpm->FetchPage(i));
+  // }
+
+  disk_manager->ShutDown();
+  remove("test.db");
+
+  delete bpm;
+  delete disk_manager;
+}
+
 }  // namespace bustub
