@@ -75,35 +75,39 @@ auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * {
   frame_id_t frame_id = INVALID_FRAME_ID;
   // Find page in buffer pool successfully
   if (page_table_->Find(page_id, frame_id)) {
-    LOG_INFO("FetchPgImp");
     *page_ptr_ptr = &pages_[frame_id];
     replacer_->SetEvictable(frame_id, false);
     replacer_->RecordAccess(frame_id);
-    (*page_ptr_ptr)->pin_count_++;
-    return *page_ptr_ptr;
-  }
+  } else if (!page_table_->Find(page_id, frame_id)) {
+    if (free_list_.empty()) {
+      if (!GetReplacementPage(&frame_id, page_ptr_ptr)) {
+        return nullptr;
+      }
+    } else if (!free_list_.empty()) {  // Get page from free list
+      frame_id = free_list_.front();
+      free_list_.pop_front();
+      temp_ptr = &pages_[frame_id];
+      // if(*page_ptr_ptr==nullptr){
+      //   LOG_DEBUG("[FetchPgImp()] No blank page in buffer pool");
+      // }
+    }  // end else
+    if (page_ptr_ptr != nullptr) {
+      ResetPage(*page_ptr_ptr, frame_id);
+      (*page_ptr_ptr)->page_id_ = page_id;
+    } else {
+      return nullptr;
+    }
+    page_table_->Insert(page_id, frame_id);
+    char *new_page_data = new char[BUSTUB_PAGE_SIZE];
+    disk_manager_->ReadPage(page_id, new_page_data);
+    memcpy((*page_ptr_ptr)->GetData(), new_page_data, BUSTUB_PAGE_SIZE);
+    delete[] new_page_data;
+  }  // end else
   // Find page in buffer pool failed
   // Get page by evicting other page
-  if (free_list_.empty() && !GetReplacementPage(&frame_id, page_ptr_ptr)) {
-    return nullptr;
-  }
-  if (!free_list_.empty()) {  // Get page from free list
-    LOG_INFO("hhh");
-    frame_id = free_list_.front();
-    free_list_.pop_front();
-    *page_ptr_ptr = &pages_[frame_id];
-    // if(*page_ptr_ptr==nullptr){
-    //   LOG_DEBUG("[FetchPgImp()] No blank page in buffer pool");
-    // }
-  }  // end if
+
   // Must steps when get page
-  ResetPage(*page_ptr_ptr, frame_id);
-  (*page_ptr_ptr)->page_id_ = page_id;
-  page_table_->Insert(page_id, frame_id);
-  char *new_page_data = new char[BUSTUB_PAGE_SIZE];
-  disk_manager_->ReadPage(page_id, new_page_data);
-  memcpy((*page_ptr_ptr)->GetData(), new_page_data, BUSTUB_PAGE_SIZE);
-  delete[] new_page_data;
+
   (*page_ptr_ptr)->pin_count_++;
   return *page_ptr_ptr;
 }  // end FetchPgImp
@@ -189,10 +193,12 @@ void BufferPoolManagerInstance::ResetPage(Page *page, frame_id_t frame_id) {
   // if(page==nullptr){
   //   LOG_DEBUG("[ResetPage()] page is nullptr");
   // }
-  page->pin_count_ = 0;
-  page->is_dirty_ = false;
-  replacer_->RecordAccess(frame_id);
-  replacer_->SetEvictable(frame_id, false);
+  if (page != nullptr) {
+    page->pin_count_ = 0;
+    page->is_dirty_ = false;
+    replacer_->RecordAccess(frame_id);
+    replacer_->SetEvictable(frame_id, false);
+  }
 }  // end ResetPage
 
 auto BufferPoolManagerInstance::GetReplacementPage(frame_id_t *frame_id_ptr, Page **page_ptr) -> bool {
