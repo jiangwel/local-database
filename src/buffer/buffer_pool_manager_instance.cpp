@@ -75,10 +75,9 @@ auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * {
   Page *temp_ptr = nullptr;
   Page **page_ptr_ptr = &temp_ptr;
   frame_id_t frame_id = INVALID_FRAME_ID;
-  page_table_->Find(page_id, frame_id);
 
   // Find page in buffer pool successfully
-  if (frame_id != INVALID_FRAME_ID) {
+  if (page_table_->Find(page_id, frame_id)) {
     *page_ptr_ptr = &pages_[frame_id];
     replacer_->SetEvictable(frame_id, false);
     replacer_->RecordAccess(frame_id);
@@ -94,7 +93,6 @@ auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * {
     frame_id = free_list_.front();
     free_list_.pop_front();
     *page_ptr_ptr = &pages_[frame_id];
-
   }  // end else
 
   ResetPage(*page_ptr_ptr, frame_id);
@@ -111,9 +109,8 @@ auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * {
 auto BufferPoolManagerInstance::UnpinPgImp(page_id_t page_id, bool is_dirty) -> bool {
   std::scoped_lock<std::mutex> lock(latch_);
   frame_id_t frame_id = INVALID_FRAME_ID;
-  page_table_->Find(page_id, frame_id);
 
-  if (frame_id == INVALID_FRAME_ID) {
+  if (!page_table_->Find(page_id, frame_id)) {
     return false;
   }  // end if
 
@@ -133,9 +130,6 @@ auto BufferPoolManagerInstance::UnpinPgImp(page_id_t page_id, bool is_dirty) -> 
 }  // end UnpinPgImp
 
 auto BufferPoolManagerInstance::FlushPgImp(page_id_t page_id) -> bool {
-  if (page_id == INVALID_PAGE_ID) {
-    return false;
-  }
   frame_id_t frame_id;
 
   if (page_table_->Find(page_id, frame_id)) {
@@ -162,9 +156,8 @@ void BufferPoolManagerInstance::FlushAllPgsImp() {
 auto BufferPoolManagerInstance::DeletePgImp(page_id_t page_id) -> bool {
   std::scoped_lock<std::mutex> lock(latch_);
   frame_id_t frame_id = INVALID_FRAME_ID;
-  page_table_->Find(page_id, frame_id);
 
-  if (frame_id == INVALID_FRAME_ID) {
+  if (!page_table_->Find(page_id, frame_id)) {
     return true;
   }
 
@@ -196,21 +189,20 @@ void BufferPoolManagerInstance::ResetPage(Page *page, frame_id_t frame_id) {
 }  // end ResetPage
 
 inline auto BufferPoolManagerInstance::GetReplacementPage(frame_id_t *frame_id_ptr, Page **page_ptr) -> bool {
-  if (replacer_->Evict(frame_id_ptr)) {
-    *page_ptr = &pages_[*frame_id_ptr];
+  if (!replacer_->Evict(frame_id_ptr)) {
+    return false;
+  }
+  *page_ptr = &pages_[*frame_id_ptr];
 
-    if ((*page_ptr)->IsDirty()) {
-      disk_manager_->WritePage((*page_ptr)->GetPageId(), (*page_ptr)->GetData());
-    }
+  if ((*page_ptr)->IsDirty()) {
+    disk_manager_->WritePage((*page_ptr)->GetPageId(), (*page_ptr)->GetData());
+  }
 
-    if (!page_table_->Remove((*page_ptr)->GetPageId())) {
-      LOG_DEBUG("[GetReplacementPage()] page_id %d not found in page_table_", (*page_ptr)->GetPageId());
-    }
+  if (!page_table_->Remove((*page_ptr)->GetPageId())) {
+    LOG_DEBUG("[GetReplacementPage()] page_id %d not found in page_table_", (*page_ptr)->GetPageId());
+  }
 
-    return true;
-  }  // end if
-
-  return false;
+  return true;
 }  // end GetReplacementPage
 
 }  // namespace bustub
