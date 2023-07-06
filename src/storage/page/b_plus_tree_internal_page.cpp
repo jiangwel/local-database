@@ -30,12 +30,9 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
   SetParentPageId(parent_id);
   SetPageType(IndexPageType::INTERNAL_PAGE);
   SetMaxSize(max_size);
-  SetSize(GetMinSize());
+  SetSize(0);
   SetLSN(INVALID_LSN);
   array_ = new MappingType[max_size];
-  for(int i=1;i<=GetMinSize();++i){
-    array_[i].second = INVALID_PAGE_ID;
-  }
 }
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a

@@ -89,6 +89,8 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
+  
+  std::list<int> root_leaf_path_;
 };
 
 }  // namespace bustub

@@ -36,9 +36,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, in
   SetLSN(INVALID_LSN);
   next_page_id_ = INVALID_PAGE_ID;
   array_ = new MappingType[max_size];
-  for(int i=1;i<=GetMinSize();++i){
-    array_[i].second = INVALID_PAGE_ID;
-  }
 }
 
 /**

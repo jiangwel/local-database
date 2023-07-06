@@ -47,7 +47,36 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool {
-  return false;
+  auto root_page = bpm->FetchPage(root_page_id_);
+  auto root = reinterpret_cast<BPlusTreePage *>(root_page->GetData());
+  if(root_page==nullptr){
+    LeafPage root;
+    root.Init(root_page_id_,INVALID_PAGE_ID,leaf_max_size_);
+    UpdateRootPageId(1);
+    Insert_In_Leaf(root,key,value);
+    
+    return true;
+  }
+  InternalPage* leaf1;
+  if(GetLeaf(key,leaf1)){
+    return false;
+  }
+  
+
+  if(leaf1->GetSize()!=leaf_max_size_){
+    Insert_In_Leaf(leaf1,key,value);
+    return true;
+  }
+
+  InternalPage* leaf2;
+  if(Splite_Tree(leaf1,leaf2,key)){
+    Insert_In_Leaf(leaf2,key,value);
+  } else {
+    Insert_In_Leaf(leaf1,key,value);
+  }
+  KeyType first_key = leaf2->KeyAt(1);
+  Insert_In_Parent(leaf1,leaf2);
+
 }
 
 /*****************************************************************************
