@@ -32,7 +32,6 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
   SetMaxSize(max_size);
   SetSize(0);
   SetLSN(INVALID_LSN);
-  array_ = new MappingType[max_size];
 }
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a
@@ -40,17 +39,12 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const -> KeyType {
-  if( index > 0 ){
-    return array_[index].first; 
-  }
-  return;
+
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) { 
-  if( index > 0 ){
-    array_[index].first = key;
-  }
+
 }
 
 /*
@@ -59,10 +53,12 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType { 
-  if( index > 0 ){
-    return array_[index].second; 
-  }
-  return;
+
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::GetData() const -> std::list<MappingType> {
+  return internal_data_;
 }
 
 // valuetype for internalNode should be page id_t

@@ -48,35 +48,136 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool {
   auto root_page = bpm->FetchPage(root_page_id_);
-  auto root = reinterpret_cast<BPlusTreePage *>(root_page->GetData());
+  // not exist root
   if(root_page==nullptr){
-    LeafPage root;
-    root.Init(root_page_id_,INVALID_PAGE_ID,leaf_max_size_);
-    UpdateRootPageId(1);
-    Insert_In_Leaf(root,key,value);
-    
+    auto root_page = bpm->NewPage(&root_page_id_);
+    UpdateRootPageId(0);
+    auto root = reinterpret_cast<LeafPage*>(root_page->GetData());
+    root->Init(root_page_id_,INVALID_PAGE_ID,leaf_max_size_);
+    InsertLeaf(root,key,value);
+
+    bpm->UnpinPage(root_page_id_,true);
     return true;
   }
-  InternalPage* leaf1;
+
+  // Get leaf1
+  LeafPage* leaf1;
   if(GetLeaf(key,leaf1)){
+    // Duplicate key, return false
+    bpm->UnpinPage(root_page_id_,false);
     return false;
   }
-  
 
+  // Leaf1 is not full, insert directly
   if(leaf1->GetSize()!=leaf_max_size_){
-    Insert_In_Leaf(leaf1,key,value);
+    InsertLeaf(leaf1,key,value);
+    bpm->UnpinPage(root_page_id_,false);
     return true;
   }
 
-  InternalPage* leaf2;
-  if(Splite_Tree(leaf1,leaf2,key)){
-    Insert_In_Leaf(leaf2,key,value);
-  } else {
-    Insert_In_Leaf(leaf1,key,value);
-  }
-  KeyType first_key = leaf2->KeyAt(1);
-  Insert_In_Parent(leaf1,leaf2);
+  // Leaf1 is full
+  // Create a new leaf
+  page_id_t leaf2_page_id;
+  auto leaf2_page = bpm->NewPage(&leaf2_page_id);
+  auto leaf2 = reinterpret_cast<LeafPage*>(leaf2_page->GetData());
+  leaf2->Init(leaf2_page_id_,leaf1->GetParentPageId(),leaf_max_size_);
 
+  // Splite leaf1 and insert key value
+  if(SpliteTree(leaf1,leaf2,key)){
+    InsertLeaf(leaf2,key,value);
+  } else {
+    InsertLeaf(leaf1,key,value);
+  }
+
+  KeyType first_key = leaf2->KeyAt(2);
+  InsertInParent(leaf1,first_key,leaf2);
+
+  bpm->UnpinPage(root_page_id_,false);
+  bpm->UnpinPage(leaf2_page_id,true);
+  return true;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+void BPLUSTREE_TYPE::InsertLeaf(LeafPage *leaf, const KeyType &key, const ValueType &value){
+  // key < first key in leaf
+  if(comparator_(key,leaf->KeyAt(0))==-1){
+    leaf->GetData()->push_front({key,value});
+    leaf->IncreaseSize(1);
+    return;
+  }
+  for(auto it = leaf->GetData()->begin();it!=leaf->GetData()->end();it++){
+    // key < it->first
+    if(comparator_(key,it->first)==-1){
+      leaf->GetData()->insert(it,{key,value});
+      leaf->IncreaseSize(1);
+      return;
+    }
+  }
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+bool BPLUSTREE_TYPE::GetLeaf(const KeyType &key,LeafPage *leaf){
+  root_leaf_path_.clear();
+
+  auto root_page = bpm->FetchPage(root_page_id_);
+  auto node = reinterpret_cast<BPlusTreePage*>(root_page->GetData());
+
+  while(!node->IsLeafPage()){
+    bool found = false;
+    auto node_as_internal = reinterpret_cast<InternalPage *>(node);
+    root_leaf_path_.push_back(node_as_internal);
+    page_id_t next_page_id;
+
+    // find key <= it->first
+    for(auto it = node_as_internal->GetData()->begin();it!=node_as_internal->GetData()->end();it++){
+      if(comparator_(key,it->first)!=1){
+        if(comparator_(key,it->first)==0){
+          next_page_id = it->second;
+        } else {
+          next_page_id = (--it)->second;
+        }
+        found = true;
+        break;
+      }
+    }
+    // not exist key <= it->first
+    if(!found){
+      next_page_id = node_as_internal->GetData()->back().second;
+    }
+    node = reinterpret_cast<BPlusTreePage*>(bpm->FetchPage(next_page_id)->GetData());
+  }
+
+  leaf = reinterpret_cast<LeafPage *>(node);
+  // check if key exists in leaf
+  for(auto it = leaf->GetData().begin();it!=leaf->GetData().end();it++){
+    if(comparator_(key,it->first)==0){
+      return true;
+    }
+  }
+
+  return false;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+bool BPLUSTREE_TYPE::SpliteTree(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key){
+  int half_index=0;
+  if(page1->IsLeafPage()){
+    page1 = reinterpret_cast<LeafPage*>(page1);
+    page2 = reinterpret_cast<LeafPage*>(page2);
+    page2->SetNextPageId(page1->GetNextPageId());
+    page1->SetNextPageId(page1->GetPageId());
+    half_index = leaf_max_size_/2;
+  } else {
+    page1 = reinterpret_cast<InternalPage*>(page1);
+    page2 = reinterpret_cast<InternalPage*>(page2);
+    half_index = internal_max_size_/2;
+  }
+
+  // k>page1[mid].key
+  if(comparator(key,page1->KeyAt(half_index))==1){
+    return true;
+  }
+  return false;
 }
 
 /*****************************************************************************

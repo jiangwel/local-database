@@ -38,7 +38,7 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest1) {
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
   (void)header_page;
-
+  // 插入1,2,3,4,5
   std::vector<int64_t> keys = {1, 2, 3, 4, 5};
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
@@ -46,7 +46,7 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest1) {
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
-
+  // 检查
   std::vector<RID> rids;
   for (auto key : keys) {
     rids.clear();
@@ -57,7 +57,7 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest1) {
     int64_t value = key & 0xFFFFFFFF;
     EXPECT_EQ(rids[0].GetSlotNum(), value);
   }
-
+  // 删除1,5 还剩下2,3,4
   std::vector<int64_t> remove_keys = {1, 5};
   for (auto key : remove_keys) {
     index_key.SetFromInteger(key);
@@ -71,7 +71,7 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest1) {
     rids.clear();
     index_key.SetFromInteger(key);
     is_present = tree.GetValue(index_key, &rids);
-
+    //如果不存在就找不到
     if (!is_present) {
       EXPECT_NE(std::find(remove_keys.begin(), remove_keys.end(), key), remove_keys.end());
     } else {

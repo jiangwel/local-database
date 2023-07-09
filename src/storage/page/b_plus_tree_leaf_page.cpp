@@ -35,7 +35,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, in
   SetSize(0);
   SetLSN(INVALID_LSN);
   next_page_id_ = INVALID_PAGE_ID;
-  array_ = new MappingType[max_size];
 }
 
 /**
@@ -57,6 +56,11 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
     return array_[index].first; 
   }
   return;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetData() const -> std::list<MappingType> {
+  return leaf_data_;
 }
 
 template class BPlusTreeLeafPage<GenericKey<4>, RID, GenericComparator<4>>;

@@ -40,17 +40,18 @@ TEST(BPlusTreeTests, DISABLED_InsertTest1) {
   ASSERT_EQ(page_id, HEADER_PAGE_ID);
   (void)header_page;
 
+  // 插入第一个kv pair
   int64_t key = 42;
   int64_t value = key & 0xFFFFFFFF;
   rid.Set(static_cast<int32_t>(key), value);
   index_key.SetFromInteger(key);
   tree.Insert(index_key, rid, transaction);
-
+  // 捕获root,检查root不是空的并且等于leaf
   auto root_page_id = tree.GetRootPageId();
   auto root_page = reinterpret_cast<BPlusTreePage *>(bpm->FetchPage(root_page_id)->GetData());
   ASSERT_NE(root_page, nullptr);
   ASSERT_TRUE(root_page->IsLeafPage());
-
+  // 又把root_page转换成leaf_page,检查leaf_page的size和key是否正确
   auto root_as_leaf = reinterpret_cast<BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>> *>(root_page);
   ASSERT_EQ(root_as_leaf->GetSize(), 1);
   ASSERT_EQ(comparator(root_as_leaf->KeyAt(0), index_key), 0);
@@ -82,7 +83,7 @@ TEST(BPlusTreeTests, DISABLED_InsertTest2) {
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
   (void)header_page;
-
+  // 插入5个kv pair
   std::vector<int64_t> keys = {1, 2, 3, 4, 5};
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
@@ -90,7 +91,7 @@ TEST(BPlusTreeTests, DISABLED_InsertTest2) {
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
-
+  // 捕获5个value,检查对不对
   std::vector<RID> rids;
   for (auto key : keys) {
     rids.clear();
@@ -146,7 +147,7 @@ TEST(BPlusTreeTests, DISABLED_InsertTest3) {
   auto header_page = bpm->NewPage(&page_id);
   ASSERT_EQ(page_id, HEADER_PAGE_ID);
   (void)header_page;
-
+  // 插入
   std::vector<int64_t> keys = {5, 4, 3, 2, 1};
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
@@ -154,7 +155,7 @@ TEST(BPlusTreeTests, DISABLED_InsertTest3) {
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
-
+  // 检查
   std::vector<RID> rids;
   for (auto key : keys) {
     rids.clear();
