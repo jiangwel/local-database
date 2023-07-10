@@ -82,7 +82,7 @@ class BPlusTree {
 
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
-  void InsertLeaf(LeafPage *leaf, const KeyType &key, const ValueType &value);
+  void InsertNode(BPlusTreePage *leaf, const KeyType &key, const ValueType &value);
   bool GetLeaf(const KeyType &key,LeafPage *leaf);
   bool SplitTree(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
   void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
@@ -94,7 +94,7 @@ class BPlusTree {
   int leaf_max_size_;
   int internal_max_size_;
   
-  std::list<InternalPage*> root_leaf_path_;
+  // std::list<InternalPage*> root_leaf_path_;
 };
 
 }  // namespace bustub

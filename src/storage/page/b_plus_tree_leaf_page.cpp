@@ -52,10 +52,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { next_pa
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
-  if( index > 0 ){
-    return array_[index].first; 
-  }
-  return;
+  return next(leaf_data_.begin(),index)->first;
 }
 
 INDEX_TEMPLATE_ARGUMENTS

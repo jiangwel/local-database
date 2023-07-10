@@ -32,6 +32,16 @@ auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return true; }
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) -> bool {
+  LeafPage* leaf;
+  if(GetLeaf(key,leaf)){
+    for(auto it = leaf->GetData().begin();it!=leaf->GetData().end();++it){
+      if(comparator_(it->first,key)==0){
+        result->push_back(it->second);
+        return true;
+      }
+    }
+    return false;
+  }
   return false;
 }
 
@@ -52,9 +62,9 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   if(root_page==nullptr){
     auto root_page = bpm->NewPage(&root_page_id_);
     UpdateRootPageId(0);
-    auto root = reinterpret_cast<LeafPage*>(root_page->GetData());
+    auto root = reinterpret_cast<BPlusTreePage*>(root_page->GetData());
     root->Init(root_page_id_);
-    InsertLeaf(root,key,value);
+    InsertNode(root,key,value);
 
     bpm->UnpinPage(root_page_id_,true);
     return true;
@@ -64,14 +74,17 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   LeafPage* leaf1;
   if(GetLeaf(key,leaf1)){
     // Duplicate key, return false
+    bpm->UnpinPage(leaf1->GetPageId(),false);
     bpm->UnpinPage(root_page_id_,false);
     return false;
   }
+  leaf1 = reinterpret_cast<BPlusTreePage*>(leaf1);
 
   // Leaf1 is not full, insert directly
   if(leaf1->GetSize()!=leaf_max_size_){
-    InsertLeaf(leaf1,key,value);
+    InsertNode(leaf1,key,value);
     bpm->UnpinPage(root_page_id_,false);
+    bpm->UnpinPage(leaf1->GetPageId(),true);
     return true;
   }
 
@@ -79,37 +92,43 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   // Create a new leaf
   page_id_t leaf2_page_id;
   auto leaf2_page = bpm->NewPage(&leaf2_page_id);
-  auto leaf2 = reinterpret_cast<LeafPage*>(leaf2_page->GetData());
+  auto leaf2 = reinterpret_cast<BPlusTreePage*>(leaf2_page->GetData());
   leaf2->Init(leaf2_page_id_,leaf1->GetParentPageId(),leaf_max_size_);
 
   // Splite leaf1 and insert key value
   if(SplitTree(leaf1,leaf2,key)){
-    InsertLeaf(leaf2,key,value);
+    InsertNode(leaf2,key,value);
   } else {
-    InsertLeaf(leaf1,key,value);
+    InsertNode(leaf1,key,value);
   }
 
   KeyType first_key = leaf2->KeyAt(1);
   InsertParent(leaf1,first_key,leaf2);
 
   bpm->UnpinPage(root_page_id_,false);
+  bpm->UnpinPage(leaf1->GetPageId(),true);
   bpm->UnpinPage(leaf2_page_id,true);
   return true;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-void BPLUSTREE_TYPE::InsertLeaf(LeafPage *leaf, const KeyType &key, const ValueType &value){
-  // key < first key in leaf
-  if(comparator_(key,leaf->KeyAt(0))==-1){
-    leaf->GetData()->push_front({key,value});
-    leaf->IncreaseSize(1);
+void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value){
+  if(node->IsLeafPage()){
+    node = reinterpret_cast<LeafPage*>(node);
+  } else {
+    node = reinterpret_cast<InternalPage*>(node);
+  }
+  // key < first key in node
+  if(comparator_(key,node->KeyAt(0))==-1){
+    node->GetData()->push_front({key,value});
+    node->IncreaseSize(1);
     return;
   }
-  for(auto it = leaf->GetData()->begin();it!=leaf->GetData()->end();it++){
+  for(auto it = node->GetData()->begin();it!=node->GetData()->end();it++){
     // key < it->first
     if(comparator_(key,it->first)==-1){
-      leaf->GetData()->insert(it,{key,value});
-      leaf->IncreaseSize(1);
+      node->GetData()->insert(it,{key,value});
+      node->IncreaseSize(1);
       return;
     }
   }
@@ -117,7 +136,7 @@ void BPLUSTREE_TYPE::InsertLeaf(LeafPage *leaf, const KeyType &key, const ValueT
 
 INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::GetLeaf(const KeyType &key,LeafPage *leaf){
-  root_leaf_path_.clear();
+  // root_leaf_path_.clear();
 
   auto root_page = bpm->FetchPage(root_page_id_);
   auto node = reinterpret_cast<BPlusTreePage*>(root_page->GetData());
@@ -125,7 +144,7 @@ bool BPLUSTREE_TYPE::GetLeaf(const KeyType &key,LeafPage *leaf){
   while(!node->IsLeafPage()){
     bool found = false;
     auto node_as_internal = reinterpret_cast<InternalPage *>(node);
-    root_leaf_path_.push_back(node_as_internal);
+    // root_leaf_path_.push_back(node_as_internal);
     page_id_t next_page_id;
 
     // find key <= it->first
@@ -152,12 +171,10 @@ bool BPLUSTREE_TYPE::GetLeaf(const KeyType &key,LeafPage *leaf){
   // check if key exists in leaf
   for(auto it = leaf->GetData().begin();it!=leaf->GetData().end();it++){
     if(comparator_(key,it->first)==0){
-      bpm->UnpinPage(leaf->GetPageId(),false);
       return true;
     }
   }
 
-  bpm->UnpinPage(leaf->GetPageId(),false);
   return false;
 }
 
@@ -200,10 +217,10 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
     // Insert page1,key,page2 into new root
     GenericKey<8> invalid_key;
     RID rid(page1->GetPageId(),page1->GetPageId() & 0xFFFFFFFF);
-    root->GetData()->push_back({invalid_key,rid});
+    new_root->GetData()->push_back({invalid_key,rid});
     rid.Set(page2->GetPageId(),page2->GetPageId() & 0xFFFFFFFF);
-    root->GetData()->push_back({key,rid});
-    root.IncreaseSize(2);
+    new_root->GetData()->push_back({key,rid});
+    new_root.IncreaseSize(2);
 
     page1->SetParentPageId(root_page_id);
     page2->SetParentPageId(root_page_id);
@@ -213,21 +230,34 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
     return;
   }
   
-  auto parent_page = reinterpret_cast<InternalPage*>(bpm->FetchPage(page1->GetParentPageId())->GetData());
+  auto parent_page = reinterpret_cast<BPlusTreePage*>(bpm->FetchPage(page1->GetParentPageId())->GetData());
   if(parent_page.GetSize()==internal_max_size_){
     // create a new page
     page_id_t parent_page_prime_id;
     auto parent_page_prime = bpm->NewPage(&parent_page_prime_id);
     auto parent_prime = reinterpret_cast<InternalPage*>(parent_page_prime->GetData());
-    parent_prime->Init(parent_page_prime_id);
+    parent_prime->Init(parent_page_prime_id,parent->GetParentPageId());
 
     // split parent_page
-    if(SplitTree(parent_page,parent_prime,key)){
-      Ins
+    RID rid;
+    if(SplitTree(parent,reinterpret_cast<BPlusTreePage*>(parent_prime),key)){
+      rid.Set(parent->GetPageId(),parent->GetPageId() & 0xFFFFFFFF);
+      InsertNode(parent_prime,key,rid);
     } else {
-      
+      rid.Set(parent_prime->GetPageId(),parent_prime->GetPageId() & 0xFFFFFFFF);
+      InsertNode(parent,key,rid);
     }
+
+    auto k_prime = parent.KeyAt(parent.GetSize()-1);
+    InsertParent(parent,parent_prime,k_prime);
+    bpm.UnpinPage(parent_page_prime_id,true);
+    return;
   }
+
+  RID rid(page2->GetPageId(),page2->GetPageId() & 0xFFFFFFFF);
+  InsertNode(parent_page,key,rid);
+  bpm.UnpinPage(parent_page_prime_id,);
+  return;
 }
 
 /*****************************************************************************
