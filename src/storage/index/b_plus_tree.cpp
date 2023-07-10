@@ -53,7 +53,7 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
     auto root_page = bpm->NewPage(&root_page_id_);
     UpdateRootPageId(0);
     auto root = reinterpret_cast<LeafPage*>(root_page->GetData());
-    root->Init(root_page_id_,INVALID_PAGE_ID,leaf_max_size_);
+    root->Init(root_page_id_);
     InsertLeaf(root,key,value);
 
     bpm->UnpinPage(root_page_id_,true);
@@ -83,14 +83,14 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   leaf2->Init(leaf2_page_id_,leaf1->GetParentPageId(),leaf_max_size_);
 
   // Splite leaf1 and insert key value
-  if(SpliteTree(leaf1,leaf2,key)){
+  if(SplitTree(leaf1,leaf2,key)){
     InsertLeaf(leaf2,key,value);
   } else {
     InsertLeaf(leaf1,key,value);
   }
 
-  KeyType first_key = leaf2->KeyAt(2);
-  InsertInParent(leaf1,first_key,leaf2);
+  KeyType first_key = leaf2->KeyAt(1);
+  InsertParent(leaf1,first_key,leaf2);
 
   bpm->UnpinPage(root_page_id_,false);
   bpm->UnpinPage(leaf2_page_id,true);
@@ -132,9 +132,9 @@ bool BPLUSTREE_TYPE::GetLeaf(const KeyType &key,LeafPage *leaf){
     for(auto it = node_as_internal->GetData()->begin();it!=node_as_internal->GetData()->end();it++){
       if(comparator_(key,it->first)!=1){
         if(comparator_(key,it->first)==0){
-          next_page_id = it->second;
+          next_page_id = it->second.GetPageId();
         } else {
-          next_page_id = (--it)->second;
+          next_page_id = (--it)->second.GetPageId();
         }
         found = true;
         break;
@@ -142,8 +142,9 @@ bool BPLUSTREE_TYPE::GetLeaf(const KeyType &key,LeafPage *leaf){
     }
     // not exist key <= it->first
     if(!found){
-      next_page_id = node_as_internal->GetData()->back().second;
+      next_page_id = node_as_internal->GetData()->back().second.GetPageId();
     }
+    bpm->UnpinPage(node_as_internal->GetPageId(),false);
     node = reinterpret_cast<BPlusTreePage*>(bpm->FetchPage(next_page_id)->GetData());
   }
 
@@ -151,33 +152,82 @@ bool BPLUSTREE_TYPE::GetLeaf(const KeyType &key,LeafPage *leaf){
   // check if key exists in leaf
   for(auto it = leaf->GetData().begin();it!=leaf->GetData().end();it++){
     if(comparator_(key,it->first)==0){
+      bpm->UnpinPage(leaf->GetPageId(),false);
       return true;
     }
   }
 
+  bpm->UnpinPage(leaf->GetPageId(),false);
   return false;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-bool BPLUSTREE_TYPE::SpliteTree(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key){
+bool BPLUSTREE_TYPE::SplitTree(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key){
   int half_index=0;
   if(page1->IsLeafPage()){
     page1 = reinterpret_cast<LeafPage*>(page1);
     page2 = reinterpret_cast<LeafPage*>(page2);
     page2->SetNextPageId(page1->GetNextPageId());
     page1->SetNextPageId(page1->GetPageId());
-    half_index = leaf_max_size_/2;
+    // Rounded up
+    half_index = (leaf_max_size_+1)/2;
   } else {
     page1 = reinterpret_cast<InternalPage*>(page1);
     page2 = reinterpret_cast<InternalPage*>(page2);
-    half_index = internal_max_size_/2;
+    half_index = (internal_max_size_+1)/2;
   }
 
-  // k>page1[mid].key
+  // k>page1[mid].key 
   if(comparator(key,page1->KeyAt(half_index))==1){
+    // page1[0,mid-1]=>page2
+    page2->GetData().splice(page2->GetData().begin(),page1->GetData(),page1->GetData().begin(),next(page1->GetData().begin(),half_index-1));
     return true;
   }
+  // page1[0,mid]=>page2
+  page2->GetData().splice(page2->GetData().begin(),page1->GetData(),page1->GetData().begin(),next(page1->GetData().begin(),half_index));
   return false;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key){
+  if(page1->IsRootPage()){
+    // Create a new root
+    page_id_t root_page_id;
+    auto new_root_page = bpm->NewPage(&root_page_id);
+    auto new_root = reinterpret_cast<InternalPage*>(root_page->GetData());
+    new_root->Init(root_page_id);
+
+    // Insert page1,key,page2 into new root
+    GenericKey<8> invalid_key;
+    RID rid(page1->GetPageId(),page1->GetPageId() & 0xFFFFFFFF);
+    root->GetData()->push_back({invalid_key,rid});
+    rid.Set(page2->GetPageId(),page2->GetPageId() & 0xFFFFFFFF);
+    root->GetData()->push_back({key,rid});
+    root.IncreaseSize(2);
+
+    page1->SetParentPageId(root_page_id);
+    page2->SetParentPageId(root_page_id);
+    root_page_id_ = root_page_id;
+    UpdateRootPageId(1);
+    bpm->UnpinPage(root_page_id,true);
+    return;
+  }
+  
+  auto parent_page = reinterpret_cast<InternalPage*>(bpm->FetchPage(page1->GetParentPageId())->GetData());
+  if(parent_page.GetSize()==internal_max_size_){
+    // create a new page
+    page_id_t parent_page_prime_id;
+    auto parent_page_prime = bpm->NewPage(&parent_page_prime_id);
+    auto parent_prime = reinterpret_cast<InternalPage*>(parent_page_prime->GetData());
+    parent_prime->Init(parent_page_prime_id);
+
+    // split parent_page
+    if(SplitTree(parent_page,parent_prime,key)){
+      Ins
+    } else {
+      
+    }
+  }
 }
 
 /*****************************************************************************

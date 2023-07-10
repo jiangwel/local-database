@@ -57,7 +57,7 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::GetData() const -> std::list<MappingType> {
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::GetData() const -> std::list<MappingType>& {
   return internal_data_;
 }
 

@@ -59,7 +59,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetData() const -> std::list<MappingType> {
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetData() const -> std::list<MappingType>& {
   return leaf_data_;
 }
 

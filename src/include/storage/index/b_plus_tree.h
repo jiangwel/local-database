@@ -84,7 +84,8 @@ class BPlusTree {
 
   void InsertLeaf(LeafPage *leaf, const KeyType &key, const ValueType &value);
   bool GetLeaf(const KeyType &key,LeafPage *leaf);
-  bool SpliteTree(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
+  bool SplitTree(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
+  void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;

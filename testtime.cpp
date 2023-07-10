@@ -2,9 +2,11 @@
 using namespace std;
 
 int main(){
-    int a[1];
-    int a[10];
-    a[2] = 3;
-    cout<<a[2]<<endl;
-    return 0;
+    list<int> a{1,2,3,4,5};
+    list<int> b;
+    int mid = 3;
+    b.splice(b.begin(), a, a.begin(), next(a.begin(), mid));
+    for(auto i : a){
+        cout << i << " ";
+    }
 }
