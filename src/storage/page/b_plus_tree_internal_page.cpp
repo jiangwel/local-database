@@ -56,10 +56,21 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType {
   return array_[index].second;
 }
 
-// INDEX_TEMPLATE_ARGUMENTS
-// auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::GetData() -> std::list<MappingType>& {
-//   return internal_data_;
-// }
+INDEX_TEMPLATE_ARGUMENTS
+bool B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index,const MappingType &pair){
+  if(index<0 || index>=this->GetSize()){
+    return false;
+  }
+  if(index==this->GetSize()){
+    array_[index] = pair;
+    return true;
+  }
+  for(int i=this->GetSize();i>index;i--){
+    array_[i] = array_[i-1];
+  }
+  array_[index] = pair;
+  return true;
+}
 
 // valuetype for internalNode should be page id_t
 template class BPlusTreeInternalPage<GenericKey<4>, page_id_t, GenericComparator<4>>;

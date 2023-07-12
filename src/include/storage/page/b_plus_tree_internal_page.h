@@ -42,13 +42,9 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   void SetKeyAt(int index, const KeyType &key);
   auto ValueAt(int index) const -> ValueType;
 
-  // auto GetData() -> MappingType*{
-  //   return array_;
-  // }
-
+  bool SetPairAt(int index,const MappingType &pair);
  private:
   // Flexible array member for page data.
   MappingType array_[1];
-  // std::list<MappingType> internal_data_;
 };
 }  // namespace bustub

@@ -57,9 +57,9 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool {
-  auto root_page = buffer_pool_manager_->FetchPage(root_page_id_);
   // not exist root
-  if(root_page==nullptr){
+  if(root_page_id_==INVALID_PAGE_ID){
+    LOG_INFO("Insert: root page is null");
     auto root_page = buffer_pool_manager_->NewPage(&root_page_id_);
     UpdateRootPageId(0);
     auto root = reinterpret_cast<LeafPage*>(root_page->GetData());
@@ -117,6 +117,13 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
   int value_int=value.GetSlotNum();
   if(node->IsLeafPage()){
     auto leaf = reinterpret_cast<LeafPage*>(node);
+    // leaf is empty
+    if(leaf->GetSize()==0){
+      // leaf->GetData().push_back(MappingType(key,value_int));
+      leaf->pb()[0] = MappingType(key,value_int);
+      leaf->IncreaseSize(1);
+      return;
+    }
     // key < first key in leaf
     if(comparator_(key,leaf->KeyAt(0))==-1){
       leaf->GetData().push_front(MappingType(key,value_int));
