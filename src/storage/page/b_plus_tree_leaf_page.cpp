@@ -52,13 +52,13 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { next_pa
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
-  return std::next(leaf_data_.begin(),index)->first;
+  return array_[index].first;
 }
 
-INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetData() -> std::list<MappingType>& {
-  return leaf_data_;
-}
+// INDEX_TEMPLATE_ARGUMENTS
+// auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetData() -> std::list<MappingType>& {
+//   return leaf_data_;
+// }
 
 template class BPlusTreeLeafPage<GenericKey<4>, RID, GenericComparator<4>>;
 template class BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>>;
