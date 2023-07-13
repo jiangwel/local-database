@@ -79,11 +79,11 @@ class BPlusTree {
 
   /* Debug Routines for FREE!! */
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
-
+  
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
   void InsertNode(BPlusTreePage *leaf, const KeyType &key, const ValueType &value);
-  bool GetLeaf(const KeyType &key,LeafPage *leaf);
+  auto GetLeaf(const KeyType &key,bool* is_repeat)->LeafPage*;
   bool SplitTree(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
   void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
   // member variable

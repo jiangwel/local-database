@@ -46,15 +46,18 @@ TEST(BPlusTreeTests, InsertTest1) {
   rid.Set(static_cast<int32_t>(key), value);
   index_key.SetFromInteger(key);
   tree.Insert(index_key, rid, transaction);
-  // 捕获root,检查root不是空的并且等于leaf
+  // 捕获root
   auto root_page_id = tree.GetRootPageId();
+  std::cout<<"root page id is: "<<root_page_id<<std::endl;
   auto root_page = reinterpret_cast<BPlusTreePage *>(bpm->FetchPage(root_page_id)->GetData());
-  ASSERT_NE(root_page, nullptr);
-  ASSERT_TRUE(root_page->IsLeafPage());
   // 又把root_page转换成leaf_page,检查leaf_page的size和key是否正确
   auto root_as_leaf = reinterpret_cast<BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>> *>(root_page);
   ASSERT_EQ(root_as_leaf->GetSize(), 1);
   ASSERT_EQ(comparator(root_as_leaf->KeyAt(0), index_key), 0);
+  // 检查root不是空的并且等于leaf
+  ASSERT_NE(root_page, nullptr);
+  ASSERT_TRUE(root_page->IsLeafPage());
+
 
   bpm->UnpinPage(root_page_id, false);
   bpm->UnpinPage(HEADER_PAGE_ID, true);
@@ -65,7 +68,7 @@ TEST(BPlusTreeTests, InsertTest1) {
   remove("test.log");
 }
 
-TEST(BPlusTreeTests, DISABLED_InsertTest2) {
+TEST(BPlusTreeTests, InsertTest2) {
   // create KeyComparator and index schema
   auto key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema.get());
@@ -86,6 +89,7 @@ TEST(BPlusTreeTests, DISABLED_InsertTest2) {
   // 插入5个kv pair
   std::vector<int64_t> keys = {1, 2, 3, 4, 5};
   for (auto key : keys) {
+    std::cout<<"insert key: "<<key<<std::endl;
     int64_t value = key & 0xFFFFFFFF;
     rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);

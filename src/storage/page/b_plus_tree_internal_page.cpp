@@ -58,7 +58,7 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType {
 
 INDEX_TEMPLATE_ARGUMENTS
 bool B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index,const MappingType &pair){
-  if(index<0 || index>=this->GetSize()){
+  if(index<0 || index>this->GetSize()){
     return false;
   }
   if(index==this->GetSize()){

@@ -55,10 +55,26 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
   return array_[index].first;
 }
 
-// INDEX_TEMPLATE_ARGUMENTS
-// auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetData() -> std::list<MappingType>& {
-//   return leaf_data_;
-// }
+INDEX_TEMPLATE_ARGUMENTS
+bool B_PLUS_TREE_LEAF_PAGE_TYPE::SetPairAt(int index,const MappingType &pair){
+  if(index<0 || index>this->GetSize()){
+    return false;
+  }
+  if(index==this->GetSize()){
+    array_[index] = pair;
+    return true;
+  }
+  for(int i=this->GetSize();i>index;i--){
+    array_[i] = array_[i-1];
+  }
+  array_[index] = pair;
+  return true;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType { 
+  return array_[index].second;
+}
 
 template class BPlusTreeLeafPage<GenericKey<4>, RID, GenericComparator<4>>;
 template class BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>>;
