@@ -13,6 +13,7 @@
 #include <sstream>
 
 #include "common/exception.h"
+#include "common/logger.h"
 #include "storage/page/b_plus_tree_internal_page.h"
 
 namespace bustub {
@@ -39,12 +40,19 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const -> KeyType {
-    return array_[index].first;
+  if(index<0 || index>this->GetSize()-1){
+    LOG_DEBUG("KeyAt: index %d out of range %d",index,this->GetSize()-1);
+  }
+  // key where index 0 is invild
+  return array_[index+1].first;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) { 
-  array_[index].first = key;
+  if(index<0||index>this->GetSize()){
+    LOG_DEBUG("SetKeyAt: index %d out of range %d",index,this->GetSize());
+  }
+  array_[index+1].first = key;
 }
 
 /*
@@ -53,6 +61,9 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType { 
+  if(index<0 || index>this->GetSize()-1){
+    LOG_DEBUG("ValueAt: index %d out of range %d",index,this->GetSize()-1);
+  }
   return array_[index].second;
 }
 

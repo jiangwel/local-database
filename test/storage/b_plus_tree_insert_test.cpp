@@ -89,12 +89,13 @@ TEST(BPlusTreeTests, InsertTest2) {
   // 插入5个kv pair
   std::vector<int64_t> keys = {1, 2, 3, 4, 5};
   for (auto key : keys) {
-    std::cout<<"insert key: "<<key<<std::endl;
+    std::cout<<std::endl<<"insert key: "<<key<<std::endl;
     int64_t value = key & 0xFFFFFFFF;
     rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
+  std::cout<<std::endl<<"insert end"<<std::endl;
   // 捕获5个value,检查对不对
   std::vector<RID> rids;
   for (auto key : keys) {
@@ -106,7 +107,7 @@ TEST(BPlusTreeTests, InsertTest2) {
     int64_t value = key & 0xFFFFFFFF;
     EXPECT_EQ(rids[0].GetSlotNum(), value);
   }
-
+  std::cout<<std::endl<<"cheak 1 end"<<std::endl;
   int64_t size = 0;
   bool is_present;
 
@@ -121,6 +122,7 @@ TEST(BPlusTreeTests, InsertTest2) {
     EXPECT_EQ(rids[0].GetSlotNum(), key);
     size = size + 1;
   }
+  std::cout<<std::endl<<"cheak 2 end"<<std::endl;
 
   EXPECT_EQ(size, keys.size());
 

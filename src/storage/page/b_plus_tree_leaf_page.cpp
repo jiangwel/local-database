@@ -13,6 +13,7 @@
 
 #include "common/exception.h"
 #include "common/rid.h"
+#include "common/logger.h"
 #include "storage/page/b_plus_tree_leaf_page.h"
 
 namespace bustub {
@@ -44,7 +45,12 @@ INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetNextPageId() const -> page_id_t { return next_page_id_; }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { next_page_id_ = next_page_id; }
+void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { 
+  // if(next_page_id<0){
+  //   LOG_DEBUG("SetNextPageId: next_page_id %d out of range",next_page_id);
+  // }
+  next_page_id_ = next_page_id; 
+}
 
 /*
  * Helper method to find and return the key associated with input "index"(a.k.a
@@ -52,6 +58,9 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { next_pa
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
+  if(index<0 || index>this->GetSize()-1){
+    LOG_DEBUG("KeyAt: index %d out of range %d",index,this->GetSize()-1);
+  }
   return array_[index].first;
 }
 
@@ -73,6 +82,9 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::SetPairAt(int index,const MappingType &pair){
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType { 
+  if(index<0 || index>this->GetSize()-1){
+    LOG_DEBUG("KeyAt: index %d out of range %d",index,this->GetSize()-1);
+  }
   return array_[index].second;
 }
 
