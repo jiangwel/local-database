@@ -110,7 +110,7 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest2) {
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
   (void)header_page;
-
+  // 插入
   std::vector<int64_t> keys = {1, 2, 3, 4, 5};
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
@@ -118,7 +118,7 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest2) {
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
-
+  // 检查插入值
   std::vector<RID> rids;
   for (auto key : keys) {
     rids.clear();
@@ -129,7 +129,7 @@ TEST(BPlusTreeTests, DISABLED_DeleteTest2) {
     int64_t value = key & 0xFFFFFFFF;
     EXPECT_EQ(rids[0].GetSlotNum(), value);
   }
-
+  // 删除1,5,3,4 还剩下2
   std::vector<int64_t> remove_keys = {1, 5, 3, 4};
   for (auto key : remove_keys) {
     index_key.SetFromInteger(key);

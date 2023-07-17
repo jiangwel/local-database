@@ -88,6 +88,20 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType {
   return array_[index].second;
 }
 
+INDEX_TEMPLATE_ARGUMENTS
+bool B_PLUS_TREE_LEAF_PAGE_TYPE::DeletePair(const KeyType &key){
+  for(int i=0;i<this->GetSize();i++){
+    if(array_[i].first==key){
+      for(int j=i;j<this->GetSize()-1;j++){
+        array_[j] = array_[j+1];
+      }
+      this->IncreaseSize(-1);
+      return true;
+    }
+  }
+  return false;
+}
+
 template class BPlusTreeLeafPage<GenericKey<4>, RID, GenericComparator<4>>;
 template class BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>>;
 template class BPlusTreeLeafPage<GenericKey<16>, RID, GenericComparator<16>>;

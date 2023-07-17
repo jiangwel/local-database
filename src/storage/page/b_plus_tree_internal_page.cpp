@@ -83,6 +83,21 @@ bool B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index,const MappingType &pair
   return true;
 }
 
+INDEX_TEMPLATE_ARGUMENTS
+bool B_PLUS_TREE_INTERNAL_PAGE_TYPE::DeletePair(const KeyType &key){
+  //array_[0] is invalid key , pointer
+  for(int i=1;i<this->GetSize();i++){
+    if(array_[i].first==key){
+      for(int j=i;j<this->GetSize()-1;j++){
+        array_[j] = array_[j+1];
+      }
+      this->IncreaseSize(-1);
+      return true;
+    }
+  }
+  return false;
+}
+
 // valuetype for internalNode should be page id_t
 template class BPlusTreeInternalPage<GenericKey<4>, page_id_t, GenericComparator<4>>;
 template class BPlusTreeInternalPage<GenericKey<8>, page_id_t, GenericComparator<8>>;
