@@ -12,8 +12,8 @@
 #include <sstream>
 
 #include "common/exception.h"
-#include "common/rid.h"
 #include "common/logger.h"
+#include "common/rid.h"
 #include "storage/page/b_plus_tree_leaf_page.h"
 
 namespace bustub {
@@ -45,11 +45,11 @@ INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetNextPageId() const -> page_id_t { return next_page_id_; }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { 
+void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {
   // if(next_page_id<0){
   //   LOG_DEBUG("SetNextPageId: next_page_id %d out of range",next_page_id);
   // }
-  next_page_id_ = next_page_id; 
+  next_page_id_ = next_page_id;
 }
 
 /*
@@ -58,42 +58,42 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
-  if(index<0 || index>this->GetSize()-1){
-    LOG_DEBUG("KeyAt: index %d out of range %d",index,this->GetSize()-1);
+  if (index < 0 || index > this->GetSize() - 1) {
+    LOG_DEBUG("KeyAt: index %d out of range %d", index, this->GetSize() - 1);
   }
   return array_[index].first;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-bool B_PLUS_TREE_LEAF_PAGE_TYPE::SetPairAt(int index,const MappingType &pair){
-  if(index<0 || index>this->GetSize()){
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::SetPairAt(int index, const MappingType &pair) -> bool {
+  if (index < 0 || index > this->GetSize()) {
     return false;
   }
-  if(index==this->GetSize()){
+  if (index == this->GetSize()) {
     array_[index] = pair;
     return true;
   }
-  for(int i=this->GetSize();i>index;i--){
-    array_[i] = array_[i-1];
+  for (int i = this->GetSize(); i > index; i--) {
+    array_[i] = array_[i - 1];
   }
   array_[index] = pair;
   return true;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType { 
-  if(index<0 || index>this->GetSize()-1){
-    LOG_DEBUG("KeyAt: index %d out of range %d",index,this->GetSize()-1);
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType {
+  if (index < 0 || index > this->GetSize() - 1) {
+    LOG_DEBUG("KeyAt: index %d out of range %d", index, this->GetSize() - 1);
   }
   return array_[index].second;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-bool B_PLUS_TREE_LEAF_PAGE_TYPE::DeletePair(const KeyType &key){
-  for(int i=0;i<this->GetSize();i++){
-    if(array_[i].first==key){
-      for(int j=i;j<this->GetSize()-1;j++){
-        array_[j] = array_[j+1];
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::DeletePair(const KeyType &key, KeyComparator &comparator) -> bool{
+  for (int i = 0; i < this->GetSize(); i++) {
+    if (comparator(array_[i].first, key) == 0) {
+      for (int j = i; j < this->GetSize() - 1; j++) {
+        array_[j] = array_[j + 1];
       }
       this->IncreaseSize(-1);
       return true;

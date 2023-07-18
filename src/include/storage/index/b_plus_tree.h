@@ -79,14 +79,14 @@ class BPlusTree {
 
   /* Debug Routines for FREE!! */
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
-  
+
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
-  void InsertNode(BPlusTreePage *leaf, const KeyType &key, const ValueType &value);
-  auto GetLeaf(const KeyType &key,bool* is_repeat)->LeafPage*;
-  bool SplitTree(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
+  void InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value);
+  auto GetLeaf(const KeyType &key, bool *is_repeat) -> LeafPage *;
+  auto SplitTree(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key) -> bool;
   void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
-  void Remove_Entry(BPlusTreePage *node1, const KeyType &key);
+  void RemoveEntry(BPlusTreePage *node1, const KeyType &key);
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;
@@ -94,7 +94,7 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
-  
+
   // std::list<InternalPage*> root_leaf_path_;
 };
 

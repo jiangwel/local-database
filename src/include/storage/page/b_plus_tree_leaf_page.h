@@ -51,8 +51,8 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto KeyAt(int index) const -> KeyType;
 
   auto ValueAt(int index) const -> ValueType;
-  bool SetPairAt(int index,const MappingType &pair);
-  bool DeletePair(const KeyType &key);
+  auto SetPairAt(int index, const MappingType &pair) -> bool;
+  auto DeletePair(const KeyType &key, KeyComparator &comparator) -> bool;
 
   // auto GetData() -> std::list<MappingType>&;
  private:
