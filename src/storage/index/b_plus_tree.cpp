@@ -14,7 +14,7 @@ BPLUSTREE_TYPE::BPlusTree(std::string name, BufferPoolManager *buffer_pool_manag
       root_page_id_(INVALID_PAGE_ID),
       buffer_pool_manager_(buffer_pool_manager),
       comparator_(comparator),
-      leaf_max_size_(leaf_max_size),
+      leaf_max_size_(--leaf_max_size),
       internal_max_size_(internal_max_size) {
         LOG_INFO("BPlusTree: leaf_max_size_=%d, internal_max_size_=%d",leaf_max_size_,internal_max_size_);
       }
@@ -23,7 +23,7 @@ BPLUSTREE_TYPE::BPlusTree(std::string name, BufferPoolManager *buffer_pool_manag
  * Helper function to decide whether current b+tree is empty
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return true; }
+auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return root_page_id_==INVALID_PAGE_ID; }
 /*****************************************************************************
  * SEARCH
  *****************************************************************************/
@@ -34,7 +34,7 @@ auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return true; }
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) -> bool {
-  LOG_INFO("GetValue: key=%d",key.GetInteger());
+  // LOG_INFO("GetValue: key=%ld",key.ToString());
   bool temp = false;
   bool *is_repeat = &temp;
   LeafPage *leaf = GetLeaf(key, is_repeat);
@@ -47,6 +47,7 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
     }
     return false;
   }
+  LOG_INFO("is_repeat is false");
   return false;
 }
 
@@ -62,7 +63,7 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool {
-  LOG_INFO("Insert: key=%d, value=%d",key.GetInteger(),value.GetSlotNum());
+  // LOG_INFO("Insert: key=%ld, value=%d",key.ToString(),value.GetSlotNum());
   // not exist root
   if (root_page_id_ == INVALID_PAGE_ID) {
     auto root_page = buffer_pool_manager_->NewPage(&root_page_id_);
@@ -142,6 +143,7 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
     auto leaf = reinterpret_cast<LeafPage *>(node);
     // leaf is empty
     if (leaf->GetSize() == 0) {
+      LOG_INFO("Insert Leaf empty %ld", key.ToString());
       if (!leaf->SetPairAt(leaf->GetSize(), MappingType(key, value))) {
         LOG_DEBUG("InsertNode: set pair failed 1");
       }
@@ -150,6 +152,7 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
     }
     // key < first key in leaf
     if (comparator_(key, leaf->KeyAt(0)) == -1) {
+      LOG_INFO("Insert Leaf key < first key in leaf %ld", key.ToString());
       if (!leaf->SetPairAt(0, MappingType(key, value))) {
         LOG_DEBUG("InsertNode: set pair failed 2");
       }
@@ -160,6 +163,7 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
     for (int i = 0; i < leaf->GetSize(); i++) {
       // key < it->first
       if (comparator_(key, leaf->KeyAt(i)) == -1) {
+        LOG_INFO("Insert Leaf key < it->first %ld", key.ToString());
         if (!leaf->SetPairAt(i, MappingType(key, value))) {
           LOG_DEBUG("InsertNode: set pair failed 3");
         }
@@ -170,6 +174,7 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
 
     // key > last key in leaf
     if (!leaf->SetPairAt(leaf->GetSize(), MappingType(key, value))) {
+      LOG_INFO("Insert key > last key in leaf %ld ,leaf size is: %d", key.ToString(), leaf->GetSize());
       LOG_DEBUG("InsertNode: set pair failed 6");
     }
     leaf->IncreaseSize(1);
@@ -257,25 +262,29 @@ auto BPLUSTREE_TYPE::SplitTree(BPlusTreePage *page1, BPlusTreePage *page2, const
     leaf2->SetNextPageId(leaf1->GetNextPageId());
     leaf1->SetNextPageId(leaf2->GetPageId());
     // Rounded up
-    half_index = (leaf_max_size_ + 1) / 2;
+    if(leaf_max_size_==1){
+      half_index = 0;
+    } else {
+      half_index = (leaf_max_size_ + 1) / 2;
+    }
 
     // k>leaf1[mid].key
     if (comparator_(key, leaf1->KeyAt(half_index)) == 1) {
       // leaf1[mid+1,end]=>leaf2
       for (int i = half_index + 1; i < leaf1->GetSize(); ++i) {
         leaf2->SetPairAt(i, {leaf1->KeyAt(i), leaf1->ValueAt(i)});
+      leaf2->IncreaseSize(1);
       }
       int increase_size = leaf1->GetSize() - (half_index + 1);
-      leaf2->IncreaseSize(increase_size);
       leaf1->IncreaseSize(-increase_size);
       return true;
     }
     // leaf1[mid,end]=>leaf2
     for (int i = half_index; i < leaf1->GetSize(); ++i) {
       leaf2->SetPairAt(i, {leaf1->KeyAt(i), leaf1->ValueAt(i)});
+      leaf2->IncreaseSize(1);
     }
     int increase_size = leaf1->GetSize() - half_index;
-    leaf2->IncreaseSize(increase_size);
     leaf1->IncreaseSize(-increase_size);
     return false;
   }
@@ -286,21 +295,23 @@ auto BPLUSTREE_TYPE::SplitTree(BPlusTreePage *page1, BPlusTreePage *page2, const
 
   // k>internal1[mid].key
   if (comparator_(key, internal1->KeyAt(half_index)) == 1) {
-    // internal1[mid-1,end]=>internal2
-    for (int i = half_index - 1; i < internal1->GetSize(); ++i) {
+    // internal1[mid+1,end]=>internal2
+    for (int i = half_index+1; i < internal1->GetSize(); ++i) {
+      LOG_INFO("page %d move %ld limited is: %d",internal1->GetPageId(),internal1->KeyAt(i).ToString(),internal1->GetSize());
       internal2->SetPairAt(i, {internal1->KeyAt(i), internal1->ValueAt(i)});
+      internal2->IncreaseSize(1);
     }
+    // LOG_INFO("end");
     int increase_size = internal1->GetSize() - (half_index - 1);
-    internal2->IncreaseSize(increase_size);
     internal1->IncreaseSize(-increase_size);
     return true;
   }
   // internal1[mid,end]=>internal2
   for (int i = half_index; i < internal1->GetSize(); ++i) {
     internal2->SetPairAt(i, {internal1->KeyAt(i), internal1->ValueAt(i)});
+    internal2->IncreaseSize(1);
   }
   int increase_size = internal1->GetSize() - half_index;
-  internal2->IncreaseSize(increase_size);
   internal1->IncreaseSize(-increase_size);
   return false;
 }
@@ -383,7 +394,7 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
  */
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
-  LOG_INFO("Remove: key=%d",key.GetInteger());
+  LOG_INFO("Remove: key=%ld",key.ToString());
   if (root_page_id_ == INVALID_PAGE_ID) {
     return;
   }
