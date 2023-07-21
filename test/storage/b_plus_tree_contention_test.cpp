@@ -39,12 +39,14 @@ bool BPlusTreeLockBenchmarkCall(size_t num_threads, int leaf_node_size, bool wit
   const int keys_stride = 100000;
   std::mutex mtx;
 
+  // crate threads
   for (size_t i = 0; i < num_threads; i++) {
     auto func = [&tree, &mtx, i, keys_per_thread, with_global_mutex]() {
       GenericKey<8> index_key;
       RID rid;
       auto *transaction = new Transaction(static_cast<txn_id_t>(i + 1));
       const auto end_key = keys_stride * i + keys_per_thread;
+      // insert keys in each thread
       for (auto key = i * keys_stride; key < end_key; key++) {
         int64_t value = key & 0xFFFFFFFF;
         rid.Set(static_cast<int32_t>(key >> 32), value);
@@ -74,7 +76,7 @@ bool BPlusTreeLockBenchmarkCall(size_t num_threads, int leaf_node_size, bool wit
   return success;
 }
 
-TEST(BPlusTreeTest, DISABLED_BPlusTreeContentionBenchmark) {  // NOLINT
+TEST(BPlusTreeTest, BPlusTreeContentionBenchmark) {  // NOLINT
   std::vector<size_t> time_ms_with_mutex;
   std::vector<size_t> time_ms_wo_mutex;
   for (size_t iter = 0; iter < 20; iter++) {

@@ -42,8 +42,9 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   void SetKeyAt(int index, const KeyType &key);
   auto ValueAt(int index) const -> ValueType;
 
-  bool SetPairAt(int index,const MappingType &pair);
-  bool DeletePair(const KeyType &key);
+  auto SetPairAt(int index, const MappingType &pair) -> bool;
+  auto DeletePair(const KeyType &key, KeyComparator &comparator) -> bool;
+
  private:
   // Flexible array member for page data.
   MappingType array_[1];

@@ -40,19 +40,19 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const -> KeyType {
-  if(index<0 || index>this->GetSize()-1){
-    LOG_DEBUG("KeyAt: index %d out of range %d",index,this->GetSize()-1);
+  if (index < 0 || index > this->GetSize() - 1) {
+    LOG_DEBUG("KeyAt: index %d out of range %d", index, this->GetSize() - 1);
   }
   // key where index 0 is invild
-  return array_[index+1].first;
+  return array_[index + 1].first;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) { 
-  if(index<0||index>this->GetSize()){
-    LOG_DEBUG("SetKeyAt: index %d out of range %d",index,this->GetSize());
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
+  if (index < 0 || index > this->GetSize()) {
+    LOG_DEBUG("SetKeyAt: index %d out of range %d", index, this->GetSize());
   }
-  array_[index+1].first = key;
+  array_[index + 1].first = key;
 }
 
 /*
@@ -60,36 +60,36 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
  * offset)
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType { 
-  if(index<0 || index>this->GetSize()-1){
-    LOG_DEBUG("ValueAt: index %d out of range %d",index,this->GetSize()-1);
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType {
+  if (index < 0 || index > this->GetSize() - 1) {
+    LOG_DEBUG("ValueAt: index %d out of range %d", index, this->GetSize() - 1);
   }
   return array_[index].second;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-bool B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index,const MappingType &pair){
-  if(index<0 || index>this->GetSize()){
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index, const MappingType &pair) -> bool {
+  if (index < 0 || index > this->GetSize()) {
     return false;
   }
-  if(index==this->GetSize()){
+  if (index == this->GetSize()) {
     array_[index] = pair;
     return true;
   }
-  for(int i=this->GetSize();i>index;i--){
-    array_[i] = array_[i-1];
+  for (int i = this->GetSize(); i > index; i--) {
+    array_[i] = array_[i - 1];
   }
   array_[index] = pair;
   return true;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-bool B_PLUS_TREE_INTERNAL_PAGE_TYPE::DeletePair(const KeyType &key){
-  //array_[0] is invalid key , pointer
-  for(int i=1;i<this->GetSize();i++){
-    if(array_[i].first==key){
-      for(int j=i;j<this->GetSize()-1;j++){
-        array_[j] = array_[j+1];
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::DeletePair(const KeyType &key, KeyComparator &comparator) -> bool {
+  // array_[0] is invalid key , pointer
+  for (int i = 1; i < this->GetSize(); i++) {
+    if (comparator(array_[i].first, key) == 0) {
+      for (int j = i; j < this->GetSize() - 1; j++) {
+        array_[j] = array_[j + 1];
       }
       this->IncreaseSize(-1);
       return true;
