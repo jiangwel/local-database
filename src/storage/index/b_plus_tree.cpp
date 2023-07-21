@@ -15,7 +15,9 @@ BPLUSTREE_TYPE::BPlusTree(std::string name, BufferPoolManager *buffer_pool_manag
       buffer_pool_manager_(buffer_pool_manager),
       comparator_(comparator),
       leaf_max_size_(leaf_max_size),
-      internal_max_size_(internal_max_size) {}
+      internal_max_size_(internal_max_size) {
+        LOG_INFO("BPlusTree: leaf_max_size_=%d, internal_max_size_=%d",leaf_max_size_,internal_max_size_);
+      }
 
 /*
  * Helper function to decide whether current b+tree is empty
@@ -32,6 +34,7 @@ auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return true; }
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) -> bool {
+  LOG_INFO("GetValue: key=%d",key.GetInteger());
   bool temp = false;
   bool* is_repeat=&temp;
   LeafPage* leaf=GetLeaf(key,is_repeat);
@@ -59,6 +62,7 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool {
+  LOG_INFO("Insert: key=%d, value=%d",key.GetInteger(),value.GetSlotNum());
   // not exist root
   if(root_page_id_==INVALID_PAGE_ID){
     auto root_page = buffer_pool_manager_->NewPage(&root_page_id_);
@@ -381,6 +385,7 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
  */
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
+  LOG_INFO("Remove: key=%d",key.GetInteger());
   if(root_page_id_==INVALID_PAGE_ID){
     return;
   }
