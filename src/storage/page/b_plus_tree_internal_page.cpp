@@ -72,13 +72,10 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index, const MappingType &pai
   if (index < 0 || index > this->GetSize()) {
     return false;
   }
-  if (index == this->GetSize()) {
-    array_[index] = pair;
-    return true;
-  }
   for (int i = this->GetSize(); i > index; i--) {
     array_[i] = array_[i - 1];
   }
+  LOG_INFO("SetPairAt: key is %ld,value is %d", pair.first.ToString(), pair.second);
   array_[index] = pair;
   return true;
 }
