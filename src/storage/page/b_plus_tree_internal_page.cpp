@@ -44,7 +44,7 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const -> KeyType {
     LOG_DEBUG("KeyAt: index %d out of range %d", index, this->GetSize() - 1);
   }
   // key where index 0 is invild
-  return array_[index + 1].first;
+  return array_[index].first;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
@@ -52,7 +52,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
   if (index < 0 || index > this->GetSize()) {
     LOG_DEBUG("SetKeyAt: index %d out of range %d", index, this->GetSize());
   }
-  array_[index + 1].first = key;
+  array_[index].first = key;
 }
 
 /*
@@ -75,8 +75,8 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index, const MappingType &pai
   for (int i = this->GetSize(); i > index; i--) {
     array_[i] = array_[i - 1];
   }
-  LOG_INFO("SetPairAt: key is %ld,value is %d", pair.first.ToString(), pair.second);
   array_[index] = pair;
+  LOG_INFO("INternal SetPairAt: key is %ld,value is %d, page id: %d", array_[index].first.ToString(), array_[index].second, this->GetPageId());
   return true;
 }
 
