@@ -141,17 +141,9 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
   int value_int = value.GetSlotNum();
   if (node->IsLeafPage()) {
     auto leaf = reinterpret_cast<LeafPage *>(node);
-    // leaf is empty
-    if (leaf->GetSize() == 0) {
-      // LOG_INFO("Insert Leaf empty %ld in p%d", key.ToString(), leaf->GetPageId());
-      if (!leaf->SetPairAt(leaf->GetSize(), MappingType(key, value))) {
-        LOG_DEBUG("InsertNode: set pair failed 1");
-      }
-      leaf->IncreaseSize(1);
-      return;
-    }
-    // key < first key in leaf
-    if (comparator_(key, leaf->KeyAt(0)) == -1) {
+
+    // leaf is empty or key < first key in leaf
+    if (leaf->GetSize() == 0 || comparator_(key, leaf->KeyAt(0)) == -1) {
       // LOG_INFO("Insert Leaf key < first key in leaf %ld", key.ToString());
       if (!leaf->SetPairAt(0, MappingType(key, value))) {
         LOG_DEBUG("InsertNode: set pair failed 2");
@@ -164,14 +156,13 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
       // it->first > key
       if (comparator_(key, leaf->KeyAt(i)) == -1) {
         // LOG_INFO("Insert Leaf key < it->first %ld", key.ToString());
-        if (!leaf->SetPairAt(i, MappingType(key, value))) {
+        if (!leaf->SetPairAt(i+1, MappingType(key, value))) {
           LOG_DEBUG("InsertNode: set pair failed 3");
         }
         leaf->IncreaseSize(1);
         return;
       }
     }
-
     // key > last key in leaf
     if (!leaf->SetPairAt(leaf->GetSize(), MappingType(key, value))) {
       // LOG_INFO("Insert key > last key in leaf %ld ,leaf size is: %d", key.ToString(), leaf->GetSize());
@@ -194,7 +185,7 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
   for (int i = 1; i < internal->GetSize(); i++) {
     // key < it->first
     if (comparator_(key, internal->KeyAt(i)) == -1) {
-      if (!internal->SetPairAt(i, std::make_pair(key, value_int))) {
+      if (!internal->SetPairAt(i+1, std::make_pair(key, value_int))) {
         LOG_DEBUG("InsertNode: set pair failed 5");
       }
       internal->IncreaseSize(1);
