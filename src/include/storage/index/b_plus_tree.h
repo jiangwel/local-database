@@ -84,8 +84,8 @@ class BPlusTree {
 
   void InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value);
   auto GetLeaf(const KeyType &key, bool *is_repeat) -> LeafPage *;
-  auto SplitTree(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key) -> bool;
-  void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
+  void SplitTree(BPlusTreePage *page1, BPlusTreePage *page2);
+  void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key, const ValueType &value);
   void RemoveEntry(BPlusTreePage *node1, const KeyType &key);
   // member variable
   std::string index_name_;

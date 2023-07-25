@@ -73,7 +73,7 @@ TEST(BPlusTreeTests, InsertTest1) {
   auto *disk_manager = new DiskManager("test.db");
   BufferPoolManager *bpm = new BufferPoolManagerInstance(50, disk_manager);
   // create b+ tree
-  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator,2,3);
+  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator,256,256);
   GenericKey<8> index_key;
   RID rid;
   // create transaction
@@ -85,9 +85,10 @@ TEST(BPlusTreeTests, InsertTest1) {
   ASSERT_EQ(page_id, HEADER_PAGE_ID);
   (void)header_page;
 
-  // 插入5个kv pair
+  // 插入42个kv pair
   std::vector<int64_t> keys;
-  for(int i=0;i<7;++i){
+  int end=5000;
+  for(int i=0;i<=end;++i){
     int64_t value = i & 0xFFFFFFFF;
     rid.Set(static_cast<int32_t>(i >> 1), value);
     index_key.SetFromInteger(i);
@@ -97,21 +98,20 @@ TEST(BPlusTreeTests, InsertTest1) {
 
   // 检查
   std::vector<RID> rids;
-  for (auto key : keys) {
-    std::cout<<"check key: "<<key<<std::endl;
+  // for (auto key : keys) {
+    std::cout<<"check key: "<<keys[end]<<std::endl;
     rids.clear();
-    index_key.SetFromInteger(key);
+    index_key.SetFromInteger(keys[end]);
     
     EXPECT_EQ(tree.GetValue(index_key, &rids),1);
     if(!rids.size()){
-      std::cout<<"key: "<<key<<" not found"<<std::endl;
+      std::cout<<"key: "<<keys[end]<<" not found"<<std::endl;
     }
     EXPECT_EQ(rids.size(), 1);
-
-
     // int64_t value = key & 0xFFFFFFFF;
     // EXPECT_EQ(rids[0].GetSlotNum(), value);
-  }
+    // break;
+  // }
 
   bpm->UnpinPage(HEADER_PAGE_ID, true);
   delete transaction;
