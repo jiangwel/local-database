@@ -10,6 +10,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "storage/page/b_plus_tree_page.h"
+#include "common/logger.h"
 
 namespace bustub {
 
@@ -17,7 +18,15 @@ namespace bustub {
  * Helper methods to get/set page type
  * Page type enum class is defined in b_plus_tree_page.h
  */
-auto BPlusTreePage::IsLeafPage() const -> bool { return page_type_ == IndexPageType::LEAF_PAGE; }
+auto BPlusTreePage::IsLeafPage() const -> bool {
+    bool ans=false;
+    try{
+        ans = page_type_ == IndexPageType::LEAF_PAGE?1:0;
+    } catch(...){
+        LOG_DEBUG("id is: %d parent id is:%d size is: %d",page_id_,parent_page_id_,size_);
+    }
+    return ans; 
+}
 auto BPlusTreePage::IsRootPage() const -> bool { return parent_page_id_ == INVALID_PAGE_ID; }
 void BPlusTreePage::SetPageType(IndexPageType page_type) { page_type_ = page_type; }
 

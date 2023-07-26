@@ -113,11 +113,19 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   auto leaf2 = reinterpret_cast<LeafPage *>(leaf2_page->GetData());
   leaf2->Init(leaf2_page_id, leaf1->GetParentPageId(), leaf_max_size_);
   auto page2 = reinterpret_cast<BPlusTreePage *>(leaf2);
+  // splite
+  InsertNode(page1, key, value);
+  leaf2->SetNextPageId(leaf1->GetNextPageId());
+  leaf1->SetNextPageId(leaf2->GetPageId());
+  // move to leaf2
+  for(int i=leaf1->GetSize()/2;i<leaf1->GetSize();++i){
+    leaf2->SetPairAt(leaf2->GetSize(), {leaf1->KeyAt(i), leaf1->ValueAt(i)});
+    leaf2->IncreaseSize(1);
+  }
+  int increase_size = leaf1->GetSize() - leaf1->GetSize()/2 ;
+  leaf1->IncreaseSize(-increase_size);
+  // end splite
 
-  // Splite page1 and insert key value
-  SplitTree(page1, page2);
-  // LOG_INFO("while insert %ld to p%d",key.ToString(),page2->GetPageId());
-  InsertNode(page2, key, value);
   KeyType first_key = leaf2->KeyAt(0);
   RID rid;
   rid.Set(leaf2->GetPageId(), leaf2->GetPageId() & 0xFFFFFFFF);
@@ -152,11 +160,11 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
       return;
     }
 
-    for (int i = 0; i < leaf->GetSize(); i++) {
+    for (int i = 1; i < leaf->GetSize(); i++) {
       // it->first > key
       if (comparator_(key, leaf->KeyAt(i)) == -1) {
         // LOG_INFO("Insert Leaf key < it->first %ld", key.ToString());
-        if (!leaf->SetPairAt(i+1, MappingType(key, value))) {
+        if (!leaf->SetPairAt(i, MappingType(key, value))) {
           LOG_DEBUG("InsertNode: set pair failed 3");
         }
         leaf->IncreaseSize(1);
@@ -182,10 +190,10 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
     return;
   }
   // insert
-  for (int i = 1; i < internal->GetSize(); i++) {
+  for (int i = 2; i < internal->GetSize(); i++) {
     // key < it->first
     if (comparator_(key, internal->KeyAt(i)) == -1) {
-      if (!internal->SetPairAt(i+1, std::make_pair(key, value_int))) {
+      if (!internal->SetPairAt(i, std::make_pair(key, value_int))) {
         LOG_DEBUG("InsertNode: set pair failed 5");
       }
       internal->IncreaseSize(1);
@@ -227,10 +235,15 @@ auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, bool *is_repeat) -> LeafPage * 
     if (!found) {
       next_page_id = node_as_internal->ValueAt(node_as_internal->GetSize() - 1);
     }
+    
     if (!buffer_pool_manager_->UnpinPage(node_as_internal->GetPageId(), false)) {
       LOG_DEBUG("GetLeaf: unpin internal page failed");
     }
-    node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(next_page_id)->GetData());
+    auto node_page = buffer_pool_manager_->FetchPage(next_page_id);
+    if(node_page==nullptr){
+      LOG_DEBUG("FetchPage %d not success",next_page_id);
+    }
+    node = reinterpret_cast<BPlusTreePage *>(node_page->GetData());
   }
 
   auto leaf = reinterpret_cast<LeafPage *>(node);
@@ -247,56 +260,56 @@ auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, bool *is_repeat) -> LeafPage * 
   return leaf;
 }
 
-INDEX_TEMPLATE_ARGUMENTS
-void BPLUSTREE_TYPE::SplitTree(BPlusTreePage *page1, BPlusTreePage *page2){
-  LOG_INFO("@SplitTree p%d,p%d",page1->GetPageId(),page2->GetPageId());
-  int half_index = 0;
-  if (page1->IsLeafPage()) {
-    auto leaf1 = reinterpret_cast<LeafPage *>(page1);
-    auto leaf2 = reinterpret_cast<LeafPage *>(page2);
-    leaf2->SetNextPageId(leaf1->GetNextPageId());
-    leaf1->SetNextPageId(leaf2->GetPageId());
-    // Rounded up
-    // include inert key so leaf1->GetSize() + 1
-    half_index = (leaf1->GetSize() + 1) / 2;
-    // move to leaf2
-    for(int i=half_index;i<leaf1->GetSize();++i){
-      leaf2->SetPairAt(leaf2->GetSize(), {leaf1->KeyAt(i), leaf1->ValueAt(i)});
-      leaf2->IncreaseSize(1);
-    }
-    int increase_size = leaf1->GetSize() - half_index ;
-    leaf1->IncreaseSize(-increase_size);
-    return;
-  }
-  // page1,2 is internal page
-  auto internal1 = reinterpret_cast<InternalPage *>(page1);
-  auto internal2 = reinterpret_cast<InternalPage *>(page2);
-  // Rounded up and insert key also need conisdier so +2
-  half_index = (internal_max_size_ + 2) / 2;
-  auto size_page1 = internal1->GetSize();
-  for(int i=half_index;i<size_page1;++i){
-    // change parent page id
-    auto move_page = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(internal1->ValueAt(i))->GetData());
-    move_page->SetParentPageId(internal2->GetPageId());
-    if (!buffer_pool_manager_->UnpinPage(move_page->GetPageId(), true)) {
-      LOG_DEBUG("Unpin page failed");
-    }
-    //move to leaf2
-    // LOG_INFO("page %d move %ld limited is: %d",internal1->GetPageId(),internal1->KeyAt(i).ToString(),internal1->GetSize());
-    // value is 1 bigger than key so keyat i-1
-    internal2->SetPairAt(internal2->GetSize(), {internal1->KeyAt(i), internal1->ValueAt(i)});
-    internal2->IncreaseSize(1);
-  }
-  int increase_size =size_page1 - half_index-1;
-  // LOG_INFO("size is %d,increase size is: %d,half is: %d",internal1->GetSize(),increase_size,half_index);
-  internal1->IncreaseSize(-increase_size);
-  // future
-  // LOG_INFO("page p%d size is:%d",internal1->GetPageId(),internal1->GetSize());
-  for(int i=0;i<internal1->GetSize();++i){
-    // LOG_INFO("  key %ld",internal1->KeyAt(i).ToString());
-  }
-  return;
-}
+// INDEX_TEMPLATE_ARGUMENTS
+// void BPLUSTREE_TYPE::SplitTree(BPlusTreePage *page1, BPlusTreePage *page2){
+//   LOG_INFO("@SplitTree p%d,p%d",page1->GetPageId(),page2->GetPageId());
+//   int half_index = 0;
+//   if (page1->IsLeafPage()) {
+//     auto leaf1 = reinterpret_cast<LeafPage *>(page1);
+//     auto leaf2 = reinterpret_cast<LeafPage *>(page2);
+//     leaf2->SetNextPageId(leaf1->GetNextPageId());
+//     leaf1->SetNextPageId(leaf2->GetPageId());
+//     // Rounded up
+//     // include inert key so leaf1->GetSize() + 1
+//     half_index = (leaf1->GetSize() + 1) / 2;
+//     // move to leaf2
+//     for(int i=half_index;i<leaf1->GetSize();++i){
+//       leaf2->SetPairAt(leaf2->GetSize(), {leaf1->KeyAt(i), leaf1->ValueAt(i)});
+//       leaf2->IncreaseSize(1);
+//     }
+//     int increase_size = leaf1->GetSize() - half_index ;
+//     leaf1->IncreaseSize(-increase_size);
+//     return;
+//   }
+//   // page1,2 is internal page
+//   auto internal1 = reinterpret_cast<InternalPage *>(page1);
+//   auto internal2 = reinterpret_cast<InternalPage *>(page2);
+//   // Rounded up and insert key also need conisdier so +2
+//   half_index = (internal_max_size_ + 2) / 2;
+//   auto size_page1 = internal1->GetSize();
+//   for(int i=half_index;i<size_page1;++i){
+//     // change parent page id
+//     auto move_page = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(internal1->ValueAt(i))->GetData());
+//     move_page->SetParentPageId(internal2->GetPageId());
+//     if (!buffer_pool_manager_->UnpinPage(move_page->GetPageId(), true)) {
+//       LOG_DEBUG("Unpin page failed");
+//     }
+//     //move to leaf2
+//     // LOG_INFO("page %d move %ld limited is: %d",internal1->GetPageId(),internal1->KeyAt(i).ToString(),internal1->GetSize());
+//     // value is 1 bigger than key so keyat i-1
+//     internal2->SetPairAt(internal2->GetSize(), {internal1->KeyAt(i), internal1->ValueAt(i)});
+//     internal2->IncreaseSize(1);
+//   }
+//   int increase_size =size_page1 - half_index-1;
+//   // LOG_INFO("size is %d,increase size is: %d,half is: %d",internal1->GetSize(),increase_size,half_index);
+//   internal1->IncreaseSize(-increase_size);
+//   // future
+//   // LOG_INFO("page p%d size is:%d",internal1->GetPageId(),internal1->GetSize());
+//   for(int i=0;i<internal1->GetSize();++i){
+//     // LOG_INFO("  key %ld",internal1->KeyAt(i).ToString());
+//   }
+//   return;
+// }
 
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key, const ValueType &value) {
@@ -335,7 +348,7 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
     return;
   }
   
-  auto parent = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(page1->GetParentPageId())->GetData());
+  auto parent = reinterpret_cast<InternalPage *>(buffer_pool_manager_->FetchPage(page1->GetParentPageId())->GetData());
   if (parent->GetSize() == internal_max_size_) {
     // create a new page
     page_id_t parent_page_prime_id;
@@ -343,15 +356,36 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
     auto parent_prime = reinterpret_cast<InternalPage *>(parent_page_prime->GetData());
     parent_prime->Init(parent_page_prime_id, parent->GetParentPageId(), internal_max_size_);
 
-    // split parent
-    SplitTree(parent, reinterpret_cast<BPlusTreePage *>(parent_prime));
-    InsertNode(parent_prime, key, value);
-    page2->SetParentPageId(parent_page_prime_id);
-    auto parent_internal = reinterpret_cast<InternalPage *>(parent);
-    auto k_prime = parent_internal->KeyAt(parent_internal->GetSize() - 1);
+    // split
+    InsertNode(reinterpret_cast<BPlusTreePage*>(parent), key, value);
+    auto half_index = parent->GetSize() / 2;
+    auto k_prime = parent->KeyAt(half_index);
+    for(int i=half_index;i<parent->GetSize();++i){
+      // change parent page id
+      auto move_page = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(parent->ValueAt(i))->GetData());
+      move_page->SetParentPageId(parent_prime->GetPageId());
+      if (!buffer_pool_manager_->UnpinPage(move_page->GetPageId(), true)) {
+        LOG_DEBUG("Unpin page failed");
+      }
+      //move to parent_prime
+      parent_prime->SetPairAt(parent_prime->GetSize(), {parent->KeyAt(i), parent->ValueAt(i)});
+      parent_prime->IncreaseSize(1);
+    }
+    int increase_size =parent->GetSize() - half_index;
+    // LOG_INFO("size is %d,increase size is: %d,half is: %d",internal1->GetSize(),increase_size,half_index);
+    parent->IncreaseSize(-increase_size);
+    // future
+    // LOG_INFO("page p%d size is:%d",internal1->GetPageId(),internal1->GetSize());
+    // for(int i=0;i<internal1->GetSize();++i){
+    //   // LOG_INFO("  key %ld",internal1->KeyAt(i).ToString());
+    // }
+    // end split
+
+    // page2->SetParentPageId(parent_page_prime_id);
+    // parent->KeyAt(parent->GetSize() - 1);
     RID rid;
     rid.Set(parent_page_prime_id, parent_page_prime_id & 0xFFFFFFFF);
-    parent_internal->IncreaseSize(-1);
+    // parent->IncreaseSize(-1);
     InsertParent(parent, parent_prime, k_prime, rid);
     if (!buffer_pool_manager_->UnpinPage(parent_page_prime_id, true)) {
       LOG_DEBUG("InsertParent: Unpin page failed");
