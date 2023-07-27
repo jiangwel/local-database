@@ -89,7 +89,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::DeletePair(const KeyType &key, KeyComparator &comparator) -> bool{
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::DeletePair(const KeyType &key, KeyComparator &comparator) -> bool {
   for (int i = 0; i < this->GetSize(); i++) {
     if (comparator(array_[i].first, key) == 0) {
       for (int j = i; j < this->GetSize() - 1; j++) {

@@ -66,14 +66,14 @@ TEST(BPlusTreeTests, InsertTest1) {
   // remove("test.db");
   // remove("test.log");
 
-    // create KeyComparator and index schema
+  // create KeyComparator and index schema
   auto key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema.get());
 
   auto *disk_manager = new DiskManager("test.db");
   BufferPoolManager *bpm = new BufferPoolManagerInstance(50, disk_manager);
   // create b+ tree
-  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator,256,256);
+  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 256, 256);
   GenericKey<8> index_key;
   RID rid;
   // create transaction
@@ -85,12 +85,12 @@ TEST(BPlusTreeTests, InsertTest1) {
   ASSERT_EQ(page_id, HEADER_PAGE_ID);
   (void)header_page;
 
-  // 插入42个kv pair
   std::vector<int64_t> keys;
-  int end=5000;
-  for(int i=0;i<=end;++i){
+  // max 6250
+  int end = 6300;
+  for (int i = 0; i <= end; ++i) {
     int64_t value = i & 0xFFFFFFFF;
-    rid.Set(static_cast<int32_t>(i >> 1), value);
+    rid.Set(static_cast<int32_t>(i), value);
     index_key.SetFromInteger(i);
     tree.Insert(index_key, rid, transaction);
     keys.push_back(i);
@@ -98,20 +98,23 @@ TEST(BPlusTreeTests, InsertTest1) {
 
   // 检查
   std::vector<RID> rids;
-  // for (auto key : keys) {
-    std::cout<<"check key: "<<keys[end]<<std::endl;
+  for (auto key : keys) {
+    // std::cout<<"check key: "<<key<<std::endl;
     rids.clear();
-    index_key.SetFromInteger(keys[end]);
-    
-    EXPECT_EQ(tree.GetValue(index_key, &rids),1);
-    if(!rids.size()){
-      std::cout<<"key: "<<keys[end]<<" not found"<<std::endl;
+    index_key.SetFromInteger(key);
+
+    EXPECT_EQ(tree.GetValue(index_key, &rids), 1);
+    if (!rids.size()) {
+      std::cout << "key: " << key << " not found" << std::endl;
     }
     EXPECT_EQ(rids.size(), 1);
     // int64_t value = key & 0xFFFFFFFF;
+    // if(rids[0].GetSlotNum()!=value){
+    //   std::cout<<"key: "<<key<<" value: "<<value<<" rids[0].GetSlotNum(): "<<rids[0].GetSlotNum()<<std::endl;
+    // }
     // EXPECT_EQ(rids[0].GetSlotNum(), value);
     // break;
-  // }
+  }
 
   bpm->UnpinPage(HEADER_PAGE_ID, true);
   delete transaction;

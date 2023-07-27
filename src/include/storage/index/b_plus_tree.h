@@ -63,10 +63,10 @@ class BPlusTree {
   auto End() -> INDEXITERATOR_TYPE;
 
   // print the B+ tree
-  void Print(BufferPoolManager *bpm);
+  void Print(BufferPoolManager *buffer_pool_manager_);
 
   // draw the B+ tree
-  void Draw(BufferPoolManager *bpm, const std::string &outf);
+  void Draw(BufferPoolManager *buffer_pool_manager_, const std::string &outf);
 
   // read data from file and insert one by one
   void InsertFromFile(const std::string &file_name, Transaction *transaction = nullptr);
@@ -78,9 +78,9 @@ class BPlusTree {
   void UpdateRootPageId(int insert_record = 0);
 
   /* Debug Routines for FREE!! */
-  void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
+  void ToGraph(BPlusTreePage *page, BufferPoolManager *buffer_pool_manager_, std::ofstream &out) const;
 
-  void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
+  void ToString(BPlusTreePage *page, BufferPoolManager *buffer_pool_manager_) const;
 
   void InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value);
   auto GetLeaf(const KeyType &key, bool *is_repeat) -> LeafPage *;
