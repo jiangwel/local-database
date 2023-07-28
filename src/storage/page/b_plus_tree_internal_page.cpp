@@ -76,8 +76,6 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index, const MappingType &pai
     array_[i] = array_[i - 1];
   }
   array_[index] = pair;
-  // LOG_INFO("INternal SetPairAt: key is %ld,value is %d, page id: %d", array_[index].first.ToString(),
-  // array_[index].second, this->GetPageId());
   return true;
 }
 
