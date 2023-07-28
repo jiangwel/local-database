@@ -32,23 +32,15 @@ auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return root_page_id_ == INVALID_P
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) -> bool {
-  bool temp = false;
-  bool *is_repeat = &temp;
-  LeafPage *leaf = GetLeaf(key, is_repeat);
-  if (*is_repeat) {
-    for (int i = 0; i < leaf->GetSize(); i++) {
-      if (comparator_(leaf->KeyAt(i), key) == 0) {
-        result->push_back(leaf->ValueAt(i));
-        if (!buffer_pool_manager_->UnpinPage(leaf->GetPageId(), false)) {
-          LOG_DEBUG("Insert: unpin leaf1 page failed");
-        }
-        return true;
-      }
-    }
+  int temp = -1;
+  int *index = &temp;
+  LeafPage *leaf = GetLeaf(key, index);
+  if (*index!=-1) {
+    result->push_back(leaf->ValueAt(*index));
     if (!buffer_pool_manager_->UnpinPage(leaf->GetPageId(), false)) {
       LOG_DEBUG("Insert: unpin leaf1 page failed");
     }
-    return false;
+    return true;
   }
   return false;
 }
@@ -79,10 +71,10 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   }
 
   // Get leaf1
-  bool temp = false;
-  bool *is_repeat = &temp;
-  LeafPage *leaf1 = GetLeaf(key, is_repeat);
-  if (*is_repeat) {
+  int temp = -1;
+  int *index = &temp;
+  LeafPage *leaf1 = GetLeaf(key, index);
+  if (*index!=-1) {
     // Duplicate key, return false
     if (!buffer_pool_manager_->UnpinPage(leaf1->GetPageId(), false)) {
       LOG_DEBUG("Insert: unpin leaf1 page failed");
@@ -192,7 +184,7 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, bool *is_repeat) -> LeafPage * {
+auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, int *index) -> LeafPage * {
   auto node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(root_page_id_)->GetData());
 
   while (!node->IsLeafPage()) {
@@ -226,11 +218,11 @@ auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, bool *is_repeat) -> LeafPage * 
   // check if key exists in leaf
   for (int i = 0; i < leaf->GetSize(); i++) {
     if (comparator_(key, leaf->KeyAt(i)) == 0) {
-      *is_repeat = true;
+      *index = i;
       return leaf;
     }
   }
-  *is_repeat = false;
+  *index = -1;
   return leaf;
 }
 
@@ -343,10 +335,10 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
     return;
   }
   if (root_page_id_ != INVALID_PAGE_ID) {
-    bool temp = false;
-    bool *is_repeat = &temp;
-    LeafPage *leaf = BPlusTree::GetLeaf(key, is_repeat);
-    if (!*is_repeat) {
+    int temp = -1;
+    int *index = &temp;
+    LeafPage *leaf = BPlusTree::GetLeaf(key, index);
+    if (*index==-1) {
       LOG_DEBUG("key not found");
     } else {
       BPlusTree::RemoveEntry(reinterpret_cast<BPlusTreePage *>(leaf), key);
@@ -531,7 +523,19 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key) {
  * @return : index iterator
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE { return IndexIterator(); }
+auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE { 
+  auto node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->NewPage(&root_page_id_)->GetData());
+  while(!node->IsLeafPage()) {
+    auto internal = reinterpret_cast<InternalPage *>(node);
+    auto first_child_page_id = internal->ValueAt(0);
+    node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(first_child_page_id)->GetData());
+    if(!buffer_pool_manager_->UnpinPage(internal->GetPageId(), false)){
+      LOG_DEBUG("Begin: Unpin page failed");
+    }
+  }
+  auto leaf = reinterpret_cast<LeafPage *>(node);
+  return INDEXITERATOR_TYPE(leaf, 0, buffer_pool_manager_);
+}
 
 /*
  * Input parameter is low key, find the leaf page that contains the input key
@@ -539,7 +543,12 @@ auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE { return IndexIterator(); }
  * @return : index iterator
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE { return INDEXITERATOR_TYPE(); }
+auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE { 
+  int temp = false;
+  int *index = &temp;
+  LeafPage *leaf = BPlusTree::GetLeaf(key, index);
+  return INDEXITERATOR_TYPE(leaf, index, buffer_pool_manager_);
+}
 
 /*
  * Input parameter is void, construct an index iterator representing the end
@@ -547,7 +556,19 @@ auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE { return IN
  * @return : index iterator
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto BPLUSTREE_TYPE::End() -> INDEXITERATOR_TYPE { return INDEXITERATOR_TYPE(); }
+auto BPLUSTREE_TYPE::End() -> INDEXITERATOR_TYPE {
+  auto node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->NewPage(&root_page_id_)->GetData());
+  while(!node->IsLeafPage()) {
+    auto internal = reinterpret_cast<InternalPage *>(node);
+    auto last_child_page_id = internal->ValueAt(internal->GetSize()-1);
+    node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(last_child_page_id)->GetData());
+    if(!buffer_pool_manager_->UnpinPage(internal->GetPageId(), false)){
+      LOG_DEBUG("Begin: Unpin page failed");
+    }
+  }
+  auto leaf = reinterpret_cast<LeafPage *>(node);
+  return INDEXITERATOR_TYPE(leaf, leaf->GetSize(), buffer_pool_manager_);
+}
 
 /**
  * @return Page id of the root of this tree

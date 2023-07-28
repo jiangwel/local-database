@@ -83,7 +83,7 @@ class BPlusTree {
   void ToString(BPlusTreePage *page, BufferPoolManager *buffer_pool_manager_) const;
 
   void InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value);
-  auto GetLeaf(const KeyType &key, bool *is_repeat) -> LeafPage *;
+  auto GetLeaf(const KeyType &key, int *index) -> LeafPage *;
   // void SplitTree(BPlusTreePage *page1, BPlusTreePage *page2);
   void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key, const ValueType &value);
   void RemoveEntry(BPlusTreePage *node1, const KeyType &key);
