@@ -22,6 +22,7 @@
 
 namespace bustub {
 // helper function to launch multiple threads
+// 创建输入数量的线程
 template <typename... Args>
 void LaunchParallelTest(uint64_t num_threads, Args &&...args) {
   std::vector<std::thread> thread_group;
@@ -32,12 +33,14 @@ void LaunchParallelTest(uint64_t num_threads, Args &&...args) {
   }
 
   // Join the threads with the main thread
+  // 等待所有线程结束
   for (uint64_t thread_itr = 0; thread_itr < num_threads; ++thread_itr) {
     thread_group[thread_itr].join();
   }
 }
 
 // helper function to insert
+//输入树与keys，插入keys
 void InsertHelper(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, const std::vector<int64_t> &keys,
                   __attribute__((unused)) uint64_t thread_itr = 0) {
   GenericKey<8> index_key;
@@ -72,6 +75,7 @@ void InsertHelperSplit(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree
 }
 
 // helper function to delete
+//输入树与keys，删除keys
 void DeleteHelper(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, const std::vector<int64_t> &remove_keys,
                   __attribute__((unused)) uint64_t thread_itr = 0) {
   GenericKey<8> index_key;
@@ -113,14 +117,15 @@ TEST(BPlusTreeConcurrentTest, DISABLED_InsertTest1) {
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
   (void)header_page;
-  // keys to Insert
+  // 创建key:1-100
   std::vector<int64_t> keys;
   int64_t scale_factor = 100;
   for (int64_t key = 1; key < scale_factor; key++) {
     keys.push_back(key);
   }
+  // 2个线程,一棵树
   LaunchParallelTest(2, InsertHelper, &tree, keys);
-
+  // 检查值
   std::vector<RID> rids;
   GenericKey<8> index_key;
   for (auto key : keys) {
@@ -132,7 +137,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_InsertTest1) {
     int64_t value = key & 0xFFFFFFFF;
     EXPECT_EQ(rids[0].GetSlotNum(), value);
   }
-
+  // 遍历检查值
   int64_t start_key = 1;
   int64_t current_key = start_key;
   index_key.SetFromInteger(start_key);

@@ -74,8 +74,8 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   int temp = -1;
   int *index = &temp;
   LeafPage *leaf1 = GetLeaf(key, index);
+  // Duplicate key, return false
   if (*index!=-1) {
-    // Duplicate key, return false
     if (!buffer_pool_manager_->UnpinPage(leaf1->GetPageId(), false)) {
       LOG_DEBUG("Insert: unpin leaf1 page failed");
     }
@@ -547,7 +547,7 @@ auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE {
   int temp = false;
   int *index = &temp;
   LeafPage *leaf = BPlusTree::GetLeaf(key, index);
-  return INDEXITERATOR_TYPE(leaf, index, buffer_pool_manager_);
+  return INDEXITERATOR_TYPE(leaf, *index, buffer_pool_manager_);
 }
 
 /*
@@ -557,10 +557,11 @@ auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE {
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::End() -> INDEXITERATOR_TYPE {
-  auto node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->NewPage(&root_page_id_)->GetData());
+  auto node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(root_page_id_)->GetData());
   while(!node->IsLeafPage()) {
     auto internal = reinterpret_cast<InternalPage *>(node);
-    auto last_child_page_id = internal->ValueAt(internal->GetSize()-1);
+    int last_index = internal->GetSize()-1<0?0:internal->GetSize()-1;
+    auto last_child_page_id = internal->ValueAt(last_index);
     node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(last_child_page_id)->GetData());
     if(!buffer_pool_manager_->UnpinPage(internal->GetPageId(), false)){
       LOG_DEBUG("Begin: Unpin page failed");

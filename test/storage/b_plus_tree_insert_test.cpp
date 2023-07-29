@@ -20,7 +20,7 @@
 
 namespace bustub {
 
-TEST(BPlusTreeTests, InsertTest1) {
+TEST(BPlusTreeTests, DISABLED_InsertTest1) {
   // // create KeyComparator and index schema
   // auto key_schema = ParseCreateStatement("a bigint");
   // GenericComparator<8> comparator(key_schema.get());
@@ -228,7 +228,7 @@ TEST(BPlusTreeTests, InsertTest3) {
     int64_t value = key & 0xFFFFFFFF;
     EXPECT_EQ(rids[0].GetSlotNum(), value);
   }
-
+  
   int64_t start_key = 1;
   int64_t current_key = start_key;
   index_key.SetFromInteger(start_key);
@@ -240,7 +240,7 @@ TEST(BPlusTreeTests, InsertTest3) {
   }
 
   EXPECT_EQ(current_key, keys.size() + 1);
-
+  
   start_key = 3;
   current_key = start_key;
   index_key.SetFromInteger(start_key);

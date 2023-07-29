@@ -53,7 +53,7 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto ValueAt(int index) const -> ValueType;
   auto SetPairAt(int index, const MappingType &pair) -> bool;
   auto DeletePair(const KeyType &key, KeyComparator &comparator) -> bool;
-
+  auto PairAt(int index) -> MappingType&;
   // auto GetData() -> std::list<MappingType>&;
  private:
   page_id_t next_page_id_;

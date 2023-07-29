@@ -61,8 +61,8 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType {
-  if (index < 0 || index > this->GetSize() - 1) {
-    LOG_DEBUG("ValueAt: index %d out of range %d", index, this->GetSize() - 1);
+  if (index < 0 || index > this->GetSize()) {
+    LOG_DEBUG("ValueAt: index %d out of range %d", index, this->GetSize());
   }
   return array_[index].second;
 }

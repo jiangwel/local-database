@@ -4,7 +4,6 @@
 #include <cassert>
 
 #include "storage/index/index_iterator.h"
-#include "common/logger.h"
 
 namespace bustub {
 
@@ -23,19 +22,18 @@ INDEXITERATOR_TYPE::~IndexIterator(){
 };  // NOLINT
 
 INDEX_TEMPLATE_ARGUMENTS
-auto INDEXITERATOR_TYPE::IsEnd() -> bool { return leaf_->GetNextPageId()==INVALID_PAGE_ID&&index_==leaf_->GetSize()-1; }
+auto INDEXITERATOR_TYPE::IsEnd() -> bool { return leaf_->GetNextPageId()==INVALID_PAGE_ID&&index_==leaf_->GetSize(); }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto INDEXITERATOR_TYPE::operator*() -> const MappingType & { return MappingType(leaf_->KeyAt(index_),leaf_->ValueAt(index)); }
+auto INDEXITERATOR_TYPE::operator*() -> const MappingType & { return leaf_->PairAt(index_); }
 
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::operator++() -> INDEXITERATOR_TYPE & { 
     auto next_page_id=leaf_->GetNextPageId();
-    if(index+1==leaf->GetSize()){
+    if(index_+1>=leaf_->GetSize()){
         if(next_page_id==INVALID_PAGE_ID){
-            if(i==leaf_->GetSize()){
-                LOG_DEBUG("index out of range");
-                return;
+            if(index_==leaf_->GetSize()){
+                throw Exception("index out of range");
             }
             index_++;
             return *this;

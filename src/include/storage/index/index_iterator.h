@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "storage/page/b_plus_tree_leaf_page.h"
+#include "common/logger.h"
 
 namespace bustub {
 
@@ -33,14 +34,15 @@ class IndexIterator {
 
   auto operator++() -> IndexIterator &;
 
-  auto operator==(const IndexIterator &itr) const -> bool { throw std::runtime_error("unimplemented"); }
+  auto operator==(const IndexIterator &itr) const -> bool { LOG_INFO("itr.index_");return leaf_==itr.leaf_&&index_==itr.index_; }
 
-  auto operator!=(const IndexIterator &itr) const -> bool { throw std::runtime_error("unimplemented"); }
+  auto operator!=(const IndexIterator &itr) const -> bool { return leaf_!=itr.leaf_||index_!=itr.index_; }
 
+ protected:
+  LeafPage *leaf_;
+  int index_;
  private:
   // add your own private member variables here
-  int index_;
-  LeafPage *leaf_;
   BufferPoolManager *bpm_;
 };
 
