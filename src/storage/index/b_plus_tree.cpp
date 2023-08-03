@@ -45,8 +45,8 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
     page_set->clear();
     return true;
   }
-  page_set[0]->RUnlatch();
-  page_set->clear();
+  page_set->back()->RUnlatch();
+  page_set->pop_back();
   return false;
 }
 
@@ -98,7 +98,7 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   if (node1->GetSize() + 1 < leaf_max_size_) {
     InsertNode(node1, key, value);
     page_set->back()->WUnlatch();
-    page_set->clear();
+    page_set->pop_back();
     if (!buffer_pool_manager_->UnpinPage(node1->GetPageId(), true)) {
       LOG_DEBUG("Insert: unpin leaf1 page failed");
     }
@@ -127,6 +127,9 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   KeyType first_key = leaf2->KeyAt(0);
   RID rid(leaf2->GetPageId(), leaf2->GetPageId() & 0xFFFFFFFF);
   leaf2_page->WUnlatch();
+  // unlatch leaf1
+  page_set->back()->WUnlatch();
+  page_set->pop_back();
   BPlusTree::InsertParent(node1, node2, first_key, rid);
 
   return true;
@@ -244,8 +247,8 @@ void BPLUSTREE_TYPE::LockAndUnlock(Page *page,BPlusTreePage *node,OperateType op
   auto page_set = transaction->GetPageSet();
   if(operator_type==OperateType::Find){
     page->RLatch();
-    page_set[0]->RUnlatch();
-    page_set->pop_front();
+    page_set->back()->RUnlatch();
+    page_set->pop_back();
     page_set->push_back(page);
     return;
   }
@@ -270,8 +273,6 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
                                   const ValueType &value) {
   auto page_set = transaction->GetPageSet();
   if (page1->IsRootPage()) {
-    page_set->back()->WUnlatch();
-    page_set->clear();
     // Create a new root
     page_id_t root_page_id;
     auto new_root = reinterpret_cast<InternalPage *>(buffer_pool_manager_->NewPage(&root_page_id)->GetData());
@@ -308,9 +309,6 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
 
   auto parent_page = buffer_pool_manager_->BufferPoolManager::FetchPage(page1->GetParentPageId());
   auto *parent = reinterpret_cast<InternalPage *>(parent_page->GetData());
-  // unlatch page1
-  page_set->back()->WUnlatch();
-  page_set->pop_back();
   // parent is full
   if (parent->GetSize() == internal_max_size_) {
     // create a new page
@@ -341,6 +339,9 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
     // end split
 
     RID rid(parent_page_prime_id, parent_page_prime_id & 0xFFFFFFFF);
+    //unlatch parent
+    page_set->back()->WUnlatch();
+    page_set->pop_back();
 
     InsertParent(parent, parent_prime, k_prime, rid);
     if (!buffer_pool_manager_->UnpinPage(page1->GetPageId(), true)) {
@@ -550,6 +551,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key,Transa
       LOG_DEBUG("coalesce: set pair failed");
     }
     internal_plus->IncreaseSize(1);
+    // move pair
     for (int i = 1; i < internal->GetSize(); i++) {
       if (!internal_plus->SetPairAt(internal_plus->GetSize(), {internal->KeyAt(i), internal->ValueAt(i)})) {
         LOG_DEBUG("coalesce: set pair failed1");
