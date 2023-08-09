@@ -1,33 +1,61 @@
-#include "bits/stdc++.h"
-
-template <typename... Args>
-void LaunchParallelTest(uint64_t num_threads, Args &&...args) {
-  std::vector<std::thread> thread_group;
-
-  // Launch a group of threads
-  for (uint64_t thread_itr = 0; thread_itr < num_threads; ++thread_itr) {
-    thread_group.push_back(std::thread(args..., thread_itr));
-  }
-
-  // Join the threads with the main thread
-  // 等待所有线程结束
-  for (uint64_t thread_itr = 0; thread_itr < num_threads; ++thread_itr) {
-    thread_group[thread_itr].join();
-  }
-}
-void InsertHelper(std::vector<int> *tree, const std::vector<int> &keys,
-                  __attribute__((unused)) uint64_t thread_itr = 0) {
-  for (auto key : keys) {
-    tree->push_back(key);
-    std::cout<<"insert: "<<key<<std::endl;
-  }
-}
-
-int main(){
-    std::vector<int> keys{1,2,3,4,5,6,7,8,9,10};
-    std::vector<int> tree;
-    LaunchParallelTest(2, InsertHelper, &tree, keys);
-    for(auto i:tree){
-        std::cout<<i<<" ";
-    }
-}
+18:BPlusTree] INFO  - BPlusTree: leaf_max_size_=2, internal_max_size_=3
+cheak point 1
+71:Insert] INFO  - @Insert key is: 1
+71:Insert] INFO  - @Insert key is: 2
+298:LockAndUnlock] INFO  - WLatch p1 thread 13561099431069608441
+147:Insert] INFO  - WUnlatch p1 thread 13561099431069608441
+71:Insert] INFO  - @Insert key is: 1
+71:Insert] INFO  - @Insert key is: 3
+298:LockAndUnlock] INFO  - WLatch p1 thread 11525714364247846656
+96:Insert] INFO  - WUnlatch p1 thread 11525714364247846656
+71:Insert] INFO  - @Insert key is: 2
+286:LockAndUnlock] INFO  - WLatch p3 thread 13561099431069608441
+286:LockAndUnlock] INFO  - WLatch p3 thread 11525714364247846656
+298:LockAndUnlock] INFO  - WLatch p2 thread 13561099431069608441
+147:Insert] INFO  - WUnlatch p2 thread 13561099431069608441
+397:InsertParent] INFO  - WUnlatch p3 thread 13561099431069608441
+71:Insert] INFO  - @Insert key is: 4
+298:LockAndUnlock] INFO  - WLatch p2 thread 11525714364247846656
+96:Insert] INFO  - WUnlatch p3 thread 11525714364247846656
+298:LockAndUnlock] INFO  - WLatch p3 thread 13561099431069608441
+96:Insert] INFO  - WUnlatch p2 thread 11525714364247846656
+298:LockAndUnlock] INFO  - WLatch p4 thread 13561099431069608441
+71:Insert] INFO  - @Insert key is: 3
+147:Insert] INFO  - WUnlatch p4 thread 13561099431069608441
+298:LockAndUnlock] INFO  - WLatch p3 thread 11525714364247846656
+379:InsertParent] INFO  - WUnlatch p3 thread 13561099431069608441
+71:Insert] INFO  - @Insert key is: 5
+298:LockAndUnlock] INFO  - WLatch p2 thread 11525714364247846656
+286:LockAndUnlock] INFO  - WLatch p7 thread 13561099431069608441
+147:Insert] INFO  - WUnlatch p2 thread 11525714364247846656
+286:LockAndUnlock] INFO  - WLatch p6 thread 13561099431069608441
+397:InsertParent] INFO  - WUnlatch p3 thread 11525714364247846656
+71:Insert] INFO  - @Insert key is: 4
+289:LockAndUnlock] INFO  - WUnlatch p7 thread 13561099431069608441
+298:LockAndUnlock] INFO  - WLatch p5 thread 13561099431069608441
+147:Insert] INFO  - WUnlatch p5 thread 13561099431069608441
+397:InsertParent] INFO  - WUnlatch p6 thread 13561099431069608441
+286:LockAndUnlock] INFO  - WLatch p7 thread 11525714364247846656
+298:LockAndUnlock] INFO  - WLatch p6 thread 11525714364247846656
+298:LockAndUnlock] INFO  - WLatch p5 thread 11525714364247846656
+96:Insert] INFO  - WUnlatch p7 thread 11525714364247846656
+96:Insert] INFO  - WUnlatch p6 thread 11525714364247846656
+96:Insert] INFO  - WUnlatch p5 thread 11525714364247846656
+71:Insert] INFO  - @Insert key is: 5
+286:LockAndUnlock] INFO  - WLatch p7 thread 11525714364247846656
+298:LockAndUnlock] INFO  - WLatch p6 thread 11525714364247846656
+298:LockAndUnlock] INFO  - WLatch p9 thread 11525714364247846656
+96:Insert] INFO  - WUnlatch p7 thread 11525714364247846656
+96:Insert] INFO  - WUnlatch p6 thread 11525714364247846656
+96:Insert] INFO  - WUnlatch p9 thread 11525714364247846656
+cheak point 2
+key is: 1
+35:GetValue] INFO  - GetValue: key=1
+key is: 2
+35:GetValue] INFO  - GetValue: key=2
+key is: 3
+35:GetValue] INFO  - GetValue: key=3
+key is: 4
+35:GetValue] INFO  - GetValue: key=4
+key is: 5
+35:GetValue] INFO  - GetValue: key=5

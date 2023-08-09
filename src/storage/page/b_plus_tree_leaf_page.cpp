@@ -98,7 +98,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::DeletePair(const KeyType &key, KeyComparator &c
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::PairAt(int index) -> MappingType&{
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::PairAt(int index) -> MappingType & {
   if (index < 0 || index > this->GetSize() - 1) {
     LOG_DEBUG("KeyAt: index %d out of range %d", index, this->GetSize() - 1);
   }
