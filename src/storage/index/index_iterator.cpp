@@ -3,8 +3,8 @@
  */
 #include <cassert>
 
-#include "storage/index/index_iterator.h"
 #include "common/logger.h"
+#include "storage/index/index_iterator.h"
 
 namespace bustub {
 
@@ -29,9 +29,7 @@ auto INDEXITERATOR_TYPE::IsEnd() -> bool {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto INDEXITERATOR_TYPE::operator*() -> const MappingType & { 
-  return leaf_->PairAt(index_);
-  }
+auto INDEXITERATOR_TYPE::operator*() -> const MappingType & { return leaf_->PairAt(index_); }
 
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::operator++() -> INDEXITERATOR_TYPE & {
