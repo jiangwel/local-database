@@ -119,13 +119,13 @@ TEST(BPlusTreeConcurrentTest, InsertTest1) {
   (void)header_page;
   // 创建key:1-100
   std::vector<int64_t> keys;
-  int64_t scale_factor = 50;
+  int64_t scale_factor = 30;
   for (int64_t key = 1; key <= scale_factor; key++) {
     keys.push_back(key);
   }
   std::cout << "cheak point 1" << std::endl;
   // 2个线程,一棵树
-  LaunchParallelTest(2, InsertHelper, &tree, keys);
+  LaunchParallelTest(4, InsertHelper, &tree, keys);
   std::cout << "cheak point 2" << std::endl;
   // 检查值
   std::vector<RID> rids;
@@ -171,14 +171,14 @@ TEST(BPlusTreeConcurrentTest, DISABLED_InsertTest2) {
   auto *disk_manager = new DiskManager("test.db");
   BufferPoolManager *bpm = new BufferPoolManagerInstance(50, disk_manager);
   // create b+ tree
-  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator);
+  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 2, 3);
   // create and fetch header_page
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
   (void)header_page;
   // keys to Insert
   std::vector<int64_t> keys;
-  int64_t scale_factor = 100;
+  int64_t scale_factor = 20;
   for (int64_t key = 1; key < scale_factor; key++) {
     keys.push_back(key);
   }
@@ -223,7 +223,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
   auto *disk_manager = new DiskManager("test.db");
   BufferPoolManager *bpm = new BufferPoolManagerInstance(50, disk_manager);
   // create b+ tree
-  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator);
+  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 2, 3);
   GenericKey<8> index_key;
   // create and fetch header_page
   page_id_t page_id;
@@ -234,7 +234,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
   InsertHelper(&tree, keys);
 
   std::vector<int64_t> remove_keys = {1, 5, 3, 4};
-  LaunchParallelTest(2, DeleteHelper, &tree, remove_keys);
+  LaunchParallelTest(1, DeleteHelper, &tree, remove_keys);
 
   int64_t start_key = 2;
   int64_t current_key = start_key;

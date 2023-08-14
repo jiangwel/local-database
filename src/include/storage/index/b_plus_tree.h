@@ -75,41 +75,6 @@ class BPlusTree {
   // read data from file and remove one by one
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
 
-  class RootPageId {
-   public:
-    RootPageId(page_id_t id) : id_(id) {}
-    auto GetRootPageId() -> page_id_t { return id_; }
-    void SetRootPageId(page_id_t id) { id_ = id; }
-    bool IsEmpty() const { return id_ == INVALID_PAGE_ID; }
-    bool Lock(std::thread::id thread_id) {
-      // if(thread_id_ == thread_id){
-      latch_.WLock();
-      return true;
-      // }
-      // return false;
-    }
-    bool Unlock(std::thread::id thread_id) {
-      // if(thread_id_ == thread_id){
-      latch_.WUnlock();
-      return true;
-      // }
-      // return false;
-    }
-    void SetThreadId(std::thread::id thread_id) {
-      if (!thread_allocated_) {
-        thread_allocated_ = true;
-        thread_id_ = thread_id;
-      }
-    }
-    std::thread::id GetThreadId() { return thread_id_; }
-
-   private:
-    ReaderWriterLatch latch_;
-    page_id_t id_;
-    std::thread::id thread_id_;
-    bool thread_allocated_ = false;
-  };
-
  private:
   void UpdateRootPageId(int insert_record = 0);
 
@@ -132,9 +97,8 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
+  page_id_t root_page_id_;
   std::mutex latch_;
-
-  RootPageId root_page_id_;
 };
 
 }  // namespace bustub
