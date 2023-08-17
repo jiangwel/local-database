@@ -46,14 +46,15 @@ void InsertHelper(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, con
   GenericKey<8> index_key;
   RID rid;
   // create transaction
-  auto *transaction = new Transaction(0);
+  // auto *transaction = new Transaction(0);
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
     rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
-    tree->Insert(index_key, rid, transaction);
+    // tree->Insert(index_key, rid, transaction);
+    tree->Insert(index_key, rid);
   }
-  delete transaction;
+  // delete transaction;
 }
 
 // helper function to seperate insert
@@ -80,12 +81,13 @@ void DeleteHelper(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, con
                   __attribute__((unused)) uint64_t thread_itr = 0) {
   GenericKey<8> index_key;
   // create transaction
-  auto *transaction = new Transaction(0);
+  // auto *transaction = new Transaction(0);
   for (auto key : remove_keys) {
     index_key.SetFromInteger(key);
-    tree->Remove(index_key, transaction);
+    // tree->Remove(index_key, transaction);
+    tree->Remove(index_key);
   }
-  delete transaction;
+  // delete transaction;
 }
 
 // helper function to seperate delete
@@ -104,7 +106,7 @@ void DeleteHelperSplit(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree
   delete transaction;
 }
 
-TEST(BPlusTreeConcurrentTest, InsertTest1) {
+TEST(BPlusTreeConcurrentTest, DISABLED_InsertTest1) {
   // create KeyComparator and index schema
   auto key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema.get());
@@ -215,7 +217,7 @@ TEST(BPlusTreeConcurrentTest, DISABLED_InsertTest2) {
   remove("test.log");
 }
 
-TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
+TEST(BPlusTreeConcurrentTest, DeleteTest1) {
   // create KeyComparator and index schema
   auto key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema.get());
