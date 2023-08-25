@@ -68,6 +68,14 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetValueAt(int index, const ValueType &value) {
+  if (index < 0 || index > this->GetSize()) {
+    LOG_DEBUG("SetValueAt: index %d out of range %d", index, this->GetSize());
+  }
+  array_[index].second = value;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index, const MappingType &pair) -> bool {
   if (index < 0 || index > this->GetSize()) {
     return false;

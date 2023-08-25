@@ -54,7 +54,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { next_pa
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
   if (index < 0 || index > this->GetSize() - 1) {
-    LOG_DEBUG("KeyAt: index %d out of range %d", index, this->GetSize() - 1);
+    LOG_DEBUG("KeyAt: index %d out of range %d page: %d", index, this->GetSize() - 1, this->GetPageId());
   }
   return array_[index].first;
 }
@@ -104,6 +104,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::PairAt(int index) -> MappingType & {
   }
   return array_[index];
 }
+
 template class BPlusTreeLeafPage<GenericKey<4>, RID, GenericComparator<4>>;
 template class BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>>;
 template class BPlusTreeLeafPage<GenericKey<16>, RID, GenericComparator<16>>;

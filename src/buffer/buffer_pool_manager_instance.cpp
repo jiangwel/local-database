@@ -117,7 +117,6 @@ auto BufferPoolManagerInstance::UnpinPgImp(page_id_t page_id, bool is_dirty) -> 
   auto page_ptr = &pages_[frame_id];
 
   page_ptr->pin_count_--;
-
   if (page_ptr->pin_count_ == 0) {
     replacer_->SetEvictable(frame_id, true);
   }  // end if
