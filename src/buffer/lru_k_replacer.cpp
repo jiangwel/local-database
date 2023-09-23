@@ -21,6 +21,7 @@ LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : k_(k), replacer_size_(
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   std::scoped_lock<std::mutex> lock(latch_);
   if (evictable_num_ == 0) {
+    LOG_INFO("LRUKReplacer::Evict: evictable_num_ is 0!");
     return false;
   }
   for (auto it = access_less_k_.begin(); it != access_less_k_.end(); it++) {
@@ -41,6 +42,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
       return true;
     }
   }
+  LOG_INFO("LRUKReplacer::Evict: no frame can be evicted!");
   return false;
 }
 
