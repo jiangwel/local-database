@@ -76,6 +76,13 @@ class BPlusTree {
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
 
  private:
+  class RootPageIDLatch{
+    public:
+    private:
+      std::mutex latch_;
+      bool is_locked_ = false;
+      std::thread::id 
+  } 
   void UpdateRootPageId(int insert_record = 0);
 
   /* Debug Routines for FREE!! */
@@ -91,6 +98,8 @@ class BPlusTree {
                     Transaction *transaction = nullptr);
   void RemoveEntry(BPlusTreePage *node1, const KeyType &key, Transaction *transaction = nullptr);
   void LockAndUnlock(Page *page, BPlusTreePage *node, OperateType operator_type, Transaction *transaction = nullptr);
+  void LockRootID();
+  auto UnlockRootID(bool is_LockRootID)->bool;
   // member variable
   std::string index_name_;
   BufferPoolManager *buffer_pool_manager_;
