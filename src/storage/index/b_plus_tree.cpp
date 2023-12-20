@@ -7,10 +7,11 @@
 #include "storage/page/header_page.h"
 
 #define PrintEntryFunInfo
-#define PrintGetLeafInfo
-#define PrintRootInfo
+// #define PrintGetLeafInfo
 // #define PrintLogInfo
 // #define PrintThreadInfo
+
+// #define TestCode
 
 namespace bustub {
 INDEX_TEMPLATE_ARGUMENTS
@@ -22,6 +23,7 @@ BPLUSTREE_TYPE::BPlusTree(std::string name, BufferPoolManager *buffer_pool_manag
       leaf_max_size_(leaf_max_size),
       internal_max_size_(internal_max_size),
       root_page_id_(INVALID_PAGE_ID) {
+        virtual_page_ptr_ = &virtual_page_;
         #ifdef PrintEntryFunInfo
         LOG_INFO("BPlusTree: leaf_max_size_=%d, internal_max_size_=%d", leaf_max_size_, internal_max_size_);
         #endif
@@ -42,12 +44,21 @@ auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return root_page_id_ == INVALID_P
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) -> bool {
-  #ifdef PrintEntryFunInfo
+  virtual_page_ptr_->RLatch();
+  #ifdef PrintLogInfo
   LOG_INFO("GetValue: key=%ld", key.ToString());
   #endif
+  Page *root_page = buffer_pool_manager_->FetchPage(root_page_id_);
+  if(transaction != nullptr){
+    root_page->RLatch();
+    transaction->GetPageSet()->push_back(root_page);
+  }
+  virtual_page_ptr_->RUnlatch();
+
   int temp = -1;
   int *index = &temp;
-  LeafPage *leaf = GetLeaf(key, index, OperateType::Find, transaction);
+  LeafPage *leaf = GetLeaf(key, index, OperateType::Find, transaction, root_page);
+  // key is found
   if (*index != -1) {
     result->push_back(leaf->ValueAt(*index));
     if (transaction != nullptr) {
@@ -86,10 +97,18 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool {
-  
+  virtual_page_ptr_->WLatch();
   #ifdef PrintEntryFunInfo
   LOG_INFO("@Insert key is: %ld rid.GetPageId:%d thread %zu", key.ToString(), value.GetPageId(),
            std::hash<std::thread::id>{}(transaction->GetThreadId()));
+  #endif
+  #ifdef TestCode
+  auto test_key = key.ToString();
+  if(test_key==1000){
+
+    LOG_INFO("hello");
+    
+  }
   #endif
   // empty tree
   if (root_page_id_ == INVALID_PAGE_ID) {
@@ -103,18 +122,35 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
     if (!buffer_pool_manager_->UnpinPage(root->GetPageId(), true)) {
       LOG_DEBUG("Insert: unpin root page failed");
     }
+    virtual_page_ptr_->WUnlatch();
     return true;
   }
   std::shared_ptr<std::deque<bustub::Page *>> page_set = nullptr;
   if (transaction != nullptr) {
     page_set = transaction->GetPageSet();
   }
+  #ifdef PrintThreadInfo
+  LOG_INFO("T get root page thread %zu", std::hash<std::thread::id>{}(transaction->GetThreadId()));
+  #endif 
+  auto root_page = buffer_pool_manager_->FetchPage(root_page_id_);
+  root_page->WLatch();
+  #ifdef PrintThreadInfo
+  LOG_INFO("S get root page thread %zu", std::hash<std::thread::id>{}(transaction->GetThreadId()));
+  #endif
+  page_set->push_back(root_page);
   // Get leaf1
   int temp = -1;
   int *index = &temp;
-  LeafPage *leaf1 = GetLeaf(key, index, OperateType::Insert, transaction);
+  LeafPage *leaf1 = GetLeaf(key, index, OperateType::Insert, transaction, root_page);
+  bool leaf1IsFull = leaf1->GetSize() +1 == leaf_max_size_;
+  if(!leaf1IsFull){
+    virtual_page_ptr_->WUnlatch();
+  }
   // Duplicate key, return false
   if (*index != -1) {
+    if(leaf1IsFull){
+      virtual_page_ptr_->WUnlatch();
+    }
     if (transaction != nullptr) {
       for (auto p : *page_set) {
         #ifdef PrintThreadInfo
@@ -126,7 +162,7 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
           LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                    std::hash<std::thread::id>{}(transaction->GetThreadId()));
           #endif
-          latch_.unlock();
+          // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
           #ifdef PrintRootInfo
           LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                    std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -137,18 +173,22 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
         #endif
       }
       page_set->clear();
+      
       // protect root_page_id
     }
     if (!buffer_pool_manager_->UnpinPage(leaf1->GetPageId(), false)) {
       LOG_DEBUG("Insert: unpin leaf1 page failed");
     }
+    #ifdef PrintLogInfo
+    LOG_INFO("Insert: duplicate key");
+    #endif
     return false;
   }
 
   auto node1 = reinterpret_cast<BPlusTreePage *>(leaf1);
 
   // node1 is not full, insert directly
-  if (node1->GetSize() + 1 < leaf_max_size_) {
+  if (!leaf1IsFull) {
     InsertNode(node1, key, value);
     if (transaction != nullptr) {
       #ifdef PrintThreadInfo
@@ -167,7 +207,7 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
         LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                  std::hash<std::thread::id>{}(transaction->GetThreadId()));
         #endif
-        latch_.unlock();
+        // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
         #ifdef PrintRootInfo
         LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                  std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -225,7 +265,7 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
 
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value) {
-  #ifdef PrintEntryFunInfo
+  #ifdef PrintLogInfo
   LOG_INFO("InsertNode: key=%ld value=%d page id=%d thread %zu", key.ToString(), value.GetPageId(), node->GetPageId(), std::hash<std::thread::id>{}(std::this_thread::get_id()));
   #endif
   int value_int = value.GetSlotNum();
@@ -293,25 +333,13 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, int *index, OperateType operator_type, Transaction *transaction)
+auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, int *index, OperateType operator_type, Transaction *transaction,Page* node_page)
     -> LeafPage * {
-  #ifdef PrintEntryFunInfo
+  #ifdef PrintLogInfo
   LOG_INFO("GetLeaf");
-  
   #endif
-  // protect root_page_id_
-  if (transaction != nullptr && (operator_type == OperateType::Insert || operator_type == OperateType::Delete)) {
-    #ifdef PrintRootInfo
-    LOG_INFO("T lock root id %d thread %zu", root_page_id_, std::hash<std::thread::id>{}(transaction->GetThreadId()));
-    #endif
-    latch_.lock();
-    #ifdef PrintRootInfo
-    LOG_INFO("S lock root id %d thread %zu", root_page_id_, std::hash<std::thread::id>{}(transaction->GetThreadId()));
-    #endif
-  }
-  auto node_page = buffer_pool_manager_->FetchPage(root_page_id_);
   auto node = reinterpret_cast<BPlusTreePage *>(node_page->GetData());
-  LockAndUnlock(node_page, node, OperateType::Other, transaction);
+  // LockAndUnlock(node_page, node, OperateType::Other, transaction);
   while (!node->IsLeafPage()) {
     bool found = false;
     auto node_as_internal = reinterpret_cast<InternalPage *>(node);
@@ -352,7 +380,7 @@ auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, int *index, OperateType operato
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::LockAndUnlock(Page *page, BPlusTreePage *node, OperateType operator_type,
                                    Transaction *transaction) {
-  #ifdef PrintEntryFunInfo
+  #ifdef PrintLogInfo
   LOG_INFO("LockAndUnlock");
   #endif
   if (transaction == nullptr) {
@@ -400,7 +428,7 @@ void BPLUSTREE_TYPE::LockAndUnlock(Page *page, BPlusTreePage *node, OperateType 
         LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                  std::hash<std::thread::id>{}(transaction->GetThreadId()));
         #endif
-        latch_.unlock();
+        // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
         #ifdef PrintRootInfo
         LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                  std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -416,7 +444,7 @@ void BPLUSTREE_TYPE::LockAndUnlock(Page *page, BPlusTreePage *node, OperateType 
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key,
                                   const ValueType &value, Transaction *transaction) {
-  #ifdef PrintEntryFunInfo
+  #ifdef PrintLogInfo
   LOG_INFO("InsertParent: key=%ld value=%d page1 id=%d page2 id=%d thread %zu", key.ToString(), value.GetPageId(),
            page1->GetPageId(), page2->GetPageId(), std::hash<std::thread::id>{}(transaction->GetThreadId()));
   #endif
@@ -448,6 +476,7 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
     auto old_root_page_id = root_page_id_;
     root_page_id_ = root_page_id;
     UpdateRootPageId(1);
+    virtual_page_ptr_->WUnlatch();
 
     // unlatch all
     if (transaction != nullptr) {
@@ -464,7 +493,7 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
           LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                    std::hash<std::thread::id>{}(transaction->GetThreadId()));
           #endif
-          latch_.unlock();
+          // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
           #ifdef PrintRootInfo
           LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                    std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -515,6 +544,7 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
     InsertParent(parent, parent_prime, k_prime, rid, transaction);
     return;
   }
+  virtual_page_ptr_->WUnlatch();
   // parent is not full
   InsertNode(parent, key, value);
   // unlatch all
@@ -532,7 +562,7 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
         LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                   std::hash<std::thread::id>{}(transaction->GetThreadId()));
         #endif
-        latch_.unlock();
+        // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
         #ifdef PrintRootInfo
         LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                   std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -556,18 +586,33 @@ void BPLUSTREE_TYPE::InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, co
  */
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
+  virtual_page_ptr_->WLatch();
   #ifdef PrintEntryFunInfo
   LOG_INFO("@Remove: key=%ld thread: %zu", key.ToString(), std::hash<std::thread::id>{}(transaction->GetThreadId()));
   #endif
   if (root_page_id_ == INVALID_PAGE_ID) {
+    virtual_page_ptr_->WUnlatch();
     return;
   }
   if (root_page_id_ != INVALID_PAGE_ID) {
+    Page *root_page = buffer_pool_manager_->FetchPage(root_page_id_);
+    root_page->WLatch();
+    transaction->GetPageSet()->push_back(root_page);
+
     int temp = -1;
     int *index = &temp;
-    LeafPage *leaf = BPlusTree::GetLeaf(key, index, OperateType::Delete, transaction);
+    LeafPage *leaf = BPlusTree::GetLeaf(key, index, OperateType::Delete, transaction, root_page);
+    bool leafIsRoot = leaf->IsRootPage(),leafSizeIs1 = leaf->GetSize() == 1,leafIsInternal = !leaf->IsLeafPage();
+    if(!(leafIsRoot && leafSizeIs1 && leafIsInternal)){
+      virtual_page_ptr_->WUnlatch();
+    }
     if (*index == -1) {
-      LOG_DEBUG("key not found");
+      if(leafIsRoot && leafSizeIs1 && leafIsInternal){
+        virtual_page_ptr_->WUnlatch();
+      }
+      #ifdef PrintLogInfo
+      LOG_INFO("key not found");
+      #endif
       auto page_set = transaction->GetPageSet();
       if (transaction != nullptr) {
         for (auto p : *page_set) {
@@ -580,7 +625,7 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
             LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                     std::hash<std::thread::id>{}(transaction->GetThreadId()));
             #endif
-            latch_.unlock();
+            // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
             #ifdef PrintRootInfo
             LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                     std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -593,6 +638,7 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
         page_set->clear();
         // protect root_page_id
       }
+      // virtual_page_ptr_->WUnlatch();
       if (!buffer_pool_manager_->UnpinPage(leaf->GetPageId(), false)) {
         LOG_DEBUG("Insert: unpin leaf page failed");
       }
@@ -604,7 +650,7 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
 
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Transaction *transaction) {
-  #ifdef PrintEntryFunInfo
+  #ifdef PrintLogInfo
   LOG_INFO("RemoveEntry: key=%ld thread: %zu node1: %d", key.ToString(),
            std::hash<std::thread::id>{}(transaction->GetThreadId()), node1->GetPageId());
   #endif
@@ -643,7 +689,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
         LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                  std::hash<std::thread::id>{}(transaction->GetThreadId()));
         #endif
-        latch_.unlock();
+        // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
         #ifdef PrintRootInfo
         LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                  std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -780,7 +826,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
               LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                        std::hash<std::thread::id>{}(transaction->GetThreadId()));
               #endif
-              latch_.unlock();
+              // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
               #ifdef PrintRootInfo
               LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                        std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -838,6 +884,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
         child->SetParentPageId(INVALID_PAGE_ID);
         root_page_id_ = child_page_id;
         UpdateRootPageId(1);
+        virtual_page_ptr_->WUnlatch();
         #ifdef PrintLogInfo
         LOG_INFO("UpdateRootPageId");
         #endif
@@ -865,7 +912,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
           LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                    std::hash<std::thread::id>{}(transaction->GetThreadId()));
           #endif
-          latch_.unlock();
+          // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
           #ifdef PrintRootInfo
           LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                    std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -900,7 +947,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
         LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                  std::hash<std::thread::id>{}(transaction->GetThreadId()));
         #endif
-        latch_.unlock();
+        // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
         #ifdef PrintRootInfo
         LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                  std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -1051,7 +1098,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
               LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                        std::hash<std::thread::id>{}(transaction->GetThreadId()));
               #endif
-              latch_.unlock();
+              // root_page_id_latch_->UnlockRootID(transaction->GetThreadId());
               #ifdef PrintRootInfo
               LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                        std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -1092,18 +1139,6 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
   }
 }
 
-INDEX_TEMPLATE_ARGUMENTS
-void BPLUSTREE_TYPE::LockRootID(){
-  latch_.lock();
-}
-INDEX_TEMPLATE_ARGUMENTS
-auto BPLUSTREE_TYPE::UnlockRootID(bool is_LockRootID)->bool{
-  if(is_LockRootID){
-    latch_.unlock();
-  }
-  return false;
-}
-
 /*****************************************************************************
  * INDEX ITERATOR
  *****************************************************************************/
@@ -1136,7 +1171,8 @@ INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE {
   int temp = false;
   int *index = &temp;
-  LeafPage *leaf = BPlusTree::GetLeaf(key, index, OperateType::Iterator);
+  Page *root_page = buffer_pool_manager_->FetchPage(root_page_id_);
+  LeafPage *leaf = BPlusTree::GetLeaf(key, index, OperateType::Iterator,nullptr, root_page);
   return INDEXITERATOR_TYPE(leaf, *index, buffer_pool_manager_);
 }
 
