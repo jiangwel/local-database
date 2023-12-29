@@ -154,4 +154,66 @@ TEST(BPlusTreeTests, DeleteTest2) {
   remove("test.db");
   remove("test.log");
 }
+
+TEST(BPlusTreeTests, DeleteTest3) {
+ // create KeyComparator and index schema
+  auto key_schema = ParseCreateStatement("a bigint");
+  GenericComparator<8> comparator(key_schema.get());
+
+  auto *disk_manager = new DiskManager("test.db");
+  BufferPoolManager *bpm = new BufferPoolManagerInstance(50, disk_manager);
+  // create b+ tree
+  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 2, 3);
+  GenericKey<8> index_key;
+  RID rid;
+  // create transaction
+
+  // create and fetch header_page
+  page_id_t page_id;
+  auto header_page = bpm->NewPage(&page_id);
+  (void)header_page;
+  auto *transaction = new Transaction(0);
+  // 插入1,2,3,4,5
+  std::vector<int64_t> keys = {1, 2, 3, 4, 5,6,7,8,9,10};
+  for (auto key : keys) {
+    int64_t value = key & 0xFFFFFFFF;
+    rid.Set(static_cast<int32_t>(key >> 32), value);
+    index_key.SetFromInteger(key);
+    tree.Insert(index_key, rid,transaction);
+  }
+  // 删除1,5 还剩下2,3,4
+  std::vector<int64_t> remove_keys = {1,5,3,4,5};
+  for (auto key : remove_keys) {
+    index_key.SetFromInteger(key);
+    tree.Remove(index_key, transaction);
+  }
+
+  int64_t size = 0;
+  bool is_present;
+  std::vector<RID> rids;
+
+  for (auto key : keys) {
+    rids.clear();
+    index_key.SetFromInteger(key);
+    is_present = tree.GetValue(index_key, &rids);
+    // 如果不存在就找不到
+    if (!is_present) {
+      EXPECT_NE(std::find(remove_keys.begin(), remove_keys.end(), key), remove_keys.end());
+    } else {
+      std::cout << std::endl << key << std::endl;
+      EXPECT_EQ(rids.size(), 1);
+      EXPECT_EQ(rids[0].GetPageId(), 0);
+      EXPECT_EQ(rids[0].GetSlotNum(), key);
+      size = size + 1;
+    }
+  }
+
+
+  bpm->UnpinPage(HEADER_PAGE_ID, true);
+  delete disk_manager;
+  delete bpm;
+  delete transaction;
+  remove("test.db");
+  remove("test.log"); 
+}
 }  // namespace bustub

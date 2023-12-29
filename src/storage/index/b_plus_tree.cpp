@@ -825,7 +825,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
               LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                        std::hash<std::thread::id>{}(transaction->GetThreadId()));
               #endif
-              // root_page_id_latch_.UnlockRootID(transaction->GetThreadId());
+              root_page_id_latch_.WUnlock();
               #ifdef PrintRootInfo
               LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                        std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -883,7 +883,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
         child->SetParentPageId(INVALID_PAGE_ID);
         root_page_id_ = child_page_id;
         UpdateRootPageId(1);
-        root_page_id_latch_.WUnlock();
+        // root_page_id_latch_.WUnlock();
         #ifdef PrintLogInfo
         LOG_INFO("UpdateRootPageId");
         #endif
@@ -911,7 +911,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
           LOG_INFO("T unlock root id %d thread %zu", root_page_id_,
                    std::hash<std::thread::id>{}(transaction->GetThreadId()));
           #endif
-          // root_page_id_latch_.UnlockRootID(transaction->GetThreadId());
+          root_page_id_latch_.WUnlock();
           #ifdef PrintRootInfo
           LOG_INFO("S unlock root id %d thread %zu", root_page_id_,
                    std::hash<std::thread::id>{}(transaction->GetThreadId()));
@@ -1130,6 +1130,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
                  std::hash<std::thread::id>{}(transaction->GetThreadId()));
         #endif
         page_set->pop_back();
+        root_page_id_latch_.WUnlock();
       }
       if (!buffer_pool_manager_->UnpinPage(internal->GetPageId(), true)) {
         LOG_DEBUG("internal: unpin page failed");
