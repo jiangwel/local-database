@@ -120,8 +120,9 @@ class BPlusTree {
   int internal_max_size_;
   page_id_t root_page_id_;
   // RootPageIDLatch* root_page_id_latch_;
-  Page virtual_page_{};
-  Page *virtual_page_ptr_;        
+  // Page virtual_page_{};
+  // Page *virtual_page_ptr_;       
+  ReaderWriterLatch root_page_id_latch_; 
 };
 
 }  // namespace bustub
