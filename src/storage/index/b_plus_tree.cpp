@@ -49,8 +49,8 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
   #endif
   Page *root_page = buffer_pool_manager_->FetchPage(root_page_id_);
   //LOG_INFO("page--");
+  root_page->RLatch();
   if(transaction != nullptr){
-    root_page->RLatch();
     transaction->GetPageSet()->push_back(root_page);
   }
   root_page_id_latch_.RUnlock();
@@ -61,27 +61,13 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
   // key is found
   if (*index != -1) {
     result->push_back(leaf->ValueAt(*index));
-    if (transaction != nullptr) {
-      transaction->GetPageSet()->back()->RUnlatch();
-      #ifdef PrintThreadInfo
-      LOG_INFO("RUnlatch p%d thread %zu", transaction->GetPageSet()->back()->GetPageId(),
-               std::hash<std::thread::id>{}(transaction->GetThreadId()));
-      #endif
-      transaction->GetPageSet()->clear();
+    if(!buffer_pool_manager_->UnpinPage(leaf->GetPageId(), false)){
+      LOG_DEBUG("GetValue: unpin leaf page failed");
     }
-    if (!buffer_pool_manager_->UnpinPage(leaf->GetPageId(), false)) {
-      LOG_DEBUG("Insert: unpin leaf1 page failed");
-    }
-    //LOG_INFO("page++");
     return true;
   }
-  if (transaction != nullptr) {
-    transaction->GetPageSet()->back()->RUnlatch();
-    #ifdef PrintThreadInfo
-    LOG_INFO("RUnlatch p%d thread %zu", transaction->GetPageSet()->back()->GetPageId(),
-             std::hash<std::thread::id>{}(transaction->GetThreadId()));
-    #endif
-    transaction->GetPageSet()->pop_back();
+  if(!buffer_pool_manager_->UnpinPage(leaf->GetPageId(), false)){
+      LOG_DEBUG("GetValue: unpin leaf page failed");
   }
   return false;
 }
@@ -305,7 +291,6 @@ auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, int *index, OperateType operato
   LOG_INFO("GetLeaf");
   #endif
   auto node = reinterpret_cast<BPlusTreePage *>(node_page->GetData());
-  // LockAndUnlock(node_page, node, OperateType::Other, transaction);
   while (!node->IsLeafPage()) {
     bool found = false;
     auto node_as_internal = reinterpret_cast<InternalPage *>(node);
@@ -321,12 +306,22 @@ auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, int *index, OperateType operato
         break;
       }
     }
+    if(operator_type == OperateType::Find){
+      node_page->RUnlatch();
+      if(!buffer_pool_manager_->UnpinPage(node_page->GetPageId(), false)){
+        LOG_DEBUG("unpin page failed");
+      }
+    }
     // all key > input_kay
     next_page_id = !found ? (node_as_internal->ValueAt(node_as_internal->GetSize() - 1)) : next_page_id;
     node_page = buffer_pool_manager_->BufferPoolManager::FetchPage(next_page_id);
     //LOG_INFO("page--");
     node = reinterpret_cast<BPlusTreePage *>(node_page->GetData());
-    LockAndUnlock(node_page, node, operator_type, transaction);
+    if(operator_type == OperateType::Find){ 
+      node_page->RLatch();
+    } else { 
+      LockAndUnlock(node_page, node, operator_type, transaction);
+    }
   }
 
   auto leaf = reinterpret_cast<LeafPage *>(node);
