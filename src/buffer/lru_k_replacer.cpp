@@ -30,6 +30,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
       frame_info_.erase(*it);
       access_less_k_.remove(*it);
       evictable_num_--;
+      // LOG_INFO("LRUKReplacer::Evict: evictable_num_ = %ld", evictable_num_);
       return true;
     }
   }
@@ -39,6 +40,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
       frame_info_.erase(*it);
       access_k_frame_.remove(*it);
       evictable_num_--;
+      // LOG_INFO("LRUKReplacer::Evict: evictable_num_ = %ld", evictable_num_);
       return true;
     }
   }
@@ -77,6 +79,7 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   if (set_evictable != frame_info_[frame_id].evictable_) {
     frame_info_[frame_id].evictable_ = set_evictable;
     evictable_num_ += set_evictable ? 1 : -1;
+    // LOG_INFO("LRUKReplacer::SetEvictable: evictable_num = %ld", evictable_num_);
   }
 }
 

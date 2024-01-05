@@ -77,26 +77,6 @@ class BPlusTree {
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
 
  private:
-  class RootPageIDLatch{
-    public:
-      RootPageIDLatch(){
-        thread_id_ = INVALID_THREAD_ID;
-      } 
-      ~RootPageIDLatch() = default;
-      void LockRootID(std::thread::id thread_id){
-        while(thread_id_ != INVALID_THREAD_ID){}
-        latch_.lock();
-        thread_id_ = thread_id;
-      }
-      void UnlockRootID(std::thread::id thread_id){
-        while(thread_id != thread_id_){}
-        thread_id_ = INVALID_THREAD_ID;
-        latch_.unlock();
-      }
-    private:
-      std::mutex latch_;
-      std::thread::id thread_id_;
-  };
   void UpdateRootPageId(int insert_record = 0);
 
   /* Debug Routines for FREE!! */
@@ -105,13 +85,15 @@ class BPlusTree {
   void ToString(BPlusTreePage *page, BufferPoolManager *buffer_pool_manager_) const;
 
   void InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value);
-  auto GetLeaf(const KeyType &key, int *index, OperateType operator_type, Transaction *transaction = nullptr, Page* node_page = nullptr)
-      -> LeafPage *;
-  // void SplitTree(BPlusTreePage *page1, BPlusTreePage *page2);
+  auto GetLeaf(const KeyType &key, int *index, OperateType operator_type, Transaction *transaction = nullptr,
+               Page *node_page = nullptr) -> LeafPage *;
+  auto GetPage(const KeyType &key, int *index, OperateType operator_type, Transaction *transaction = nullptr,
+               Page *node_page = nullptr) -> Page *;
   void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key, const ValueType &value,
                     Transaction *transaction = nullptr);
   void RemoveEntry(BPlusTreePage *node1, const KeyType &key, Transaction *transaction = nullptr);
   void LockAndUnlock(Page *page, BPlusTreePage *node, OperateType operator_type, Transaction *transaction = nullptr);
+  void ReleaseResourcesd(Transaction *transaction = nullptr);
   // member variable
   std::string index_name_;
   BufferPoolManager *buffer_pool_manager_;
@@ -121,8 +103,8 @@ class BPlusTree {
   page_id_t root_page_id_;
   // RootPageIDLatch* root_page_id_latch_;
   // Page virtual_page_{};
-  // Page *virtual_page_ptr_;       
-  ReaderWriterLatch root_page_id_latch_; 
+  // Page *virtual_page_ptr_;
+  ReaderWriterLatch root_page_id_latch_;
 };
 
 }  // namespace bustub
