@@ -82,6 +82,10 @@ void BPLUSTREE_TYPE::ReleaseResourcesd(Transaction *transaction){
     //LOG_INFO("page++");
   }
   transaction->GetPageSet()->clear();
+  for (auto p : *transaction->GetDeletedPageSet()) {
+    buffer_pool_manager_->DeletePage(p);
+  }
+  transaction->GetDeletedPageSet()->clear();
 }
 /*****************************************************************************
  * INSERTION
@@ -642,6 +646,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
       #endif
       if (leaf->GetPageId() != parent->ValueAt(parent->GetSize() - 1)) {
         sibling_page = buffer_pool_manager_->FetchPage(leaf->GetNextPageId());
+        page_set->push_back(sibling_page);
         leaf_plus = reinterpret_cast<LeafPage *>(sibling_page->GetData());
         // key_plus maybe not equal to leaf_plus.kay[0]
         for (int i = 1; i < parent->GetSize(); i++) {
@@ -655,6 +660,7 @@ void BPLUSTREE_TYPE::RemoveEntry(BPlusTreePage *node1, const KeyType &key, Trans
           if (parent->ValueAt(i) == leaf->GetPageId()) {
             auto leaf_plus_page_id = parent->ValueAt(i - 1);
             sibling_page = buffer_pool_manager_->FetchPage(leaf_plus_page_id);
+            page_set->push_back(sibling_page);
             leaf_plus = reinterpret_cast<LeafPage *>(sibling_page->GetData());
             key_plus = parent->KeyAt(i);
             break;
