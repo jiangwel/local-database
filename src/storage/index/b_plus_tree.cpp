@@ -55,12 +55,11 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
   }
   root_page_id_latch_.RUnlock();
 
-  int temp = -1;
-  int *index = &temp;
-  LeafPage *leaf = GetLeaf(key, index, OperateType::Find, transaction, root_page);
+  auto[leaf,index] = GetLeaf(key, OperateType::Find, transaction, root_page);
+  bool is_key_found = index != -1;
   // key is found
-  if (*index != -1) {
-    result->push_back(leaf->ValueAt(*index));
+  if (is_key_found) {
+    result->push_back(leaf->ValueAt(index));
     if(!buffer_pool_manager_->UnpinPage(leaf->GetPageId(), false)){
       LOG_DEBUG("GetValue: unpin leaf page failed");
     }
@@ -159,12 +158,11 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   auto root_page = buffer_pool_manager_->FetchPage(root_page_id_);
   root_page->WLatch();
   page_set->push_back(root_page);
-  int temp = -1;
-  int *index = &temp;
-  LeafPage *leaf1 = GetLeaf(key, index, OperateType::Insert, transaction, root_page);
+  auto [leaf1,index] = GetLeaf(key, OperateType::Insert, transaction, root_page);
   bool leaf1IsFull = leaf1->GetSize() +1 == leaf_max_size_;
+  bool is_key_found = index!=-1;
 
-  if (*index != -1) {
+  if (is_key_found) {
     root_page_id_latch_.WUnlock();
     ReleaseResourcesd(transaction); 
     return false;
@@ -256,8 +254,8 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, int *index, OperateType operator_type, Transaction *transaction,Page* node_page)
-    -> LeafPage * {
+auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, OperateType operator_type, Transaction *transaction,Page* node_page)
+    -> std::tuple<LeafPage *, int> {
   #ifdef PrintLogInfo
   LOG_INFO("GetLeaf");
   #endif
@@ -299,12 +297,11 @@ auto BPLUSTREE_TYPE::GetLeaf(const KeyType &key, int *index, OperateType operato
   // check if key exists in leaf
   for (int i = 0; i < leaf->GetSize(); i++) {
     if (comparator_(key, leaf->KeyAt(i)) == 0) {
-      *index = i;
-      return leaf;
+      return {leaf,i};
     }
   }
-  *index = -1;
-  return leaf;
+
+  return {leaf,-1};
 }
 
 INDEX_TEMPLATE_ARGUMENTS
@@ -504,14 +501,10 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
     root_page->WLatch();
     transaction->GetPageSet()->push_back(root_page);
 
-    int temp = -1;
-    int *index = &temp;
-    LeafPage *leaf = BPlusTree::GetLeaf(key, index, OperateType::Delete, transaction, root_page);
+    auto [leaf,index] = BPlusTree::GetLeaf(key, OperateType::Delete, transaction, root_page);
     bool leafIsRoot = leaf->IsRootPage(),leafSizeIs1 = leaf->GetSize() == 1,leafIsInternal = !leaf->IsLeafPage();
-    // if(!(leafIsRoot && leafSizeIs1 && leafIsInternal)){
-    //   root_page_id_latch_.WUnlock();
-    // }
-    if (*index == -1) {
+    bool is_key_found = index!=-1;
+    if (!is_key_found) {
       if(leafIsRoot && leafSizeIs1 && leafIsInternal){
         root_page_id_latch_.WUnlock();
       }
@@ -1077,11 +1070,9 @@ auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE {
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE {
-  int temp = false;
-  int *index = &temp;
   Page *root_page = buffer_pool_manager_->FetchPage(root_page_id_);
-  LeafPage *leaf = BPlusTree::GetLeaf(key, index, OperateType::Iterator,nullptr, root_page);
-  return INDEXITERATOR_TYPE(leaf, *index, buffer_pool_manager_);
+  auto [leaf,index] = BPlusTree::GetLeaf(key, OperateType::Iterator,nullptr, root_page);
+  return INDEXITERATOR_TYPE(leaf, index, buffer_pool_manager_);
 }
 
 /*

@@ -85,10 +85,8 @@ class BPlusTree {
   void ToString(BPlusTreePage *page, BufferPoolManager *buffer_pool_manager_) const;
 
   void InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value);
-  auto GetLeaf(const KeyType &key, int *index, OperateType operator_type, Transaction *transaction = nullptr,
-               Page *node_page = nullptr) -> LeafPage *;
-  auto GetPage(const KeyType &key, int *index, OperateType operator_type, Transaction *transaction = nullptr,
-               Page *node_page = nullptr) -> Page *;
+  auto GetLeaf(const KeyType &key, OperateType operator_type, Transaction *transaction = nullptr,
+               Page *node_page = nullptr) -> std::tuple<LeafPage *, int>;
   void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key, const ValueType &value,
                     Transaction *transaction = nullptr);
   void RemoveEntry(BPlusTreePage *node1, const KeyType &key, Transaction *transaction = nullptr);
