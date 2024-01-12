@@ -94,6 +94,8 @@ class BPlusTree {
   void ReleaseResourcesd(Transaction *transaction = nullptr);
   void MakeRoot(const KeyType &key, const ValueType &value);
   void InsertInFillNode(LeafPage *leaf1,const KeyType &key, const ValueType &value,Transaction *transaction);
+  void RenewRoot(BPlusTreePage *page1, BPlusTreePage *page2,const KeyType &key);
+  void InsertInFillParent(BPlusTreePage *page1, BPlusTreePage *page2,InternalPage * parent,const KeyType &key, const ValueType &value, Transaction *transaction);
   // member variable
   std::string index_name_;
   BufferPoolManager *buffer_pool_manager_;
