@@ -90,6 +90,49 @@ void BPLUSTREE_TYPE::ReleaseResourcesd(Transaction *transaction){
 /*****************************************************************************
  * INSERTION
  *****************************************************************************/
+
+INDEX_TEMPLATE_ARGUMENTS
+void BPLUSTREE_TYPE::MakeRoot(const KeyType &key, const ValueType &value){
+  page_id_t new_root_page_id;
+  auto new_root = reinterpret_cast<LeafPage *>(buffer_pool_manager_->NewPage(&new_root_page_id)->GetData());
+  root_page_id_ = new_root_page_id;
+  new_root->Init(root_page_id_, INVALID_PAGE_ID, leaf_max_size_);
+  InsertNode(reinterpret_cast<BPlusTreePage *>(new_root), key, value);
+  UpdateRootPageId(0);
+  buffer_pool_manager_->UnpinPage(new_root->GetPageId(), true);
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+void BPLUSTREE_TYPE::InsertInFillNode(LeafPage *leaf1,const KeyType &key, const ValueType &value,Transaction *transaction){
+  page_id_t new_node_id;
+  auto new_page = buffer_pool_manager_->NewPage(&new_node_id);
+  new_page->WLatch();
+  auto page_set = transaction->GetPageSet();
+  page_set->push_back(new_page);
+
+  auto leaf2 = reinterpret_cast<LeafPage *>(new_page->GetData());
+  leaf2->Init(new_node_id, leaf1->GetParentPageId(), leaf_max_size_);
+
+  // splite
+  leaf2->SetNextPageId(leaf1->GetNextPageId());
+  leaf1->SetNextPageId(leaf2->GetPageId());
+  // move to leaf2
+  for (int i = leaf1->GetSize() / 2; i < leaf1->GetSize(); ++i) {
+    leaf2->SetPairAt(leaf2->GetSize(), {leaf1->KeyAt(i), leaf1->ValueAt(i)});
+    leaf2->IncreaseSize(1);
+  }
+  int increase_size = leaf1->GetSize() - leaf1->GetSize() / 2;
+  leaf1->IncreaseSize(-increase_size);
+
+  // update parent
+  KeyType first_key = leaf2->KeyAt(0);
+  RID rid(leaf2->GetPageId(), leaf2->GetPageId() & 0xFFFFFFFF);
+  auto node2 = reinterpret_cast<BPlusTreePage *>(leaf2);
+  auto node1 = reinterpret_cast<BPlusTreePage *>(leaf1);
+  BPlusTree::InsertParent(node1, node2, first_key, rid, transaction);
+}
+
+
 /*
  * Insert constant key & value pair into b+ tree
  * if current tree is empty, start new tree, update root page id and insert
@@ -107,7 +150,7 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   #endif
 
   if (IsEmpty()) {
-    MakeRoot();
+    MakeRoot(key,value);
     root_page_id_latch_.WUnlock();
     return true;
   }
@@ -130,55 +173,18 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   auto node1 = reinterpret_cast<BPlusTreePage *>(leaf1);
 
   if (!leaf1IsFull) {
+    root_page_id_latch_.WUnlock();
     InsertNode(node1, key, value);
     ReleaseResourcesd(transaction);
     return true;
   }
 
   InsertNode(node1, key, value);
-  InsertInFillNode();
+  InsertInFillNode(leaf1,key,value,transaction);
   ReleaseResourcesd(transaction);
   return true;
 }
 
-INDEX_TEMPLATE_ARGUMENTS
-void BPLUSTREE_TYPE::MakeRoot(const KeyType &key, const ValueType &value){
-  page_id_t new_root_page_id;
-  auto new_root = reinterpret_cast<LeafPage *>(buffer_pool_manager_->NewPage(&new_root_page_id)->GetData());
-  root_page_id_ = new_root_page_id;
-  root->Init(root_page_id_, INVALID_PAGE_ID, leaf_max_size_);
-  InsertNode(reinterpret_cast<BPlusTreePage *>(root), key, value);
-  UpdateRootPageId(0);
-  buffer_pool_manager_->UnpinPage(root->GetPageId(), true);
-}
-
-INDEX_TEMPLATE_ARGUMENTS
-void BPLUSTREE_TYPE::InsertInFillNode(LeafPage *leaf1,const KeyType &key, const ValueType &value,Transaction *transaction){
-  page_id_t new_node_id;
-  auto new_page = buffer_pool_manager_->NewPage(&new_node_id);
-  new_page->WLatch();
-  page_set->push_back(new_page);
-
-  auto leaf2 = reinterpret_cast<LeafPage *>(new_page->GetData());
-  leaf2->Init(new_node_id, leaf1->GetParentPageId(), leaf_max_size_);
-
-  // splite
-  leaf2->SetNextPageId(leaf1->GetNextPageId());
-  leaf1->SetNextPageId(leaf2->GetPageId());
-  // move to leaf2
-  for (int i = leaf1->GetSize() / 2; i < leaf1->GetSize(); ++i) {
-    leaf2->SetPairAt(leaf2->GetSize(), {leaf1->KeyAt(i), leaf1->ValueAt(i)});
-    leaf2->IncreaseSize(1);
-  }
-  int increase_size = leaf1->GetSize() - leaf1->GetSize() / 2;
-  leaf1->IncreaseSize(-increase_size);
-
-  // update parent
-  KeyType first_key = leaf2->KeyAt(0);
-  RID rid(leaf2->GetPageId(), leaf2->GetPageId() & 0xFFFFFFFF);
-  auto node2 = reinterpret_cast<BPlusTreePage *>(leaf2);
-  BPlusTree::InsertParent(node1, node2, first_key, rid, transaction);
-}
 
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value) {
