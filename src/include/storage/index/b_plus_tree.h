@@ -97,9 +97,8 @@ class BPlusTree {
   void RenewRoot(BPlusTreePage *page1, BPlusTreePage *page2,const KeyType &key);
   void InsertInFillParent(BPlusTreePage *page1, BPlusTreePage *page2,InternalPage * parent,const KeyType &key, const ValueType &value, Transaction *transaction);
   void ReplaceRootByChildren(InternalPage *old_root);
-  auto GetSibling(InternalPage *parent_page,const ValueType &page_id)->page_id_t;
-  void ReplaceRootByChildren(InternalPage *old_root);
-  void Coalesce(bool is_sibling_brother,P *bptree_page,P *sibling_page);
+  auto GetSiblingIdx(InternalPage *parent_page,const int page_id)->int;
+  void Coalesce(bool is_sibling_brother,BPlusTreePage *bptree_page,BPlusTreePage *sibling_page);
   // member variable
   std::string index_name_;
   BufferPoolManager *buffer_pool_manager_;
