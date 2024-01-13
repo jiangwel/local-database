@@ -85,16 +85,17 @@ class BPlusTree {
   void ToString(BPlusTreePage *page, BufferPoolManager *buffer_pool_manager_) const;
 
   void InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value);
-  auto GetLeaf(const KeyType &key, int *index, OperateType operator_type, Transaction *transaction = nullptr,
-               Page *node_page = nullptr) -> LeafPage *;
-  auto GetPage(const KeyType &key, int *index, OperateType operator_type, Transaction *transaction = nullptr,
-               Page *node_page = nullptr) -> Page *;
+  auto GetLeaf(const KeyType &key, OperateType operator_type, Transaction *transaction = nullptr,
+               Page *node_page = nullptr) -> std::tuple<LeafPage *, int>;
   void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key, const ValueType &value,
                     Transaction *transaction = nullptr);
   void RemoveEntry(BPlusTreePage *node1, const KeyType &key, Transaction *transaction = nullptr);
   void LockAndUnlock(Page *page, BPlusTreePage *node, OperateType operator_type, Transaction *transaction = nullptr);
   void ReleaseResourcesd(Transaction *transaction = nullptr);
-  void ReplaceRootByChildren(InternalPage *old_root);
+  void MakeRoot(const KeyType &key, const ValueType &value);
+  void InsertInFillNode(LeafPage *leaf1,const KeyType &key, const ValueType &value,Transaction *transaction);
+  void RenewRoot(BPlusTreePage *page1, BPlusTreePage *page2,const KeyType &key);
+  void InsertInFillParent(BPlusTreePage *page1, BPlusTreePage *page2,InternalPage * parent,const KeyType &key, const ValueType &value, Transaction *transaction);
   // member variable
   std::string index_name_;
   BufferPoolManager *buffer_pool_manager_;
