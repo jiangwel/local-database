@@ -89,13 +89,17 @@ class BPlusTree {
                Page *node_page = nullptr) -> std::tuple<LeafPage *, int>;
   void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key, const ValueType &value,
                     Transaction *transaction = nullptr);
-  void RemoveEntry(BPlusTreePage *node1, const KeyType &key, Transaction *transaction = nullptr);
+  void RemoveEntry(BPlusTreePage *bptree_page, const KeyType &key, Transaction *transaction = nullptr);
   void LockAndUnlock(Page *page, BPlusTreePage *node, OperateType operator_type, Transaction *transaction = nullptr);
   void ReleaseResourcesd(Transaction *transaction = nullptr);
   void MakeRoot(const KeyType &key, const ValueType &value);
   void InsertInFillNode(LeafPage *leaf1,const KeyType &key, const ValueType &value,Transaction *transaction);
   void RenewRoot(BPlusTreePage *page1, BPlusTreePage *page2,const KeyType &key);
   void InsertInFillParent(BPlusTreePage *page1, BPlusTreePage *page2,InternalPage * parent,const KeyType &key, const ValueType &value, Transaction *transaction);
+  void ReplaceRootByChildren(InternalPage *old_root);
+  auto GetSibling(InternalPage *parent_page,const ValueType &page_id)->page_id_t;
+  void ReplaceRootByChildren(InternalPage *old_root);
+  void Coalesce(bool is_sibling_brother,P *bptree_page,P *sibling_page);
   // member variable
   std::string index_name_;
   BufferPoolManager *buffer_pool_manager_;
