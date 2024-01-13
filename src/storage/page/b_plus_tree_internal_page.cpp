@@ -102,6 +102,19 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::DeletePair(const KeyType &key, KeyComparato
   return false;
 }
 
+/*
+return brother first
+*/
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::GetSibling(const ValueType &page_id)->ValueType {
+  ValueType sibling_page_id = INVALID_PAGE_ID;
+  for (int i = 0; i < GetSize(); i++) {
+    if (ValueAt(i) == page_id) {
+      sibling_page_id = i==0?ValueAt(i+1):ValueAt(i-1);
+    }
+  } 
+  return sibling_page_id;
+}
 // valuetype for internalNode should be page id_t
 template class BPlusTreeInternalPage<GenericKey<4>, page_id_t, GenericComparator<4>>;
 template class BPlusTreeInternalPage<GenericKey<8>, page_id_t, GenericComparator<8>>;

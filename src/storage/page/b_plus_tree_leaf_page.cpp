@@ -24,13 +24,13 @@ namespace bustub {
 
 /**
  * Init method after creating a new leaf page
- * Including set page type, set current size to zero, set page id/parent id, set
+ * Including set page type, set current size to zero, set page id/parent_page id, set
  * next page id and set max size
  */
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {
+void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_page_id, int max_size) {
   SetPageId(page_id);
-  SetParentPageId(parent_id);
+  Setparent_pagePageId(parent_page_id);
   SetPageType(IndexPageType::LEAF_PAGE);
   SetMaxSize(max_size);
   SetSize(0);
@@ -104,6 +104,23 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::PairAt(int index) -> MappingType & {
   }
   return array_[index];
 }
+
+// INDEX_TEMPLATE_ARGUMENTS
+// auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetSibling(InternalPage *parent_page_page)->BPlusTreeLeafPage * {
+//   BPlusTreeLeafPage * sibling_page = nullptr;
+//   if (page_id_ != parent_page->ValueAt(parent_page->GetSize() - 1)) {
+//     sibling_page = buffer_pool_manager_->FetchPage(next_page_id_);
+//     return sibling_page;
+//   }
+//   for (int i = 1; i < parent_page->GetSize(); i++) {
+//     if (parent_page->ValueAt(i) == page_id_) {
+//       auto sibling_page_id = parent_page->ValueAt(i - 1);
+//       sibling_page = buffer_pool_manager_->FetchPage(sibling_page_id);
+//       break;
+//     }
+//   }
+//   return sibling_page;
+// }
 
 template class BPlusTreeLeafPage<GenericKey<4>, RID, GenericComparator<4>>;
 template class BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>>;

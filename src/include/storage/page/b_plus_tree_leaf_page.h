@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+// #include "storage/page/b_plus_tree_internal_page.h"
 #include "storage/page/b_plus_tree_page.h"
 
 namespace bustub {
@@ -41,6 +42,7 @@ namespace bustub {
  */
 INDEX_TEMPLATE_ARGUMENTS
 class BPlusTreeLeafPage : public BPlusTreePage {
+// using InternalPage = BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>;
  public:
   // After creating a new leaf page from buffer pool, must call initialize
   // method to set default values
@@ -54,12 +56,11 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto SetPairAt(int index, const MappingType &pair) -> bool;
   auto DeletePair(const KeyType &key, KeyComparator &comparator) -> bool;
   auto PairAt(int index) -> MappingType &;
-  // auto GetData() -> std::list<MappingType>&;
+  // auto GetSibling(InternalPage *parent_page_pag)->BPlusTreeLeafPage *;
  private:
   page_id_t next_page_id_;
   // Flexible array member for page data.
   MappingType array_[1];
 
-  // std::list<MappingType> leaf_data_;
 };
 }  // namespace bustub
