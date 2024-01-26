@@ -85,8 +85,7 @@ class BPlusTree {
   void ToString(BPlusTreePage *page, BufferPoolManager *buffer_pool_manager_) const;
 
   void InsertNode(BPlusTreePage *node, const KeyType &key, const ValueType &value);
-  auto GetLeaf(const KeyType &key, OperateType operator_type, Transaction *transaction = nullptr,
-               Page *node_page = nullptr) -> std::tuple<LeafPage *, int>;
+  auto GetLeaf(const KeyType &key, OperateType operator_type, Transaction *transaction = nullptr) -> std::tuple<LeafPage *, bool>;
   void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key, const ValueType &value,
                     Transaction *transaction = nullptr);
   void RemoveEntry(BPlusTreePage *bptree_page, const KeyType &key, Transaction *transaction = nullptr);
@@ -96,10 +95,11 @@ class BPlusTree {
   void InsertInFillNode(LeafPage *leaf1,const KeyType &key, const ValueType &value,Transaction *transaction);
   void RenewRoot(BPlusTreePage *page1, BPlusTreePage *page2,const KeyType &key);
   void InsertInFillParent(BPlusTreePage *page1, BPlusTreePage *page2,InternalPage * parent,const KeyType &key, const ValueType &value, Transaction *transaction);
-  void ReplaceRootByChildren(InternalPage *old_root);
+  void ReplaceRootByChildren(InternalPage *old_root,Transaction *transaction);
   auto GetSiblingIdx(InternalPage *parent_page,const int page_id)->int;
-  void Coalesce(bool is_sibling_brother,BPlusTreePage *bptree_page,BPlusTreePage *sibling_page,InternalPage *parent,const KeyType &key_plus,Transaction *transaction);
-  void Redistribute(BPlusTreePage *bptree_page,BPlusTreePage *sibling_page,InternalPage *parent,KeyType key_plus,bool is_sibling_brother,Transaction *transaction);
+  void Coalesce(bool is_sibling_brother, BPlusTreePage* node, BPlusTreePage* sibling_page,  const KeyType& key_plus, Transaction* transaction);
+  void Redistribute(BPlusTreePage *node,BPlusTreePage *sib_node, InternalPage *parent,bool is_i_plus_before_i,KeyType key_plus);
+  auto IsSafe(BPlusTreePage *node,  OperateType op)->bool;
 
 
   // member variable

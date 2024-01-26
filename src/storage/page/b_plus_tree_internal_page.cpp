@@ -90,7 +90,7 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index, const MappingType &pai
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::DeletePair(const KeyType &key, KeyComparator &comparator) -> bool {
   // array_[0] is invalid key , pointer
-  for (int i = 1; i < this->GetSize(); i++) {
+  for (int i = 0; i < this->GetSize(); i++) {
     if (comparator(array_[i].first, key) == 0) {
       for (int j = i; j < this->GetSize() - 1; j++) {
         array_[j] = array_[j + 1];
@@ -100,6 +100,17 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::DeletePair(const KeyType &key, KeyComparato
     }
   }
   return false;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::ReplaceKey(const KeyType &old_key, const KeyType &new_key,
+                                                KeyComparator &comparator) {
+  for (int i = 0; i < GetSize(); i++) {
+    if (comparator(old_key, KeyAt(i)) == 0) {
+      SetKeyAt(i, new_key);
+      return;
+    }
+  }
 }
 
 // valuetype for internalNode should be page id_t
