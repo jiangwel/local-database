@@ -84,6 +84,7 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetPairAt(int index, const MappingType &pai
     array_[i] = array_[i - 1];
   }
   array_[index] = pair;
+  this->IncreaseSize(1);
   return true;
 }
 

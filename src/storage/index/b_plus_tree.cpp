@@ -106,7 +106,6 @@ void BPLUSTREE_TYPE::InsertInFillNode(LeafPage *leaf1,const KeyType &key, const 
   // move to leaf2
   for (int i = leaf1->GetSize() / 2; i < leaf1->GetSize(); ++i) {
     leaf2->SetPairAt(leaf2->GetSize(), {leaf1->KeyAt(i), leaf1->ValueAt(i)});
-    leaf2->IncreaseSize(1);
   }
   int increase_size = leaf1->GetSize() - leaf1->GetSize() / 2;
   leaf1->IncreaseSize(-increase_size);
@@ -189,7 +188,6 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
       if (!leaf->SetPairAt(0, MappingType(key, value))) {
         LOG_DEBUG("InsertNode: set pair failed 2");
       }
-      leaf->IncreaseSize(1);
       return;
     }
 
@@ -199,7 +197,6 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
         if (!leaf->SetPairAt(i, MappingType(key, value))) {
           LOG_DEBUG("InsertNode: set pair failed 3");
         }
-        leaf->IncreaseSize(1);
         return;
       }
     }
@@ -207,7 +204,6 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
     if (!leaf->SetPairAt(leaf->GetSize(), MappingType(key, value))) {
       LOG_DEBUG("InsertNode: set pair failed 6");
     }
-    leaf->IncreaseSize(1);
     return;
   }
   // #end insert leaf
@@ -219,7 +215,6 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
     if (!internal->SetPairAt(1, std::make_pair(key, value_int))) {
       LOG_DEBUG("InsertNode: set pair failed 4");
     }
-    internal->IncreaseSize(1);
     return;
   }
   // insert
@@ -230,7 +225,6 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
       if (!internal->SetPairAt(i, std::make_pair(key, value_int))) {
         LOG_DEBUG("InsertNode: set pair failed 5");
       }
-      internal->IncreaseSize(1);
       return;
     }
   }
@@ -239,7 +233,6 @@ void BPLUSTREE_TYPE::InsertNode(BPlusTreePage *node, const KeyType &key, const V
   if (!internal->SetPairAt(internal->GetSize(), std::make_pair(key, value_int))) {
     LOG_DEBUG("InsertNode: set pair failed 7");
   }
-  internal->IncreaseSize(1);
   // #end insert internal
 }
 
@@ -349,11 +342,9 @@ void BPLUSTREE_TYPE::RenewRoot(BPlusTreePage *page1, BPlusTreePage *page2,const 
   if (!new_root->SetPairAt(0, std::make_pair(invalid_key, page1->GetPageId()))) {
     LOG_DEBUG("InsertParent: set pair failed 1");
   }
-  new_root->IncreaseSize(1);
   if (!new_root->SetPairAt(1, std::make_pair(key, page2->GetPageId()))) {
     LOG_DEBUG("InsertParent: set pair failed 2");
   }
-  new_root->IncreaseSize(1);
   page1->SetParentPageId(root_page_id);
   page2->SetParentPageId(root_page_id);
   root_page_id_ = root_page_id;
@@ -385,7 +376,6 @@ void BPLUSTREE_TYPE::InsertInFillParent(BPlusTreePage *page1, BPlusTreePage *pag
     //LOG_INFO("page++");
     // move to parent_prime
     parent_prime->SetPairAt(parent_prime->GetSize(), {parent->KeyAt(i), parent->ValueAt(i)});
-    parent_prime->IncreaseSize(1);
   }
   int increase_size = parent->GetSize() - half_index;
   parent->IncreaseSize(-increase_size);
@@ -515,8 +505,8 @@ void BPLUSTREE_TYPE::Coalesce(bool is_sibling_brother, BPlusTreePage* node, BPlu
     auto leaf = reinterpret_cast<LeafPage*>(node);
     auto leaf_sibling_page = reinterpret_cast<LeafPage*>(sibling_page);
     for (int i = 0; i < leaf->GetSize(); i++) {
+      // leaf_sibling_page->SetPairAt(i+leaf_sibling_page->GetSize(), { leaf->KeyAt(i), leaf->ValueAt(i) });
       leaf_sibling_page->SetPairAt(leaf_sibling_page->GetSize(), { leaf->KeyAt(i), leaf->ValueAt(i) });
-      leaf_sibling_page->IncreaseSize(1);
     }
     leaf->SetSize(0);
     leaf_sibling_page->SetNextPageId(leaf->GetNextPageId());
@@ -532,14 +522,14 @@ void BPLUSTREE_TYPE::Coalesce(bool is_sibling_brother, BPlusTreePage* node, BPlu
     child->SetParentPageId(internal_sibling_page->GetPageId());
     buffer_pool_manager_->UnpinPage(child->GetPageId(), true);
 
-    internal_sibling_page->IncreaseSize(1);
     for (int i = 1; i < internal->GetSize(); i++) {
+    // for (int i = 0; i < internal->GetSize(); i++) {
+      // internal_sibling_page->SetPairAt(i+internal_sibling_page->GetSize(), { internal->KeyAt(i), internal->ValueAt(i) });
       internal_sibling_page->SetPairAt(internal_sibling_page->GetSize(), { internal->KeyAt(i), internal->ValueAt(i) });
       auto child =
         reinterpret_cast<BPlusTreePage*>(buffer_pool_manager_->FetchPage(internal->ValueAt(i))->GetData());
       child->SetParentPageId(internal_sibling_page->GetPageId());
       buffer_pool_manager_->UnpinPage(child->GetPageId(), true);
-      internal_sibling_page->IncreaseSize(1);
     }
     internal->SetSize(0);
   }
@@ -563,16 +553,14 @@ void BPLUSTREE_TYPE::Redistribute(BPlusTreePage* node, BPlusTreePage* sib_node, 
     if (is_i_plus_before_i) {
       temp_key = leaf_sibling_page->KeyAt(leaf_sibling_page->GetSize() - 1);
       temp_value = leaf_sibling_page->ValueAt(leaf_sibling_page->GetSize() - 1);
-      leaf_sibling_page->IncreaseSize(-1);
+      leaf_sibling_page->DeletePair(temp_key, comparator_);
       leaf->SetPairAt(0, { temp_key, temp_value });
-      node->IncreaseSize(1);
     }
     else {
       temp_key = leaf_sibling_page->KeyAt(0);
       temp_value = leaf_sibling_page->ValueAt(0);
       leaf_sibling_page->DeletePair(temp_key, comparator_);
       leaf->SetPairAt(leaf->GetSize(), { temp_key, temp_value });
-      leaf->IncreaseSize(1);
       temp_key = leaf_sibling_page->KeyAt(0);
     }
   }

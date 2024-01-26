@@ -32,7 +32,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_page_i
   SetPageId(page_id);
   SetParentPageId(parent_page_id);
   SetPageType(IndexPageType::LEAF_PAGE);
-  SetMaxSize(max_size);
+  SetMaxSize(max_size - (max_size == LEAF_PAGE_SIZE ? 1 : 0));
   SetSize(0);
   SetLSN(INVALID_LSN);
   next_page_id_ = INVALID_PAGE_ID;
@@ -64,14 +64,11 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::SetPairAt(int index, const MappingType &pair) -
   if (index < 0 || index > this->GetSize()) {
     return false;
   }
-  if (index == this->GetSize()) {
-    array_[index] = pair;
-    return true;
-  }
   for (int i = this->GetSize(); i > index; i--) {
     array_[i] = array_[i - 1];
   }
   array_[index] = pair;
+  this->IncreaseSize(1);
   return true;
 }
 
