@@ -44,10 +44,10 @@ TEST(BPlusTreeTests, DeleteTest1) {
     int64_t value = key & 0xFFFFFFFF;
     rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
-    tree.Insert(index_key, rid,transaction);
+    tree.Insert(index_key, rid, transaction);
   }
   // 删除1,5 还剩下2,3,4
-  std::vector<int64_t> remove_keys = {1,2,3,4,5};
+  std::vector<int64_t> remove_keys = {1, 2, 3, 4, 5};
   for (auto key : remove_keys) {
     index_key.SetFromInteger(key);
     tree.Remove(index_key, transaction);
@@ -73,14 +73,12 @@ TEST(BPlusTreeTests, DeleteTest1) {
     }
   }
 
-
   bpm->UnpinPage(HEADER_PAGE_ID, true);
   delete disk_manager;
   delete bpm;
   delete transaction;
   remove("test.db");
   remove("test.log");
-
 }
 
 TEST(BPlusTreeTests, DeleteTest2) {
@@ -156,7 +154,7 @@ TEST(BPlusTreeTests, DeleteTest2) {
 }
 
 TEST(BPlusTreeTests, DeleteTest3) {
- // create KeyComparator and index schema
+  // create KeyComparator and index schema
   auto key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema.get());
 
@@ -174,15 +172,15 @@ TEST(BPlusTreeTests, DeleteTest3) {
   (void)header_page;
   auto *transaction = new Transaction(0);
   // 插入1,2,3,4,5
-  std::vector<int64_t> keys = {1, 2, 3, 4, 5,6,7,8,9,10};
+  std::vector<int64_t> keys = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
     rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
-    tree.Insert(index_key, rid,transaction);
+    tree.Insert(index_key, rid, transaction);
   }
   // 删除1,5 还剩下2,3,4
-  std::vector<int64_t> remove_keys = {1,5,3,4,5};
+  std::vector<int64_t> remove_keys = {1, 5, 3, 4, 5};
   for (auto key : remove_keys) {
     index_key.SetFromInteger(key);
     tree.Remove(index_key, transaction);
@@ -208,12 +206,11 @@ TEST(BPlusTreeTests, DeleteTest3) {
     }
   }
 
-
   bpm->UnpinPage(HEADER_PAGE_ID, true);
   delete disk_manager;
   delete bpm;
   delete transaction;
   remove("test.db");
-  remove("test.log"); 
+  remove("test.log");
 }
 }  // namespace bustub

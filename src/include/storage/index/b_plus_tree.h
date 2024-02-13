@@ -12,8 +12,8 @@
 
 #include <queue>
 #include <string>
-#include <vector>
 #include <tuple>
+#include <vector>
 
 #include "concurrency/transaction.h"
 #include "storage/index/index_iterator.h"
@@ -85,18 +85,16 @@ class BPlusTree {
 
   void ToString(BPlusTreePage *page, BufferPoolManager *buffer_pool_manager_) const;
 
-  auto GetLeaf(const KeyType &key, OperateType operator_type, Transaction *transaction = nullptr)
-      -> Page *;
+  auto GetLeaf(const KeyType &key, OperateType operator_type, Transaction *transaction = nullptr) -> Page *;
   void InsertParent(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key, const ValueType &value,
                     Transaction *transaction = nullptr);
   template <typename P>
   void RemoveEntry(P *node, const KeyType &key, Transaction *transaction = nullptr);
   void ReleaseResourcesd(Transaction *transaction = nullptr);
   void MakeRoot(const KeyType &key, const ValueType &value);
-  void InsertInFillNode(LeafPage *leaf1,Transaction *transaction);
+  void InsertInFillNode(LeafPage *leaf1, Transaction *transaction);
   void RenewRoot(BPlusTreePage *page1, BPlusTreePage *page2, const KeyType &key);
-  void InsertInFillParent(InternalPage *parent, const KeyType &key,
-                          const ValueType &value, Transaction *transaction);
+  void InsertInFillParent(InternalPage *parent, const KeyType &key, const ValueType &value, Transaction *transaction);
   void ReplaceRootByChildren(InternalPage *old_root, Transaction *transaction);
   auto GetSiblingIdx(InternalPage *parent_page, int page_id) -> int;
   void Coalesce(bool is_sibling_brother, BPlusTreePage *node, BPlusTreePage *sibling_page, const KeyType &key_plus,
@@ -104,14 +102,14 @@ class BPlusTree {
   void Redistribute(BPlusTreePage *node, BPlusTreePage *sib_node, InternalPage *parent, bool is_i_plus_before_i,
                     KeyType key_plus);
   auto IsSafe(BPlusTreePage *node, OperateType op) -> bool;
-  void InsertLeaf(LeafPage* leaf,const KeyType &key, const ValueType &value);
-  void InsertInternal(InternalPage* internal,const KeyType &key, const ValueType &value);
-  auto GetNextPageIdForFind(InternalPage* internal,const KeyType &key)const -> page_id_t;
-  void RemoveRoot(BPlusTreePage* node, Transaction* transaction);
+  void InsertLeaf(LeafPage *leaf, const KeyType &key, const ValueType &value);
+  void InsertInternal(InternalPage *internal, const KeyType &key, const ValueType &value);
+  auto GetNextPageIdForFind(InternalPage *internal, const KeyType &key) const -> page_id_t;
+  void RemoveRoot(BPlusTreePage *node, Transaction *transaction);
   void CoalesceLeafPages(LeafPage *node, LeafPage *sibling_page);
   void CoalesceInternalPages(InternalPage *node, InternalPage *sibling_page, const KeyType &key_plus);
-  auto RedistributeLeafPages(LeafPage *node, LeafPage *sibling_page, const bool is_i_plus_before_i)->KeyType;
-  auto RedistributeInternalPages(InternalPage *node, InternalPage *sibling_page, const bool is_i_plus_before_i)->KeyType;
+  auto RedistributeLeafPages(LeafPage *node, LeafPage *sibling_page, bool is_i_plus_before_i) -> KeyType;
+  auto RedistributeInternalPages(InternalPage *node, InternalPage *sibling_page, bool is_i_plus_before_i) -> KeyType;
   // member variable
   std::string index_name_;
   BufferPoolManager *buffer_pool_manager_;

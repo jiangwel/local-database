@@ -103,7 +103,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::PairAt(int index) -> MappingType & {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::IsKeyExist(const KeyType &key, KeyComparator &comparator) const -> bool{
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::IsKeyExist(const KeyType &key, KeyComparator &comparator) const -> bool {
   for (int i = 0; i < this->GetSize(); i++) {
     if (comparator(key, this->KeyAt(i)) == 0) {
       return true;

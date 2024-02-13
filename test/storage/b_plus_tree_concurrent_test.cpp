@@ -18,11 +18,11 @@
 #include <future>  // NOLINT
 #include <thread>  // NOLINT
 
-#include "test_util.h"  // NOLINT
 #include "buffer/buffer_pool_manager.h"
 #include "buffer/buffer_pool_manager_instance.h"
 #include "gtest/gtest.h"
 #include "storage/index/b_plus_tree.h"
+#include "test_util.h"  // NOLINT
 
 // Macro for time out mechanism
 #define TEST_TIMEOUT_BEGIN                           \
@@ -183,7 +183,7 @@ void InsertTest1Call() {
     EXPECT_EQ(current_key, keys.size() + 1);
 
     bpm->UnpinPage(HEADER_PAGE_ID, true);
-    
+
     delete disk_manager;
     delete bpm;
     remove("test.db");
@@ -239,7 +239,7 @@ void InsertTest2Call() {
     EXPECT_EQ(current_key, keys.size() + 1);
 
     bpm->UnpinPage(HEADER_PAGE_ID, true);
-    
+
     delete disk_manager;
     delete bpm;
     remove("test.db");
@@ -284,7 +284,7 @@ void DeleteTest1Call() {
     EXPECT_EQ(size, 1);
 
     bpm->UnpinPage(HEADER_PAGE_ID, true);
-    
+
     delete disk_manager;
     delete bpm;
     remove("test.db");
@@ -301,7 +301,7 @@ void DeleteTest2Call() {
     DiskManager *disk_manager = new DiskManager("test.db");
     BufferPoolManager *bpm = new BufferPoolManagerInstance(50, disk_manager);
     // create b+ tree
-    BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator,3,5);
+    BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 3, 5);
     // create and fetch header_page
     page_id_t page_id;
     auto header_page = bpm->NewPage(&page_id);
@@ -330,7 +330,7 @@ void DeleteTest2Call() {
     EXPECT_EQ(size, 4);
 
     bpm->UnpinPage(HEADER_PAGE_ID, true);
-    
+
     delete disk_manager;
     delete bpm;
     remove("test.db");
@@ -347,7 +347,7 @@ void MixTest1Call() {
     DiskManager *disk_manager = new DiskManager("test.db");
     BufferPoolManager *bpm = new BufferPoolManagerInstance(50, disk_manager);
     // create b+ tree
-    BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator,3,5);
+    BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 3, 5);
 
     // create and fetch header_page
     page_id_t page_id;
@@ -394,7 +394,7 @@ void MixTest1Call() {
     EXPECT_EQ(size, for_insert.size());
 
     bpm->UnpinPage(HEADER_PAGE_ID, true);
-    
+
     delete disk_manager;
     delete bpm;
     remove("test.db");
@@ -464,7 +464,7 @@ void MixTest2Call() {
     EXPECT_EQ(size, perserved_keys.size());
 
     bpm->UnpinPage(HEADER_PAGE_ID, true);
-    
+
     delete disk_manager;
     delete bpm;
     remove("test.db");
@@ -526,7 +526,7 @@ void MixTest3Call() {
     EXPECT_EQ(size, for_insert.size());
 
     bpm->UnpinPage(HEADER_PAGE_ID, true);
-    
+
     delete disk_manager;
     delete bpm;
     remove("test.db");
