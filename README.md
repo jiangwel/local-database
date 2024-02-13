@@ -6,5 +6,5 @@
 Fall 2022 版本.
 # Result
 **lab1**
-![image](https://github.com/jiangwel/bustub/assets/84135487/e3c7bdfa-4b68-4d54-ba7a-65ddc009d847)
+![image](https://github.com/jiangwel/bustub/assets/84135487/deeb6af5-71cf-450b-9d3e-145494852ad7)
 
