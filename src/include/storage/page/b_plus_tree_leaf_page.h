@@ -42,7 +42,7 @@ namespace bustub {
  */
 INDEX_TEMPLATE_ARGUMENTS
 class BPlusTreeLeafPage : public BPlusTreePage {
-// using InternalPage = BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>;
+  // using InternalPage = BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>;
  public:
   // After creating a new leaf page from buffer pool, must call initialize
   // method to set default values
@@ -56,10 +56,11 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto SetPairAt(int index, const MappingType &pair) -> bool;
   auto DeletePair(const KeyType &key, KeyComparator &comparator) -> bool;
   auto PairAt(int index) -> MappingType &;
+  auto IsKeyExist(const KeyType &key, KeyComparator &comparator) const -> bool;
+
  private:
   page_id_t next_page_id_;
   // Flexible array member for page data.
   MappingType array_[1];
-
 };
 }  // namespace bustub

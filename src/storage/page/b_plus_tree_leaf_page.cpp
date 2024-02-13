@@ -28,9 +28,9 @@ namespace bustub {
  * next page id and set max size
  */
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_page_id, int max_size) {
+void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {
   SetPageId(page_id);
-  SetParentPageId(parent_page_id);
+  SetParentPageId(parent_id);
   SetPageType(IndexPageType::LEAF_PAGE);
   SetMaxSize(max_size - (max_size == LEAF_PAGE_SIZE ? 1 : 0));
   SetSize(0);
@@ -102,6 +102,15 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::PairAt(int index) -> MappingType & {
   return array_[index];
 }
 
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::IsKeyExist(const KeyType &key, KeyComparator &comparator) const -> bool{
+  for (int i = 0; i < this->GetSize(); i++) {
+    if (comparator(key, this->KeyAt(i)) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
 template class BPlusTreeLeafPage<GenericKey<4>, RID, GenericComparator<4>>;
 template class BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>>;
 template class BPlusTreeLeafPage<GenericKey<16>, RID, GenericComparator<16>>;

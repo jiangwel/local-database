@@ -14,7 +14,7 @@ namespace bustub {
  */
 INDEX_TEMPLATE_ARGUMENTS
 INDEXITERATOR_TYPE::IndexIterator(LeafPage *leaf, int index, BufferPoolManager *bpm)
-    : leaf_(leaf), index_(index), bpm_(bpm){};
+    : leaf_(leaf), index_(index), bpm_(bpm) {}
 
 INDEX_TEMPLATE_ARGUMENTS
 INDEXITERATOR_TYPE::~IndexIterator() {
