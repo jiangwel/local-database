@@ -108,6 +108,10 @@ class BPlusTree {
   void InsertInternal(InternalPage* internal,const KeyType &key, const ValueType &value);
   auto GetNextPageIdForFind(InternalPage* internal,const KeyType &key)const -> page_id_t;
   void RemoveRoot(BPlusTreePage* node, Transaction* transaction);
+  void CoalesceLeafPages(LeafPage *node, LeafPage *sibling_page);
+  void CoalesceInternalPages(InternalPage *node, InternalPage *sibling_page, const KeyType &key_plus);
+  auto RedistributeLeafPages(LeafPage *node, LeafPage *sibling_page, const bool is_i_plus_before_i)->KeyType;
+  auto RedistributeInternalPages(InternalPage *node, InternalPage *sibling_page, const bool is_i_plus_before_i)->KeyType;
   // member variable
   std::string index_name_;
   BufferPoolManager *buffer_pool_manager_;

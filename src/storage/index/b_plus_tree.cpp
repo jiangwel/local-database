@@ -418,36 +418,42 @@ auto BPLUSTREE_TYPE::GetSiblingIdx(InternalPage *parent_page, int page_id) -> in
 }
 
 INDEX_TEMPLATE_ARGUMENTS
+void BPLUSTREE_TYPE::CoalesceLeafPages(LeafPage *node, LeafPage *sibling_page) {
+  for (int i = 0; i < node->GetSize(); i++) {
+    sibling_page->SetPairAt(sibling_page->GetSize(), {node->KeyAt(i), node->ValueAt(i)});
+  }
+  node->SetSize(0);
+  sibling_page->SetNextPageId(node->GetNextPageId());
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+void BPLUSTREE_TYPE::CoalesceInternalPages(InternalPage *node, InternalPage *sibling_page, const KeyType &key_plus) {
+  sibling_page->SetPairAt(sibling_page->GetSize(), {key_plus, node->ValueAt(0)});
+
+  auto child = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(node->ValueAt(0))->GetData());
+  child->SetParentPageId(sibling_page->GetPageId());
+  buffer_pool_manager_->UnpinPage(child->GetPageId(), true);
+
+  for (int i = 1; i < node->GetSize(); i++) {
+    sibling_page->SetPairAt(sibling_page->GetSize(), {node->KeyAt(i), node->ValueAt(i)});
+    auto child = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(node->ValueAt(i))->GetData());
+    child->SetParentPageId(sibling_page->GetPageId());
+    buffer_pool_manager_->UnpinPage(child->GetPageId(), true);
+  }
+  node->SetSize(0);
+}
+
+INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::Coalesce(bool is_sibling_brother, BPlusTreePage *node, BPlusTreePage *sibling_page,
                               const KeyType &key_plus, Transaction *transaction) {
   if (!is_sibling_brother) {
     std::swap(node, sibling_page);
   }
+
   if (node->IsLeafPage()) {
-    auto leaf = reinterpret_cast<LeafPage *>(node);
-    auto leaf_sibling_page = reinterpret_cast<LeafPage *>(sibling_page);
-    for (int i = 0; i < leaf->GetSize(); i++) {
-      leaf_sibling_page->SetPairAt(leaf_sibling_page->GetSize(), {leaf->KeyAt(i), leaf->ValueAt(i)});
-    }
-    leaf->SetSize(0);
-    leaf_sibling_page->SetNextPageId(leaf->GetNextPageId());
+    CoalesceLeafPages(reinterpret_cast<LeafPage *>(node), reinterpret_cast<LeafPage *>(sibling_page));
   } else {
-    auto internal = reinterpret_cast<InternalPage *>(node);
-    auto internal_sibling_page = reinterpret_cast<InternalPage *>(sibling_page);
-
-    internal_sibling_page->SetPairAt(internal_sibling_page->GetSize(), {key_plus, internal->ValueAt(0)});
-
-    auto child = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(internal->ValueAt(0))->GetData());
-    child->SetParentPageId(internal_sibling_page->GetPageId());
-    buffer_pool_manager_->UnpinPage(child->GetPageId(), true);
-
-    for (int i = 1; i < internal->GetSize(); i++) {
-      internal_sibling_page->SetPairAt(internal_sibling_page->GetSize(), {internal->KeyAt(i), internal->ValueAt(i)});
-      auto child = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(internal->ValueAt(i))->GetData());
-      child->SetParentPageId(internal_sibling_page->GetPageId());
-      buffer_pool_manager_->UnpinPage(child->GetPageId(), true);
-    }
-    internal->SetSize(0);
+    CoalesceInternalPages(reinterpret_cast<InternalPage *>(node), reinterpret_cast<InternalPage *>(sibling_page), key_plus);
   }
 
   auto parent = reinterpret_cast<InternalPage *>(buffer_pool_manager_->FetchPage(node->GetParentPageId())->GetData());
@@ -457,54 +463,63 @@ void BPLUSTREE_TYPE::Coalesce(bool is_sibling_brother, BPlusTreePage *node, BPlu
   transaction->AddIntoDeletedPageSet(node->GetPageId());
   buffer_pool_manager_->UnpinPage(parent->GetPageId(), true);
 }
+INDEX_TEMPLATE_ARGUMENTS
+auto BPLUSTREE_TYPE::RedistributeLeafPages(LeafPage *node, LeafPage *sibling_page, const bool is_i_plus_before_i)->KeyType {
+  KeyType temp_key;
+  ValueType temp_value;
 
+  if (is_i_plus_before_i) {
+    temp_key = sibling_page->KeyAt(sibling_page->GetSize() - 1);
+    temp_value = sibling_page->ValueAt(sibling_page->GetSize() - 1);
+    sibling_page->DeletePair(temp_key, comparator_);
+    node->SetPairAt(0, {temp_key, temp_value});
+  } else {
+    temp_key = sibling_page->KeyAt(0);
+    temp_value = sibling_page->ValueAt(0);
+    sibling_page->DeletePair(temp_key, comparator_);
+    node->SetPairAt(node->GetSize(), {temp_key, temp_value});
+    temp_key = sibling_page->KeyAt(0);
+  }
+  return temp_key;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto BPLUSTREE_TYPE::RedistributeInternalPages(InternalPage *node, InternalPage *sibling_page, const bool is_i_plus_before_i)->KeyType {
+  KeyType temp_key;
+  int temp_value;
+
+  if (is_i_plus_before_i) {
+    auto index = sibling_page->GetSize() - 1;
+    temp_key = sibling_page->KeyAt(index);
+    temp_value = sibling_page->ValueAt(index);
+    auto child_node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(temp_value)->GetData());
+    child_node->SetParentPageId(node->GetPageId());
+    buffer_pool_manager_->UnpinPage(child_node->GetPageId(), true);
+
+    sibling_page->DeletePair(temp_key, comparator_);
+    node->SetPairAt(0, {temp_key, temp_value});
+  } else {
+    temp_key = sibling_page->KeyAt(0);
+    temp_value = sibling_page->ValueAt(0);
+    auto child_node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(temp_value)->GetData());
+    child_node->SetParentPageId(node->GetPageId());
+    buffer_pool_manager_->UnpinPage(child_node->GetPageId(), true);
+
+    sibling_page->DeletePair(temp_key, comparator_);
+    node->SetPairAt(node->GetSize(), {temp_key, temp_value});
+    temp_key = sibling_page->KeyAt(0);
+  }
+  return temp_key;
+}
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::Redistribute(BPlusTreePage *node, BPlusTreePage *sib_node, InternalPage *parent,
                                   bool is_i_plus_before_i, KeyType key_plus) {
   KeyType temp_key;
-  ValueType temp_value;
+
   if (node->IsLeafPage()) {
-    auto leaf = reinterpret_cast<LeafPage *>(node);
-    auto leaf_sibling_page = reinterpret_cast<LeafPage *>(sib_node);
-
-    if (is_i_plus_before_i) {
-      temp_key = leaf_sibling_page->KeyAt(leaf_sibling_page->GetSize() - 1);
-      temp_value = leaf_sibling_page->ValueAt(leaf_sibling_page->GetSize() - 1);
-      leaf_sibling_page->DeletePair(temp_key, comparator_);
-      leaf->SetPairAt(0, {temp_key, temp_value});
-    } else {
-      temp_key = leaf_sibling_page->KeyAt(0);
-      temp_value = leaf_sibling_page->ValueAt(0);
-      leaf_sibling_page->DeletePair(temp_key, comparator_);
-      leaf->SetPairAt(leaf->GetSize(), {temp_key, temp_value});
-      temp_key = leaf_sibling_page->KeyAt(0);
-    }
+    temp_key = RedistributeLeafPages(reinterpret_cast<LeafPage *>(node), reinterpret_cast<LeafPage *>(sib_node), is_i_plus_before_i);
   } else {
-    auto internal = reinterpret_cast<InternalPage *>(node);
-    auto internal_sibling_node = reinterpret_cast<InternalPage *>(sib_node);
-    int temp_value;
-    if (is_i_plus_before_i) {
-      auto index = internal_sibling_node->GetSize() - 1;
-      temp_key = internal_sibling_node->KeyAt(index);
-      temp_value = internal_sibling_node->ValueAt(index);
-      auto child_node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(temp_value)->GetData());
-      child_node->SetParentPageId(internal->GetPageId());
-      buffer_pool_manager_->UnpinPage(child_node->GetPageId(), true);
-
-      internal_sibling_node->DeletePair(temp_key, comparator_);
-      internal->SetPairAt(0, {temp_key, temp_value});
-    } else {
-      temp_key = internal_sibling_node->KeyAt(0);
-      temp_value = internal_sibling_node->ValueAt(0);
-
-      auto child_node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(temp_value)->GetData());
-      child_node->SetParentPageId(internal->GetPageId());
-      buffer_pool_manager_->UnpinPage(child_node->GetPageId(), true);
-
-      internal_sibling_node->DeletePair(temp_key, comparator_);
-      internal->SetPairAt(internal->GetSize(), {temp_key, temp_value});
-      temp_key = internal_sibling_node->KeyAt(0);
-    }
+    temp_key = RedistributeInternalPages(reinterpret_cast<InternalPage *>(node), reinterpret_cast<InternalPage *>(sib_node), is_i_plus_before_i);
   }
   parent->ReplaceKey(key_plus, temp_key, comparator_);
 }
