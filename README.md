@@ -11,5 +11,7 @@ Fall 2022 版本.
 **lab2**  
 
 ![image](https://github.com/jiangwel/bustub/assets/84135487/840b2708-01d0-499c-9e10-68765b09c2ff)
+![image](https://github.com/jiangwel/bustub/assets/84135487/07ba26a8-62f6-4132-b2f3-a30345227913)
+
 
 
