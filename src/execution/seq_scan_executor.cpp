@@ -29,8 +29,15 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
     if(table_iter_ == table_heap_->End()){
         return false;
     }
-    *tuple = *table_iter_;
     *rid = table_iter_->GetRid();
+    std::vector<Value> values{};
+    values.reserve(GetOutputSchema().GetColumnCount());
+    for(uint32_t i =0;i<GetOutputSchema().GetColumnCount();i++){
+        values.push_back(table_iter_->GetValue(&GetOutputSchema(),i));
+    }
+    *tuple = Tuple{values, &GetOutputSchema()};
+    
+    table_iter_++;
     return true;
 }
 
