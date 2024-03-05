@@ -47,7 +47,7 @@ class SeqScanExecutor : public AbstractExecutor {
   /** @return The output schema for the sequential scan */
   auto GetOutputSchema() const -> const Schema & override { return plan_->OutputSchema(); }
 
-  void PrintTableIndex();
+  // void PrintTableIndex();
 
  private:
   /** The sequential scan plan node to be executed */

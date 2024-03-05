@@ -18,10 +18,46 @@ namespace bustub {
 
 DeleteExecutor::DeleteExecutor(ExecutorContext *exec_ctx, const DeletePlanNode *plan,
                                std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx) {}
+    : AbstractExecutor(exec_ctx),plan_(plan),child_executor_(std::move(child_executor)){}
 
-void DeleteExecutor::Init() { throw NotImplementedException("DeleteExecutor is not implemented"); }
+void DeleteExecutor::Init() { 
+    child_executor_->Init();
+}
 
-auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool { return false; }
+void DeleteExecutor::UpdateIndex(Tuple* tuple,RID *rid){
+    auto* table_metadata = GetExecutorContext()->GetCatalog()->GetTable(plan_->TableOid());
+    auto table_indexs = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_metadata->name_);
+    if(table_indexs.size() == 0){
+        return;
+    }
+    auto index = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_metadata->name_)[0]->index_.get();
+    auto key = tuple->KeyFromTuple(table_metadata->schema_, *index->GetKeySchema(),index->GetKeyAttrs()); 
+    index->DeleteEntry(key, *rid, GetExecutorContext()->GetTransaction());
+}
+
+auto DeleteExecutor::Next(Tuple *tuple, RID *rid) -> bool {
+    if(done_flag_){
+        return false;
+    }
+    done_flag_ = true;
+    auto* table = GetExecutorContext()->GetCatalog()->GetTable(plan_->TableOid())->table_.get();
+
+    Tuple child_tuple{};
+    int deleted_rows_num = 0;
+
+    // Insert tuples
+    while(child_executor_->Next(&child_tuple, rid)){
+        table->MarkDelete(*rid, GetExecutorContext()->GetTransaction());
+        UpdateIndex(&child_tuple,rid);
+        deleted_rows_num++;
+    }
+
+    std::vector<Value> values{};
+    values.reserve(1);
+    values.push_back(ValueFactory::GetIntegerValue(deleted_rows_num));
+    *tuple = Tuple{values, &GetOutputSchema()};
+
+    return true;
+}
 
 }  // namespace bustub
