@@ -23,7 +23,7 @@ void IndexScanExecutor::Init() {
 }
 
 auto IndexScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
-    if(index_iter_.IsEnd()){
+    if( index_iter_.IsInvaildIndexIter() || index_iter_.IsEnd()){
         return false;
     }
     if(!table_heap_->GetTuple((*index_iter_).second, tuple, exec_ctx_->GetTransaction())){

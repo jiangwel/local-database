@@ -17,15 +17,16 @@ INDEXITERATOR_TYPE::IndexIterator(LeafPage *leaf, int index, BufferPoolManager *
     : leaf_(leaf), index_(index), bpm_(bpm) {}
 
 INDEX_TEMPLATE_ARGUMENTS
-INDEXITERATOR_TYPE::~IndexIterator() {
-  if (!bpm_->UnpinPage(leaf_->GetPageId(), false)) {
-    LOG_DEBUG("unpin page failed");
-  }
-};  // NOLINT
+INDEXITERATOR_TYPE::~IndexIterator() {};  // NOLINT
 
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::IsEnd() -> bool {
   return leaf_->GetNextPageId() == INVALID_PAGE_ID && index_ == leaf_->GetSize();
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto INDEXITERATOR_TYPE::IsInvaildIndexIter() -> bool {
+  return leaf_ == nullptr || index_ < 0 || index_ > leaf_->GetSize(); 
 }
 
 INDEX_TEMPLATE_ARGUMENTS

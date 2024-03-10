@@ -31,12 +31,13 @@ class IndexIterator {
 
   auto IsEnd() -> bool;
 
+  auto IsInvaildIndexIter() -> bool;
+
   auto operator*() -> const MappingType &;
 
   auto operator++() -> IndexIterator &;
 
   auto operator==(const IndexIterator &itr) const -> bool {
-    LOG_INFO("itr.index_");
     return leaf_ == itr.leaf_ && index_ == itr.index_;
   }
 

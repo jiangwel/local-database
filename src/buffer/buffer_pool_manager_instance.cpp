@@ -64,7 +64,7 @@ auto BufferPoolManagerInstance::NewPgImp(page_id_t *page_id) -> Page * {
 
   page_table_->Insert(*page_id, *frame_id_ptr);
   ResetPage(*page_ptr, *frame_id_ptr);
-  (*page_ptr)->pin_count_++;
+  (*page_ptr)->pin_count_=1;
 
   return *page_ptr;
 }  // end NewPgImp
@@ -101,7 +101,7 @@ auto BufferPoolManagerInstance::FetchPgImp(page_id_t page_id) -> Page * {
   disk_manager_->ReadPage(page_id, (*page_ptr_ptr)->GetData());
 
   // Must steps when get page
-  (*page_ptr_ptr)->pin_count_++;
+  (*page_ptr_ptr)->pin_count_=1;
 
   return *page_ptr_ptr;
 }  // end FetchPgImp

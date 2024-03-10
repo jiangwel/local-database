@@ -22,17 +22,20 @@ DeleteExecutor::DeleteExecutor(ExecutorContext *exec_ctx, const DeletePlanNode *
 
 void DeleteExecutor::Init() { 
     child_executor_->Init();
+    table_info_ = GetExecutorContext()->GetCatalog()->GetTable(plan_->TableOid());
+    table_heap_ = table_info_->table_.get();
+    table_indexs_ = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_info_->name_);
 }
 
 void DeleteExecutor::UpdateIndex(Tuple* tuple,RID *rid){
-    auto* table_metadata = GetExecutorContext()->GetCatalog()->GetTable(plan_->TableOid());
-    auto table_indexs = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_metadata->name_);
-    if(table_indexs.size() == 0){
+    if(table_indexs_.size() == 0){
         return;
     }
-    auto index = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_metadata->name_)[0]->index_.get();
-    auto key = tuple->KeyFromTuple(table_metadata->schema_, *index->GetKeySchema(),index->GetKeyAttrs()); 
-    index->DeleteEntry(key, *rid, GetExecutorContext()->GetTransaction());
+    for(auto index_info:table_indexs_){
+        auto index = index_info->index_.get();
+        auto key = tuple->KeyFromTuple(table_info_->schema_, *index->GetKeySchema(),index->GetKeyAttrs()); 
+        index->DeleteEntry(key, *rid, GetExecutorContext()->GetTransaction());
+    }
 }
 
 auto DeleteExecutor::Next(Tuple *tuple, RID *rid) -> bool {
@@ -40,16 +43,19 @@ auto DeleteExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         return false;
     }
     done_flag_ = true;
-    auto* table = GetExecutorContext()->GetCatalog()->GetTable(plan_->TableOid())->table_.get();
 
     Tuple child_tuple{};
     int deleted_rows_num = 0;
 
     // Insert tuples
     while(child_executor_->Next(&child_tuple, rid)){
-        table->MarkDelete(*rid, GetExecutorContext()->GetTransaction());
-        UpdateIndex(&child_tuple,rid);
         deleted_rows_num++;
+        LOG_INFO("deleted_rows_num: %d", deleted_rows_num);
+        LOG_INFO("rid: %d", rid->GetSlotNum());
+        LOG_INFO("delete tuple is: %s", child_tuple.ToString(&plan_->OutputSchema()).c_str());
+        table_heap_->MarkDelete(*rid, GetExecutorContext()->GetTransaction());
+        LOG_INFO("update index");
+        UpdateIndex(&child_tuple,rid);
     }
 
     std::vector<Value> values{};
