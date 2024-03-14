@@ -21,7 +21,6 @@ LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : k_(k), replacer_size_(
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   std::scoped_lock<std::mutex> lock(latch_);
   if (evictable_num_ == 0) {
-    LOG_INFO("LRUKReplacer::Evict: evictable_num_ is 0!");
     return false;
   }
   for (auto it = access_less_k_.begin(); it != access_less_k_.end(); it++) {
@@ -30,7 +29,6 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
       frame_info_.erase(*it);
       access_less_k_.remove(*it);
       evictable_num_--;
-      // LOG_INFO("LRUKReplacer::Evict: evictable_num_ = %ld", evictable_num_);
       return true;
     }
   }
@@ -40,11 +38,9 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
       frame_info_.erase(*it);
       access_k_frame_.remove(*it);
       evictable_num_--;
-      // LOG_INFO("LRUKReplacer::Evict: evictable_num_ = %ld", evictable_num_);
       return true;
     }
   }
-  LOG_INFO("LRUKReplacer::Evict: no frame can be evicted!");
   return false;
 }
 
@@ -79,7 +75,6 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   if (set_evictable != frame_info_[frame_id].evictable_) {
     frame_info_[frame_id].evictable_ = set_evictable;
     evictable_num_ += set_evictable ? 1 : -1;
-    // LOG_INFO("LRUKReplacer::SetEvictable: evictable_num = %ld", evictable_num_);
   }
 }
 

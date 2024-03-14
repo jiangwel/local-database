@@ -50,11 +50,7 @@ auto DeleteExecutor::Next(Tuple *tuple, RID *rid) -> bool {
     // Insert tuples
     while(child_executor_->Next(&child_tuple, rid)){
         deleted_rows_num++;
-        LOG_INFO("deleted_rows_num: %d", deleted_rows_num);
-        LOG_INFO("rid: %d", rid->GetSlotNum());
-        LOG_INFO("delete tuple is: %s", child_tuple.ToString(&plan_->OutputSchema()).c_str());
         table_heap_->MarkDelete(*rid, GetExecutorContext()->GetTransaction());
-        LOG_INFO("update index");
         UpdateIndex(&child_tuple,rid);
     }
 
