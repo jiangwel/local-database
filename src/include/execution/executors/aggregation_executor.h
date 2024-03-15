@@ -74,48 +74,43 @@ class SimpleAggregationHashTable {
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
       switch (agg_types_[i]) {
         case AggregationType::CountStarAggregate:
-          if(!input.aggregates_[i].IsNull()){
+          if (!input.aggregates_[i].IsNull()) {
             result->aggregates_[i] = result->aggregates_[i].Add(ValueFactory::GetIntegerValue(1));
           }
           break;
         case AggregationType::CountAggregate:
-          if(input.aggregates_[i].IsNull()){
+          if (input.aggregates_[i].IsNull()) {
             continue;
-          } else if(result->aggregates_[i].IsNull()){
+          } else if (result->aggregates_[i].IsNull()) {
             result->aggregates_[i] = ValueFactory::GetIntegerValue(1);
-          }
-          else{
+          } else {
             result->aggregates_[i] = result->aggregates_[i].Add(ValueFactory::GetIntegerValue(1));
           }
           break;
         case AggregationType::SumAggregate:
-          if(input.aggregates_[i].IsNull()){
+          if (input.aggregates_[i].IsNull()) {
             continue;
-          } else
-          if(result->aggregates_[i].IsNull()){
+          } else if (result->aggregates_[i].IsNull()) {
             result->aggregates_[i] = input.aggregates_[i];
-          }
-          else{
+          } else {
             result->aggregates_[i] = result->aggregates_[i].Add(input.aggregates_[i]);
           }
           break;
         case AggregationType::MinAggregate:
-          if(input.aggregates_[i].IsNull()){
+          if (input.aggregates_[i].IsNull()) {
             continue;
-          } else if(result->aggregates_[i].IsNull()){
+          } else if (result->aggregates_[i].IsNull()) {
             result->aggregates_[i] = input.aggregates_[i];
-          }
-          else{
+          } else {
             result->aggregates_[i] = result->aggregates_[i].Min(input.aggregates_[i]);
           }
           break;
         case AggregationType::MaxAggregate:
-          if(input.aggregates_[i].IsNull()){
+          if (input.aggregates_[i].IsNull()) {
             continue;
-          } else if(result->aggregates_[i].IsNull()){
+          } else if (result->aggregates_[i].IsNull()) {
             result->aggregates_[i] = input.aggregates_[i];
-          }
-          else{
+          } else {
             result->aggregates_[i] = result->aggregates_[i].Max(input.aggregates_[i]);
           }
           break;

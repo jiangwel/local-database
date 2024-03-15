@@ -534,7 +534,7 @@ void BPLUSTREE_TYPE::Redistribute(BPlusTreePage *node, BPlusTreePage *sib_node, 
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE {
-  if(IsEmpty()) {
+  if (IsEmpty()) {
     return INDEXITERATOR_TYPE(nullptr, -1, nullptr);
   }
   auto node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(root_page_id_)->GetData());
@@ -557,7 +557,7 @@ auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE {
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE {
-  if(IsEmpty()) {
+  if (IsEmpty()) {
     return INDEXITERATOR_TYPE(nullptr, -1, nullptr);
   }
   auto leaf_page = BPlusTree::GetLeaf(key, OperateType::Find, nullptr);

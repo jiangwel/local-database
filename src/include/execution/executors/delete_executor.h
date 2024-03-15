@@ -57,14 +57,14 @@ class DeleteExecutor : public AbstractExecutor {
   auto GetOutputSchema() const -> const Schema & override { return plan_->OutputSchema(); };
 
  private:
-  void UpdateIndex(Tuple* tuple,RID *rid);
+  void UpdateIndex(Tuple *tuple, RID *rid);
   /** The delete plan node to be executed */
   const DeletePlanNode *plan_;
   /** The child executor from which RIDs for deleted tuples are pulled */
   std::unique_ptr<AbstractExecutor> child_executor_;
-  bool done_flag_=false;
-  TableHeap* table_heap_=nullptr;
-  TableInfo* table_info_=nullptr;
-  std::vector<bustub::IndexInfo *> table_indexs_={};
+  bool done_flag_ = false;
+  TableHeap *table_heap_ = nullptr;
+  TableInfo *table_info_ = nullptr;
+  std::vector<bustub::IndexInfo *> table_indexs_ = {};
 };
 }  // namespace bustub

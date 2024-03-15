@@ -14,34 +14,35 @@
 
 namespace bustub {
 
-SeqScanExecutor::SeqScanExecutor(ExecutorContext *exec_ctx, const SeqScanPlanNode *plan) : AbstractExecutor(exec_ctx),plan_(plan){}
+SeqScanExecutor::SeqScanExecutor(ExecutorContext *exec_ctx, const SeqScanPlanNode *plan)
+    : AbstractExecutor(exec_ctx), plan_(plan) {}
 
 void SeqScanExecutor::Init() {
-    auto* exec_ctx = GetExecutorContext();
-    auto* catalog = exec_ctx->GetCatalog();
-    auto table_oid = plan_->GetTableOid();
-    auto* table_metadata = catalog->GetTable(table_oid);
-    table_heap_ = table_metadata->table_.get();
-    table_iter_ = table_heap_->Begin(exec_ctx->GetTransaction());
+  auto *exec_ctx = GetExecutorContext();
+  auto *catalog = exec_ctx->GetCatalog();
+  auto table_oid = plan_->GetTableOid();
+  auto *table_metadata = catalog->GetTable(table_oid);
+  table_heap_ = table_metadata->table_.get();
+  table_iter_ = table_heap_->Begin(exec_ctx->GetTransaction());
 }
 
 auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
-    if(table_iter_ == table_heap_->End()){
-        return false;
-    }
-    *rid = table_iter_->GetRid();
+  if (table_iter_ == table_heap_->End()) {
+    return false;
+  }
+  *rid = table_iter_->GetRid();
 
-    std::vector<Value> values{};
-    auto value_num = GetOutputSchema().GetColumnCount();
-    values.reserve(value_num);
+  std::vector<Value> values{};
+  auto value_num = GetOutputSchema().GetColumnCount();
+  values.reserve(value_num);
 
-    for(uint32_t i =0;i<value_num;i++){
-        values.push_back(table_iter_->GetValue(&GetOutputSchema(),i));
-    }
-    *tuple = Tuple{values, &GetOutputSchema()};
-    
-    table_iter_++;
-    return true;
+  for (uint32_t i = 0; i < value_num; i++) {
+    values.push_back(table_iter_->GetValue(&GetOutputSchema(), i));
+  }
+  *tuple = Tuple{values, &GetOutputSchema()};
+
+  table_iter_++;
+  return true;
 }
 
 }  // namespace bustub

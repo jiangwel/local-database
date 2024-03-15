@@ -17,7 +17,7 @@ INDEXITERATOR_TYPE::IndexIterator(LeafPage *leaf, int index, BufferPoolManager *
     : leaf_(leaf), index_(index), bpm_(bpm) {}
 
 INDEX_TEMPLATE_ARGUMENTS
-INDEXITERATOR_TYPE::~IndexIterator() {};  // NOLINT
+INDEXITERATOR_TYPE::~IndexIterator(){};  // NOLINT
 
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::IsEnd() -> bool {
@@ -26,7 +26,7 @@ auto INDEXITERATOR_TYPE::IsEnd() -> bool {
 
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::IsInvaildIndexIter() -> bool {
-  return leaf_ == nullptr || index_ < 0 || index_ > leaf_->GetSize(); 
+  return leaf_ == nullptr || index_ < 0 || index_ > leaf_->GetSize();
 }
 
 INDEX_TEMPLATE_ARGUMENTS
