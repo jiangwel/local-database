@@ -56,7 +56,6 @@ auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       left_tuple_valid_ = left_executor_->Next(&left_tuple_, &left_rid);
       is_not_matched_= true;
     } else {
-      LOG_INFO("right tuple: %s", right_tuple.ToString(&right_executor_->GetOutputSchema()).c_str());
       auto result = plan_->Predicate().EvaluateJoin(&left_tuple_, left_executor_->GetOutputSchema(), &right_tuple,
                                                     right_executor_->GetOutputSchema());
       if (ProcessJoinResult(result,&right_tuple, values, tuple)) {
