@@ -50,6 +50,7 @@ void AggregationExecutor::Init() {
 
 auto AggregationExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   if (aht_iterator_ == aht_.End()) {
+    aht_.Clear();
     return false;
   }
 
