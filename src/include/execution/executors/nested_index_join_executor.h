@@ -49,12 +49,12 @@ class NestIndexJoinExecutor : public AbstractExecutor {
   auto Next(Tuple *tuple, RID *rid) -> bool override;
 
  private:
-  void AddTupleValuesToVector(const Tuple *tuple, const Schema &schema,std::vector<Value> &values);
-  auto ProcessJoinResult(const Value &result,const Tuple *right_tuple,
-                         std::vector<Value> &values, Tuple *tuple) -> bool;
+  void AddTupleValuesToVector(const Tuple *tuple, const Schema &schema, std::vector<Value> &values);
+  auto ProcessJoinResult(const Tuple *right_tuple, std::vector<Value> &values, Tuple *tuple) -> bool;
   /** The nested index join plan node. */
   const NestedIndexJoinPlanNode *plan_;
   std::unique_ptr<AbstractExecutor> child_executor_;
+  IndexInfo *index_info_ = nullptr;
   BPlusTreeIndexForOneIntegerColumn *index_tree_ = nullptr;
   TableHeap *table_heap_ = nullptr;
   Tuple left_tuple_{};

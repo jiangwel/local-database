@@ -49,17 +49,17 @@ auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
     if (right_tuple_valid == false) {
       // reset right executor
       right_executor_->Init();
-      if (is_not_matched_&& ProcessLeftJoin(values, tuple)) {
+      if (is_not_matched_ && ProcessLeftJoin(values, tuple)) {
         left_tuple_valid_ = left_executor_->Next(&left_tuple_, &left_rid);
         return true;
       }
       left_tuple_valid_ = left_executor_->Next(&left_tuple_, &left_rid);
-      is_not_matched_= true;
+      is_not_matched_ = true;
     } else {
       auto result = plan_->Predicate().EvaluateJoin(&left_tuple_, left_executor_->GetOutputSchema(), &right_tuple,
                                                     right_executor_->GetOutputSchema());
-      if (ProcessJoinResult(result,&right_tuple, values, tuple)) {
-        is_not_matched_= false;
+      if (ProcessJoinResult(result, &right_tuple, values, tuple)) {
+        is_not_matched_ = false;
         return true;
       }
     }
@@ -68,8 +68,7 @@ auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   return false;
 }
 
-auto NestedLoopJoinExecutor::ProcessLeftJoin(std::vector<Value> &values, Tuple *tuple)
-    -> bool {
+auto NestedLoopJoinExecutor::ProcessLeftJoin(std::vector<Value> &values, Tuple *tuple) -> bool {
   if (plan_->GetJoinType() == JoinType::LEFT) {
     auto left_result = plan_->Predicate().Evaluate(&left_tuple_, left_executor_->GetOutputSchema());
     if (!left_result.IsNull()) {
@@ -84,7 +83,7 @@ auto NestedLoopJoinExecutor::ProcessLeftJoin(std::vector<Value> &values, Tuple *
   return false;
 }
 
-auto NestedLoopJoinExecutor::ProcessJoinResult(const Value &result,const Tuple *right_tuple,
+auto NestedLoopJoinExecutor::ProcessJoinResult(const Value &result, const Tuple *right_tuple,
                                                std::vector<Value> &values, Tuple *tuple) -> bool {
   switch (plan_->GetJoinType()) {
     case JoinType::INNER:

@@ -55,8 +55,8 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
 
  private:
   auto ProcessLeftJoin(std::vector<Value> &values, Tuple *tuple) -> bool;
-  auto ProcessJoinResult(const Value &result,const Tuple *right_tuple,
-                         std::vector<Value> &values, Tuple *tuple) -> bool;
+  auto ProcessJoinResult(const Value &result, const Tuple *right_tuple, std::vector<Value> &values, Tuple *tuple)
+      -> bool;
   void AddTupleValuesToVector(const Tuple *tuple, const Schema &schema, std::vector<Value> &values);
   /** The NestedLoopJoin plan node to be executed. */
   const NestedLoopJoinPlanNode *plan_;
