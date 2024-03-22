@@ -50,7 +50,20 @@ class SortExecutor : public AbstractExecutor {
   auto GetOutputSchema() const -> const Schema & override { return plan_->OutputSchema(); }
 
  private:
+  class SortComparator {
+    public:
+      using OrderBy = std::pair<OrderByType, AbstractExpressionRef>;
+      SortComparator(const OrderBy *order_by,const Schema &schema) : order_by_(order_by_),schema_(schema) {}
+      inline auto operator()(const Tuple & ltuple,const Tuple &rtuple) const->bool ;
+      void SetOrderBy(const OrderBy *order_by) { order_by_ = order_by; }
+    private:
+      const OrderBy *order_by_;
+      const Schema &schema_;
+  };
   /** The sort plan node to be executed */
   const SortPlanNode *plan_;
+  std::unique_ptr<AbstractExecutor> child_executor_;
+  std::vector<Tuple*> sort_tuples_;
+  size_t cursor_=0;
 };
 }  // namespace bustub
