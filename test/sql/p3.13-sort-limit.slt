@@ -4,6 +4,21 @@
 
 # Default
 query
+select * from  __mock_table_tas_2022 order by github_id desc;
+----
+yliang412 Tuesday
+timlee0119 Monday
+thepinetree Tuesday
+skyzh Randomly
+mkpjnx Wednesday
+lmwnshn Friday
+kush789 Thursday
+karthik-ramanathan-3006 Wednesday
+joyceliaoo Monday
+durovo Wednesday
+amstqq Tuesday
+
+query
 select * from  __mock_table_tas_2022 order by office_hour, github_id;
 ----
 lmwnshn Friday
@@ -35,20 +50,7 @@ karthik-ramanathan-3006 Wednesday
 durovo Wednesday
 
 
-query
-select * from  __mock_table_tas_2022 order by github_id desc;
-----
-yliang412 Tuesday
-timlee0119 Monday
-thepinetree Tuesday
-skyzh Randomly
-mkpjnx Wednesday
-lmwnshn Friday
-kush789 Thursday
-karthik-ramanathan-3006 Wednesday
-joyceliaoo Monday
-durovo Wednesday
-amstqq Tuesday
+
 
 
 # Simple limit
