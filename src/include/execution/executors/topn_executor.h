@@ -50,7 +50,16 @@ class TopNExecutor : public AbstractExecutor {
   auto GetOutputSchema() const -> const Schema & override { return plan_->OutputSchema(); }
 
  private:
+  class TopNComparator {
+    public:
+      TopNComparator(const TopNPlanNode *plan) : plan_(plan) {}
+      inline auto operator()(const Tuple & ltuple,const Tuple &rtuple) const->bool ;
+    private:
+      const TopNPlanNode *plan_;
+  };
   /** The topn plan node to be executed */
   const TopNPlanNode *plan_;
+  std::unique_ptr<AbstractExecutor> child_executor_;
+  std::priority_queue<TopNComparator, std::vector<Tuple>> pq_;
 };
 }  // namespace bustub
