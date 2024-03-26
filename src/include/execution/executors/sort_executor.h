@@ -51,16 +51,17 @@ class SortExecutor : public AbstractExecutor {
 
  private:
   class SortComparator {
-    public:
-      SortComparator(const SortPlanNode *plan) : plan_(plan) {}
-      inline auto operator()(const Tuple & ltuple,const Tuple &rtuple) const->bool ;
-    private:
-      const SortPlanNode *plan_;
+   public:
+    explicit SortComparator(const SortPlanNode *plan) : plan_(plan) {}
+    inline auto operator()(const Tuple &ltuple, const Tuple &rtuple) const -> bool;
+
+   private:
+    const SortPlanNode *plan_;
   };
   /** The sort plan node to be executed */
   const SortPlanNode *plan_;
   std::unique_ptr<AbstractExecutor> child_executor_;
   std::vector<Tuple> sort_tuples_;
-  size_t cursor_=0;
+  size_t cursor_ = 0;
 };
 }  // namespace bustub

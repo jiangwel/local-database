@@ -46,7 +46,7 @@ auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
 
   while (left_tuple_valid_) {
     auto right_tuple_valid = right_executor_->Next(&right_tuple, &right_rid);
-    if (right_tuple_valid == false) {
+    if (!right_tuple_valid) {
       // reset right executor
       right_executor_->Init();
       if (is_not_matched_ && ProcessLeftJoin(values, tuple)) {

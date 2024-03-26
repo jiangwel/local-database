@@ -28,7 +28,7 @@ void InsertExecutor::Init() {
 }
 
 void InsertExecutor::UpdateIndex(Tuple *tuple, RID *rid) {
-  if (table_indexs_.size() == 0) {
+  if (table_indexs_.empty()) {
     return;
   }
   for (auto index_info : table_indexs_) {

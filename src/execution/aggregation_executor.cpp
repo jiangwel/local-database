@@ -22,7 +22,7 @@ AggregationExecutor::AggregationExecutor(ExecutorContext *exec_ctx, const Aggreg
       plan_(plan),
       child_(std::move(child)),
       aht_(SimpleAggregationHashTable(plan_->GetAggregates(), plan_->GetAggregateTypes())),
-      aht_iterator_(SimpleAggregationHashTable::Iterator(aht_.Begin())) {}
+      aht_iterator_(static_cast<SimpleAggregationHashTable::Iterator>(aht_.Begin())) {}
 
 void AggregationExecutor::Init() {
   child_->Init();
@@ -58,11 +58,11 @@ auto AggregationExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   auto values_size = GetOutputSchema().GetColumnCount();
   values.reserve(values_size);
 
-  for (size_t i = 0; i < aht_iterator_.Key().group_bys_.size(); i++) {
-    values.emplace_back(aht_iterator_.Key().group_bys_[i]);
+  for (const auto &group_by : aht_iterator_.Key().group_bys_) {
+    values.emplace_back(group_by);
   }
-  for (size_t i = 0; i < aht_iterator_.Val().aggregates_.size(); i++) {
-    values.emplace_back(aht_iterator_.Val().aggregates_[i]);
+  for (const auto &aggregate : aht_iterator_.Val().aggregates_) {
+    values.emplace_back(aggregate);
   }
   ++aht_iterator_;
 

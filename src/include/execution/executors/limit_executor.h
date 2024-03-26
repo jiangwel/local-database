@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "execution/executors/abstract_executor.h"
 #include "execution/plans/limit_plan.h"
@@ -53,7 +54,6 @@ class LimitExecutor : public AbstractExecutor {
   const LimitPlanNode *plan_;
   /** The child executor from which tuples are obtained */
   std::unique_ptr<AbstractExecutor> child_executor_;
-  size_t cursor_=0;
-  std::vector<Tuple> tuples_;
+  size_t cursor_;
 };
 }  // namespace bustub

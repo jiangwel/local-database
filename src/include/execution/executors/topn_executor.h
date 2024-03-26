@@ -51,14 +51,15 @@ class TopNExecutor : public AbstractExecutor {
 
  private:
   class TopNComparator {
-    public:
-      TopNComparator(const TopNPlanNode *plan) : plan_(plan) {}
-      inline auto operator()(const Tuple& ltuple, const Tuple& rtuple) const->bool;
-    private:
-    const TopNPlanNode* plan_;
+   public:
+    explicit TopNComparator(const TopNPlanNode *plan) : plan_(plan) {}
+    inline auto operator()(const Tuple &ltuple, const Tuple &rtuple) const -> bool;
+
+   private:
+    const TopNPlanNode *plan_;
   };
   /** The topn plan node to be executed */
-  const TopNPlanNode* plan_;
+  const TopNPlanNode *plan_;
   std::unique_ptr<AbstractExecutor> child_executor_;
   std::vector<Tuple> results_;
   size_t results_idx_ = 0;
