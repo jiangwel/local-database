@@ -63,6 +63,15 @@ class LockManager {
 
   class LockRequestQueue {
    public:
+    LockRequestQueue() = default;
+    LockRequestQueue(LockRequest* request) {
+      request_queue_.push_back(request);
+    }
+    ~LockRequestQueue() {
+      for (auto request : request_queue_) {
+        delete request;
+      }
+    }
     /** List of lock requests for the same resource (table or row) */
     std::list<LockRequest *> request_queue_;
     /** For notifying blocked transactions on this rid */
@@ -298,6 +307,8 @@ class LockManager {
   auto RunCycleDetection() -> void;
 
  private:
+  // helper function
+  auto LockManager::IllegalBehaviorTable(Transaction *txn, LockMode lock_mode) -> bool;
   /** Fall 2022 */
   /** Structure that holds lock requests for a given table oid */
   std::unordered_map<table_oid_t, std::shared_ptr<LockRequestQueue>> table_lock_map_;
