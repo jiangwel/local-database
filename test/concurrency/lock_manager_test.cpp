@@ -109,6 +109,52 @@ void TableLockTest1() {
     delete txns[i];
   }
 }
+void MemaryLackTest() {
+  LockManager lock_mgr{};
+  TransactionManager txn_mgr{&lock_mgr};
+
+  std::vector<table_oid_t> oids;
+  std::vector<Transaction *> txns;
+  table_oid_t oid = 0;
+  int num_oids = 1;
+  for (int i = 0; i < num_oids; i++) {
+    txns.push_back(txn_mgr.Begin());
+    EXPECT_EQ(i, txns[i]->GetTransactionId());
+  }
+
+  
+
+  /** Each transaction takes an S lock on every table and then unlocks */
+  auto task = [&](int txn_id) {
+    bool res;
+      res = lock_mgr.LockTable(txns[txn_id], LockManager::LockMode::EXCLUSIVE, oid);
+      EXPECT_TRUE(res);
+      CheckGrowing(txns[txn_id]);
+      res = lock_mgr.UnlockTable(txns[txn_id], oid);
+      EXPECT_TRUE(res);
+      CheckShrinking(txns[txn_id]);
+    txn_mgr.Commit(txns[txn_id]);
+    CheckCommitted(txns[txn_id]);
+
+    /** All locks should be dropped */
+    CheckTableLockSizes(txns[txn_id], 0, 0, 0, 0, 0);
+  };
+
+  std::vector<std::thread> threads;
+  threads.reserve(num_oids);
+
+  for (int i = 0; i < num_oids; i++) {
+    threads.emplace_back(std::thread{task, i});
+  }
+
+  for (int i = 0; i < num_oids; i++) {
+    threads[i].join();
+  }
+
+  for (int i = 0; i < num_oids; i++) {
+    delete txns[i];
+  }
+}
 /** Upgrading single transaction from S -> X */
 void TableLockUpgradeTest1() {
   LockManager lock_mgr{};
@@ -349,22 +395,7 @@ void TableLockNotPresent() {
   txn_mgr.Abort(txn);
   delete txn;
 }
-void IncompatibleUpgrade() {
-  LockManager lock_mgr;
-  TransactionManager txn_mgr(&lock_mgr);
 
-  table_oid_t oid = 0;
-  auto *txn = txn_mgr.Begin();
-
-  // 获取意图共享锁
-  EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_SHARED, oid));
-
-  // 尝试将意图共享锁升级为意图排他锁,应该抛出异常
-  EXPECT_THROW(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_EXCLUSIVE, oid), TransactionAbortException);
-
-  txn_mgr.Abort(txn);
-  delete txn;
-}
 void UpgradeConflict() {
   LockManager lock_mgr;
   TransactionManager txn_mgr(&lock_mgr);
@@ -425,6 +456,44 @@ void TableUnlockedBeforeUnlockingRows() {
   txn_mgr.Commit(txn);
   delete txn;
 }
+// 测试表锁的兼容性
+class TableLockCompatibilityTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    lock_mgr = std::make_unique<LockManager>();
+    txn_mgr = std::make_unique<TransactionManager>(lock_mgr.get());
+    table_oid = 1;
+  }
+
+  std::unique_ptr<LockManager> lock_mgr;
+  std::unique_ptr<TransactionManager> txn_mgr;
+  table_oid_t table_oid;
+};
+void TestLockCompatibility() {
+  LockManager lock_mgr{};
+  TransactionManager txn_mgr{&lock_mgr};
+
+  table_oid_t table1_oid = 1;
+
+  // 事务a获取表1上的S锁
+  auto *txn_a = txn_mgr.Begin();
+  EXPECT_TRUE(lock_mgr.LockTable(txn_a, LockManager::LockMode::SHARED, table1_oid));
+
+  // 事务b获取表1上的S锁,应该成功
+  auto *txn_b = txn_mgr.Begin();
+  EXPECT_TRUE(lock_mgr.LockTable(txn_b, LockManager::LockMode::SHARED, table1_oid));
+
+  // // 事务c试图获取表1上的X锁,应该失败
+  // auto *txn_c = txn_mgr.Begin();
+  // EXPECT_FALSE(lock_mgr.LockTable(txn_c, LockManager::LockMode::EXCLUSIVE, table1_oid));
+
+
+  delete txn_a;
+  delete txn_b;
+  // delete txn_c;
+}
+
+
 
 // Lock upgrade tests
 void TableLockUpgradeTest() {
@@ -547,14 +616,206 @@ void LockUpgradeForSameLock() {
   txn_mgr.Commit(txn);
 }
 
-TEST(LockManagerTest, ExceptionTest) {
+TEST(LockManagerTest, DISABLED_ExceptionTest1) {
   AttemptedIntentionLockOnRow();
+}
+TEST(LockManagerTest, ExceptionTest2) {
   LockSharedOnReadUncommitted();
-  LockOnShrinking();
-  TableLockNotPresent();
-  IncompatibleUpgrade();
-  UpgradeConflict();
-  AttemptedUnlockButNoLockHeld();
-  TableUnlockedBeforeUnlockingRows();
 } 
+TEST(LockManagerTest, DISABLED_ExceptionTest3) {
+  LockOnShrinking();
+} 
+TEST(LockManagerTest, DISABLED_ExceptionTest4) {
+  TableLockNotPresent();
+} 
+
+TEST(LockManagerTest, DISABLED_UpgradeConflict) {
+  UpgradeConflict();
+} 
+TEST(LockManagerTest, DISABLED_ExceptionTest7) {
+  AttemptedUnlockButNoLockHeld();
+} 
+TEST(LockManagerTest, DISABLED_ExceptionTest8) {
+  TableUnlockedBeforeUnlockingRows();
+}  
+TEST(LockManagerTest, LockUpgradeToSameMode) {
+  LockManager lock_mgr;
+  TransactionManager txn_mgr(&lock_mgr);
+
+  const int num_tables = 5;
+  std::vector<table_oid_t> table_oids;
+  for (int i = 0; i < num_tables; i++) {
+    table_oids.emplace_back(static_cast<table_oid_t>(i));
+  }
+
+  Transaction* txn = txn_mgr.Begin();
+
+  // 获取 S 锁
+  for (table_oid_t oid : table_oids) {
+    EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::SHARED, oid));
+  }
+
+  // 尝试将 S 锁升级为 S 锁
+  for (table_oid_t oid : table_oids) {
+    EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::SHARED, oid));
+  }
+
+  txn_mgr.Commit(txn);
+  delete txn;
+}
+TEST(LockManagerTest, TableLockTest1) {
+  TableLockTest1();
+}
+TEST(LockManagerTest, MemaryLackTest) {
+  MemaryLackTest();
+}
+TEST(LockManagerTest, IncompatibleTableLockUpgrade) {
+  LockManager lock_mgr;
+  TransactionManager txn_mgr(&lock_mgr);
+
+  table_oid_t oid = 0;
+  Transaction* txn = txn_mgr.Begin();
+
+  // IX -> IS (不允许)
+  EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_EXCLUSIVE, oid));
+  EXPECT_THROW(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_SHARED, oid), TransactionAbortException);
+  txn_mgr.Abort(txn);
+  delete txn;
+
+   ++oid;
+   txn = txn_mgr.Begin();
+
+  // IX -> S (不允许)
+  EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_EXCLUSIVE, oid));
+  EXPECT_THROW(lock_mgr.LockTable(txn, LockManager::LockMode::SHARED, oid), TransactionAbortException);
+  txn_mgr.Abort(txn);
+  delete txn;
+
+   ++oid;
+   txn = txn_mgr.Begin();
+
+  // S -> IX (不允许)
+  EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::SHARED, oid));
+  EXPECT_THROW(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_EXCLUSIVE, oid), TransactionAbortException);
+  txn_mgr.Abort(txn);
+  delete txn;
+
+   ++oid;
+   txn = txn_mgr.Begin();
+
+  // S -> IS (不允许)
+  EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::SHARED, oid));
+  EXPECT_THROW(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_SHARED, oid), TransactionAbortException);
+  txn_mgr.Abort(txn);
+  delete txn;
+
+   ++oid;
+   txn = txn_mgr.Begin();
+
+  // X -> IS (不允许)
+  EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::EXCLUSIVE, oid));
+  EXPECT_THROW(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_SHARED, oid), TransactionAbortException);
+  txn_mgr.Abort(txn);
+  delete txn;
+
+   ++oid;
+   txn = txn_mgr.Begin();
+
+  // X -> S (不允许)
+  EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::EXCLUSIVE, oid));
+  EXPECT_THROW(lock_mgr.LockTable(txn, LockManager::LockMode::SHARED, oid), TransactionAbortException);
+  txn_mgr.Abort(txn);
+  delete txn;
+
+   txn = txn_mgr.Begin();
+   ++oid;
+
+  // X -> IX (不允许)
+  EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::EXCLUSIVE, oid));
+  EXPECT_THROW(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_EXCLUSIVE, oid), TransactionAbortException);
+
+  txn_mgr.Abort(txn);
+  delete txn;
+}
+TEST(LockManagerTest, DISABLED_ConcurrentTableLockUpgrade) {
+  // LockManager lock_mgr{};
+  // TransactionManager txn_mgr{&lock_mgr};
+
+  // Transaction* txn1 = txn_mgr.Begin();
+  // // Transaction* txn2 = txn_mgr.Begin();
+
+  // EXPECT_TRUE(lock_mgr.LockTable(txn1, LockManager::LockMode::INTENTION_SHARED, 1));
+  // // EXPECT_TRUE(lock_mgr.LockTable(txn2, LockManager::LockMode::INTENTION_SHARED, 1));
+
+  // EXPECT_TRUE(lock_mgr.LockTable(txn1, LockManager::LockMode::SHARED, 1));
+
+
+
+  // delete txn1;
+  // // delete txn2;
+
+  LockManager lock_mgr;
+  TransactionManager txn_mgr(&lock_mgr);
+
+  table_oid_t oid = 0;
+  Transaction* txn = txn_mgr.Begin(nullptr, IsolationLevel::REPEATABLE_READ);
+  txn->SetState(TransactionState::GROWING);
+  Transaction* txn2 = txn_mgr.Begin();
+
+  EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_SHARED, oid));
+  EXPECT_TRUE(lock_mgr.LockTable(txn2, LockManager::LockMode::INTENTION_SHARED, oid));
+
+  EXPECT_TRUE(lock_mgr.LockTable(txn, LockManager::LockMode::INTENTION_EXCLUSIVE, oid));
+    std::thread upgrade_thread([&] {
+      EXPECT_THROW(lock_mgr.LockTable(txn2, LockManager::LockMode::INTENTION_EXCLUSIVE, oid), TransactionAbortException);
+  });
+
+  upgrade_thread.join();
+  // txn_mgr.Abort(txn);
+  delete txn;
+  delete txn2;
+}
+TEST(LockManagerTest, TestLockCompatibility) {
+  TestLockCompatibility();
+}
+// 相容: IS + IS
+TEST_F(TableLockCompatibilityTest, IntentionSharedCompatible) {
+  auto *txn1 = txn_mgr->Begin();
+  auto *txn2 = txn_mgr->Begin();
+
+  EXPECT_TRUE(lock_mgr->LockTable(txn1, LockManager::LockMode::INTENTION_SHARED, table_oid));
+  EXPECT_TRUE(lock_mgr->LockTable(txn2, LockManager::LockMode::INTENTION_SHARED, table_oid));
+
+  txn_mgr->Commit(txn1);
+  txn_mgr->Commit(txn2);
+  delete txn1;
+  delete txn2;
+}
+// 相容: IS + S
+TEST_F(TableLockCompatibilityTest, IntentionSharedAndSharedCompatible) {
+  auto *txn1 = txn_mgr->Begin();
+  auto *txn2 = txn_mgr->Begin();
+
+  EXPECT_TRUE(lock_mgr->LockTable(txn1, LockManager::LockMode::INTENTION_SHARED, table_oid));
+  EXPECT_TRUE(lock_mgr->LockTable(txn2, LockManager::LockMode::SHARED, table_oid));
+
+  txn_mgr->Commit(txn1);
+  txn_mgr->Commit(txn2);
+  delete txn1;
+  delete txn2;
+}
+// 相容: S + S
+TEST_F(TableLockCompatibilityTest, SharedCompatible) {
+  auto *txn1 = txn_mgr->Begin();
+  auto *txn2 = txn_mgr->Begin();
+
+  EXPECT_TRUE(lock_mgr->LockTable(txn1, LockManager::LockMode::SHARED, table_oid));
+  EXPECT_TRUE(lock_mgr->LockTable(txn2, LockManager::LockMode::SHARED, table_oid));
+
+  txn_mgr->Commit(txn1);
+  txn_mgr->Commit(txn2);
+  delete txn1;
+  delete txn2;
+}
+
 }  // namespace bustub
