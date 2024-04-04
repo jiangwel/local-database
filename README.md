@@ -1,7 +1,3 @@
-<img src="logo/bustub-whiteborder.svg" alt="BusTub Logo" height="200">
-
------------------
-
 # What
 
 BusTub is a relational database management system built at Carnegie Mellon University for the Introduction to Database Systems (15-445/645) course.  
