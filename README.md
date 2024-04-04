@@ -4,14 +4,37 @@
 
 # What
 
-本项目是卡内基梅隆大学为Introduction to Database Systems（15-445/645）课程的一个实现关系数据库管理系统的项目,支持基本的 SQL 并带有一个交互式 shell.
-
-Fall 2022 版本.
+BusTub is a relational database management system built at Carnegie Mellon University for the Introduction to Database Systems (15-445/645) course.  
+### LAB1 Buffer Pool implementation   
+  + Extendible Hash Table  
+  + LRU-K Replacement Policy  
+  + Buffer Pool Manager Instance
+### LAB2 B+ Tree index implementation
+  + B+ tree pages
+  + B+ Tree Data Structure(Insertion,Deletion,Point Search)
+  + Index Iterator
+  + Concurrent Index(crabbing technique)
+### LAB3 Operator executors  & Top-N Optimization implementation  
+  + Seq scan executor
+  + Insert executor
+  + Delete executor
+  + Index scan executor
+  + Aggregation executor
+  + Nested loop join executor
+  + Nested index join executor
+  + Sort executor
+  + Limit executor
+  + Topn executor
+  + Sort limit as topn optimizer
+### LAB4 Lock Manager implementation
+  + Lock manager 
+   
+  
 
 # Result
 
 <details>
-<summary>展开/折叠结果</summary>
+<summary>Expand/Collapse</summary>
 
 <table style="table-layout:fixed; width:100%;">
   <tr>
