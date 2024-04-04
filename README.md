@@ -11,16 +11,7 @@ BusTub is a relational database management system built at Carnegie Mellon Unive
   + Index Iterator
   + Concurrent Index(crabbing technique)
 ### LAB3 Operator executors  & Top-N Optimization implementation  
-  + Seq scan executor
-  + Insert executor
-  + Delete executor
-  + Index scan executor
-  + Aggregation executor
-  + Nested loop join executor
-  + Nested index join executor
-  + Sort executor
-  + Limit executor
-  + Topn executor
+  + Seq scan executor, Insert executor, Delete executor, Index scan executor, Aggregation executor, Nested loop join executor, Nested index join executor, Sort executor, Limit executor, Topn executor
   + Sort limit as topn optimizer
 ### LAB4 Lock Manager implementation
   + Lock manager 
