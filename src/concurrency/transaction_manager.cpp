@@ -44,6 +44,7 @@ auto TransactionManager::Begin(Transaction *txn, IsolationLevel isolation_level)
 }
 
 void TransactionManager::Commit(Transaction *txn) {
+  LOG_INFO("Commit txn_id: %d",txn->GetTransactionId());
   txn->SetState(TransactionState::COMMITTED);
 
   // Perform all deletes before we commit.
