@@ -321,7 +321,7 @@ class LockManager {
   auto IsConcurrentLockUpgrades(std::shared_ptr<LockRequestQueue> req_queue, txn_id_t txn_id) const -> bool;
   void TableTxnLockSetDeleteRecord(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) const;
   void RowTxnLockSetDeleteRecord(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const RID &rid) const;
-  auto TableIsLockCompatible(std::shared_ptr<LockRequestQueue> req_queue, LockMode new_mode) const -> bool;
+  auto TableIsLockCompatible(LockMode old_mode, LockMode new_mode) const -> bool;
   auto RowIsLockCompatible(std::shared_ptr<LockRequestQueue> req_queue, LockMode new_mode) const -> bool;
   void TableWaitLock(Transaction *txn, LockMode lock_mode, const table_oid_t &oid,
                      std::shared_ptr<LockRequestQueue> req_queue) const;
@@ -330,6 +330,7 @@ class LockManager {
   auto UnlockTableIllegalBehavior(Transaction *txn, const table_oid_t &oid) const -> bool;
   auto UnlockRowIllegalBehavior(Transaction *txn, const table_oid_t &oid, const RID &rid) const -> bool;
   void UpdateTxnState(Transaction *txn, LockMode lock_mode) const;
+  auto GrantLock(std::shared_ptr<LockRequestQueue> req_queue,LockRequest* new_req)const->bool;
   /** Fall 2022 */
   /** Structure that holds lock requests for a given table oid */
   std::unordered_map<table_oid_t, std::shared_ptr<LockRequestQueue>> table_lock_map_;
