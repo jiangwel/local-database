@@ -641,7 +641,7 @@ void LockUpgradeForSameLock() {
   // Clean up
   txn_mgr.Commit(txn);
 }
-// #define ENABLE_TESTING
+#define ENABLE_TESTING
 
 #ifdef ENABLE_TESTING
 

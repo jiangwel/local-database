@@ -145,49 +145,46 @@ auto LockManager::LockRow(Transaction* txn, LockMode lock_mode, const table_oid_
     return true;
   }
   row_lock_map_latch_.unlock();
-  auto& que_latch = req_queue_itr->second->latch_;
-  que_latch.lock();
+
+  std::unique_lock<std::mutex> lck(req_queue_itr->second->latch_);
+
   bool is_queue_empty = req_queue_itr->second->request_queue_.empty();
   if (is_queue_empty) {
     auto* new_req = new LockRequest(txn->GetTransactionId(), lock_mode, oid, rid);
     new_req->granted_ = true;
     req_queue_itr->second->request_queue_.emplace_back(new_req);
-    que_latch.unlock();
     RowTxnLockSetAddRecord(txn, lock_mode, oid, rid);
     return true;
   }
   if (TryRowLockUpgrade(txn, req_queue_itr->second, lock_mode)) {
-    que_latch.unlock();
+    if (txn->GetState() == TransactionState::ABORTED) {
+      return false;
+    } 
     return true;
   }
 
-  bool is_lock_compatible = true;
-  for (auto* req : req_queue_itr->second->request_queue_) {
-    if (!req->granted_ || lock_mode == LockMode::EXCLUSIVE ||
-      (req->lock_mode_ != LockMode::SHARED || lock_mode != LockMode::SHARED)) {
-      is_lock_compatible = false;
-      break;
-    }
-  }
-
-  if (is_lock_compatible) {
-    // give the lock
-    auto* new_req = new LockRequest(txn->GetTransactionId(), lock_mode, oid, rid);
-    new_req->granted_ = true;
-    req_queue_itr->second->request_queue_.emplace_back(new_req);
-    que_latch.unlock();
-    RowTxnLockSetAddRecord(txn, lock_mode, oid, rid);
-    return true;
-  }
-  else {
+  auto *new_req = new LockRequest(txn->GetTransactionId(), lock_mode, oid, rid);
+  req_queue_itr->second->request_queue_.push_back(new_req);
+  
+  while (!GrantLock(req_queue_itr->second, new_req)) {
 #ifdef Debug
-    LOG_INFO("Wait Row Lock: txn_id: %d", txn->GetTransactionId());
+    LOG_INFO("Wait Row Lock: txn_id: %d,oid: %d", txn->GetTransactionId(), oid);
 #endif
-    RowWaitLock(txn, lock_mode, oid, req_queue_itr->second, rid);
+    req_queue_itr->second->cv_.wait(lck);
+    if (txn->GetState() == TransactionState::ABORTED) {
+      req_queue_itr->second->request_queue_.remove(new_req);
+      delete new_req;
+      req_queue_itr->second->cv_.notify_all();
+      return false;
+    }
 #ifdef Debug
     LOG_INFO("Wait Row Lock Done: txn_id: %d", txn->GetTransactionId());
 #endif
   }
+
+  new_req->granted_ = true;
+  RowTxnLockSetAddRecord(txn, lock_mode, oid,rid);
+
   return true;
 }
 
@@ -202,13 +199,13 @@ auto LockManager::UnlockRow(Transaction* txn, const table_oid_t& oid, const RID&
 #endif
     return false;
   }
-  row_lock_map_latch_.lock();
   // update lock table
   LockRequest* txn_req = nullptr;
+  row_lock_map_latch_.lock();
   auto req_queue_itr = row_lock_map_.find(rid);
-  auto& que_latch = req_queue_itr->second->latch_;
-  que_latch.lock();
+  row_lock_map_latch_.unlock();
 
+  std::lock_guard<std::mutex> guard(req_queue_itr->second->latch_);
   auto req_queue_ptr = req_queue_itr->second;
   for (auto* req : req_queue_ptr->request_queue_) {
     if (req->txn_id_ == txn->GetTransactionId()) {
@@ -224,20 +221,14 @@ auto LockManager::UnlockRow(Transaction* txn, const table_oid_t& oid, const RID&
   RowTxnLockSetDeleteRecord(txn, lock_mode, oid, rid);
 
   auto* last_req = req_queue_ptr->request_queue_.back();
-  bool has_wait_txn = last_req->granted_ == false;
+  bool has_wait_txn = last_req->granted_ == false || req_queue_ptr->upgrading_ != INVALID_TXN_ID;
 
   req_queue_ptr->request_queue_.remove(txn_req);
   delete txn_req;
 
-  if (req_queue_ptr->request_queue_.empty()) {
-    row_lock_map_.erase(rid);
-  }
-  row_lock_map_latch_.unlock();
-
   if (has_wait_txn) {
     req_queue_itr->second->cv_.notify_all();
   }
-  que_latch.unlock();
   return true;
 }
 
@@ -575,7 +566,7 @@ auto LockManager::TryTableLockUpgrade(Transaction* txn, std::shared_ptr<LockRequ
   }
   return false;
 }
-auto LockManager::GrantLock(std::shared_ptr<LockRequestQueue> req_queue,LockRequest* new_req)const->bool{
+auto LockManager::GrantLock(std::shared_ptr<LockRequestQueue> req_queue, LockRequest* new_req)const->bool {
   for (auto it = req_queue->request_queue_.begin();(*it) != new_req;++it) {
     auto next_it = std::next(it);
     bool cur_is_not_first_watting = *next_it == new_req && !(*it)->granted_;
@@ -596,49 +587,58 @@ auto LockManager::TryRowLockUpgrade(Transaction* txn, std::shared_ptr<LockReques
       if (old_mode == new_mode) {
         return true;
       }
-      auto* new_req = new LockRequest(txn->GetTransactionId(), new_mode, req->oid_, req->rid_);
-      req_queue->request_queue_.emplace_back(new_req);
-      if (IsConcurrentLockUpgrades(req_queue, txn->GetTransactionId())) {
-        req_queue->request_queue_.remove(new_req);
+
+      if(req_queue->upgrading_ != INVALID_TXN_ID){
         txn->SetState(TransactionState::ABORTED);
         throw TransactionAbortException(txn->GetTransactionId(), AbortReason::UPGRADE_CONFLICT);
       }
+      RowTxnLockSetDeleteRecord(txn, old_mode, req->oid_, req->rid_);
+      req_queue->request_queue_.remove(req);
+      auto* new_req = new LockRequest(txn->GetTransactionId(), new_mode, req->oid_, req->rid_);
+      delete req;
 
-      bool is_only_two_que_exzit = req_queue->request_queue_.size() == 2;
-      if (!is_only_two_que_exzit) {
-        bool is_all_compatible = true;
+      auto pos = req_queue->request_queue_.begin();
+      for (;pos != req_queue->request_queue_.end();++pos) {
+        bool is_waiting = !(*pos)->granted_;
+        if (is_waiting) {
+          break;
+        }
+      }
+      req_queue->request_queue_.insert(pos, new_req);
+      req_queue->upgrading_ = txn->GetTransactionId();
+      
+      bool is_uncompatible = true;
+      std::unique_lock<std::mutex> lck(req_queue->latch_, std::adopt_lock);
+      while (is_uncompatible) {
         for (auto* temp_req : req_queue->request_queue_) {
-          if (temp_req->granted_ && (temp_req->lock_mode_ != LockMode::SHARED || new_mode != LockMode::SHARED)) {
-            is_all_compatible = false;
+          if (temp_req->granted_ && !TableIsLockCompatible(temp_req->lock_mode_, new_mode)) {
+            is_uncompatible = true;
+            req_queue->cv_.wait(lck);
+            if (txn->GetState() == TransactionState::ABORTED) {
+              req_queue->upgrading_ = INVALID_TXN_ID;
+              req_queue->request_queue_.remove(new_req);
+              delete new_req;
+              req_queue->cv_.notify_all();
+              return true;
+            }
             break;
           }
-        }
-        if (!is_all_compatible) {
-          std::unique_lock<std::mutex> lck(req_queue->latch_, std::adopt_lock);
-          req_queue->cv_.wait(lck, [&] {
-            is_all_compatible = true;
-            for (auto* temp_req : req_queue->request_queue_) {
-              if (temp_req->granted_ && (temp_req->lock_mode_ != LockMode::SHARED || new_mode != LockMode::SHARED)) {
-                is_all_compatible = false;
-                break;
-              }
-            }
-            return is_all_compatible;
-            });
+          is_uncompatible = false;
         }
       }
 
-      req_queue->request_queue_.remove(new_req);
-      delete new_req;
-      req->lock_mode_ = new_mode;
-      RowTxnLockSetDeleteRecord(txn, old_mode, req->oid_, req->rid_);
-      RowTxnLockSetAddRecord(txn, new_mode, req->oid_, req->rid_);
+      new_req->granted_ = true;
+      req_queue->upgrading_ = INVALID_TXN_ID;
+#ifdef Debug
+      LOG_INFO("RowLockUpgrade: txn_id: %d, oid: %d, old_mode: %d, new_mode: %d", txn->GetTransactionId(), new_req->oid_, int(old_mode), int(new_mode));
+#endif
+      RowTxnLockSetAddRecord(txn, new_mode, new_req->oid_, new_req->rid_);
       return true;
+
     }
   }
   return false;
 }
-
 auto LockManager::IsConcurrentLockUpgrades(std::shared_ptr<LockRequestQueue> req_queue, txn_id_t txn_id) const -> bool {
   std::unordered_set<txn_id_t> wait_lock_upgrade_set;
   for (auto rit = req_queue->request_queue_.rbegin(); rit != req_queue->request_queue_.rend(); ++rit) {
