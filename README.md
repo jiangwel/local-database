@@ -43,7 +43,7 @@ BusTub is a relational database management system built at Carnegie Mellon Unive
 <img src="https://github.com/jiangwel/bustub/assets/84135487/7e191ae2-c3bc-4073-aa6e-142cf2b92862" style="max-width:100%;">
 </td>
 <td style="width:35%;">
-<img src="https://github.com/jiangwel/bustub/assets/84135487/ba1e9721-33f8-47d4-9a3a-6a2e62100cb1" style="max-width:100%;">
+<img src="https://github.com/jiangwel/bustub/assets/84135487/232e136c-8c0e-4ce6-96bc-9344c819b7f2" style="max-width:100%;">
 </td>
 </tr>
 </table>
