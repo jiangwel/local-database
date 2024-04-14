@@ -28,7 +28,7 @@ BusTub is a relational database management system built at Carnegie Mellon Unive
 <th style="width:25%;">lab1(100/100)</th>
 <th style="width:25%;">lab2(95/100)</th>  
 <th style="width:25%;">lab3(100/100)</th>
-<th style="width:25%;">lab4(70/100)</th>
+<th style="width:25%;">lab4(80/100)</th>
 </tr>
 
 <tr>
@@ -37,13 +37,13 @@ BusTub is a relational database management system built at Carnegie Mellon Unive
 </td>
 <td style="width:25%;">
 <img src="https://github.com/jiangwel/bustub/assets/84135487/0ee0505b-b17a-4580-a056-55d94b8c57b8" style="max-width:20%;">
-<img src="https://github.com/jiangwel/bustub/assets/84135487/b6f2d910-c57a-44bd-add3-161dca94c8b6" style="max-width:20%;">
+<img src="https://github.com/jiangwel/bustub/assets/84135487/8dd069c2-aa17-4e85-bdb5-ec78258163fb" style="max-width:20%;">
 </td>
 <td style="width:20%;">
 <img src="https://github.com/jiangwel/bustub/assets/84135487/7e191ae2-c3bc-4073-aa6e-142cf2b92862" style="max-width:100%;">
 </td>
 <td style="width:35%;">
-<img src="https://github.com/jiangwel/bustub/assets/84135487/232e136c-8c0e-4ce6-96bc-9344c819b7f2" style="max-width:100%;">
+<img src="https://github.com/jiangwel/bustub/assets/84135487/b4fe000d-f3cb-4c20-8685-bbb2a28d5677" style="max-width:100%;">
 </td>
 </tr>
 </table>
