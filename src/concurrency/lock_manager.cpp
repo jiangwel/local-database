@@ -229,22 +229,79 @@ auto LockManager::UnlockRow(Transaction *txn, const table_oid_t &oid, const RID 
   return true;
 }
 
-void LockManager::AddEdge(txn_id_t t1, txn_id_t t2) {}
+void LockManager::AddEdge(txn_id_t t1, txn_id_t t2) {
+  auto& neighbors = waits_for_[t1];
+  auto it = std::find(neighbors.begin(), neighbors.end(), t2);
 
-void LockManager::RemoveEdge(txn_id_t t1, txn_id_t t2) {}
+  if (it == neighbors.end()) {
+      neighbors.push_back(t2);
+  }
+}
 
-auto LockManager::HasCycle(txn_id_t *txn_id) -> bool { return false; }
+void LockManager::RemoveEdge(txn_id_t t1, txn_id_t t2) {
+  auto it = waits_for_.find(t1);
+  if (it == waits_for_.end()) {
+      return;
+  }
+
+  auto& neighbors = it->second;
+  auto it_neighbor = std::find(neighbors.begin(), neighbors.end(), t2);
+  if (it_neighbor != neighbors.end()) {
+      neighbors.erase(it_neighbor);
+  }
+}
+
+auto LockManager::HasCycle(txn_id_t *txn_id) -> bool {
+  std::unordered_set<txn_id_t> visited;
+  std::unordered_set<txn_id_t> recursion_stack;
+  std::vector<txn_id_t> start_nodes;
+  txn_id_t min_id = std::numeric_limits<txn_id_t>::max();
+
+  for (const auto& pair : waits_for_) {
+      const txn_id_t& node = pair.first;
+      if (!visited.count(node)) {
+          start_nodes.push_back(node);
+      }
+  }
+  std::sort(start_nodes.begin(), start_nodes.end());
+
+  for (const txn_id_t& node : start_nodes) {
+      if (!visited.count(node) && DFS(node, visited, recursion_stack, min_id)) {
+          return min_id;
+      }
+  }
+
+  return min_id;
+}
 
 auto LockManager::GetEdgeList() -> std::vector<std::pair<txn_id_t, txn_id_t>> {
   std::vector<std::pair<txn_id_t, txn_id_t>> edges(0);
+  for (const auto& node_pair : waits_for_) {
+      txn_id_t src_node = node_pair.first;
+      const std::vector<txn_id_t>& neighbors = node_pair.second;
+
+      for (const txn_id_t& dest_node : neighbors) {
+          edges.emplace_back(src_node, dest_node);
+      }
+  }
   return edges;
 }
 
 void LockManager::RunCycleDetection() {
   while (enable_cycle_detection_) {
     std::this_thread::sleep_for(cycle_detection_interval);
-    {  // TODO(students): detect deadlock
+#ifdef Debug
+    LOG_INFO("Start CycleDetection");
+#endif
+    {
+      for(auto &table:table_lock_map_){
+        table.
+      }
+
     }
+#ifdef Debug
+    LOG_INFO("End CycleDetection");
+#endif
   }
 }
 // helper function
@@ -691,6 +748,37 @@ auto LockManager::GetRequest(const std::shared_ptr<LockRequestQueue> &req_queue,
     }
   }
   return nullptr;
+}
+
+auto LockManager::DFS(txn_id_t start, std::unordered_set<txn_id_t>& visited, std::unordered_set<txn_id_t>& recursion_stack, txn_id_t& min_id) -> bool{
+  std::stack<txn_id_t> stack;
+  stack.push(start);
+  visited.insert(start);
+  recursion_stack.insert(start);
+  min_id = start;
+
+  while (!stack.empty()) {
+      txn_id_t curr = stack.top();
+      stack.pop();
+
+      std::vector<txn_id_t> neighbors = waits_for_[curr];
+      std::sort(neighbors.begin(), neighbors.end());
+
+      for (const txn_id_t& neighbor : neighbors) {
+          if (recursion_stack.count(neighbor)) {
+              min_id = std::min(min_id, neighbor);
+              return true;
+          }
+          if (!visited.count(neighbor)) {
+              visited.insert(neighbor);
+              recursion_stack.insert(neighbor);
+              stack.push(neighbor);
+          }
+      }
+      recursion_stack.erase(curr);
+  }
+
+  return false;
 }
 // end of helper function
 }  // namespace bustub

@@ -21,6 +21,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <stack>
 
 #include "common/config.h"
 #include "common/rid.h"
@@ -326,6 +327,7 @@ class LockManager {
   void UpdateTxnState(Transaction *txn, LockMode lock_mode) const;
   auto GrantLock(const std::shared_ptr<LockRequestQueue> &req_queue, LockRequest *new_req) const -> bool;
   auto GetRequest(const std::shared_ptr<LockRequestQueue> &req_queue, txn_id_t txn_id) const -> LockRequest *;
+  auto DFS(txn_id_t start, std::unordered_set<txn_id_t>& visited, std::unordered_set<txn_id_t>& recursion_stack, txn_id_t& min_id) -> bool;
   /** Fall 2022 */
   /** Structure that holds lock requests for a given table oid */
   std::unordered_map<table_oid_t, std::shared_ptr<LockRequestQueue>> table_lock_map_;
