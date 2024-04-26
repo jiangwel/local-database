@@ -20,9 +20,6 @@ BusTub is a relational database management system built at Carnegie Mellon Unive
 
 # Result
 
-<details>
-<summary>Expand/Collapse</summary>
-
 <table style="table-layout:fixed; width:100%;">
 <tr>
 <th style="width:25%;">lab1(100/100)</th>
@@ -48,4 +45,3 @@ BusTub is a relational database management system built at Carnegie Mellon Unive
 </tr>
 </table>
 
-</details>
