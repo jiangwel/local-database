@@ -230,59 +230,59 @@ auto LockManager::UnlockRow(Transaction *txn, const table_oid_t &oid, const RID 
 }
 
 void LockManager::AddEdge(txn_id_t t1, txn_id_t t2) {
-  auto& neighbors = waits_for_[t1];
+  auto &neighbors = waits_for_[t1];
   auto it = std::find(neighbors.begin(), neighbors.end(), t2);
 
   if (it == neighbors.end()) {
-      neighbors.push_back(t2);
+    neighbors.push_back(t2);
   }
 }
 
 void LockManager::RemoveEdge(txn_id_t t1, txn_id_t t2) {
   auto it = waits_for_.find(t1);
   if (it == waits_for_.end()) {
-      return;
+    return;
   }
 
-  auto& neighbors = it->second;
+  auto &neighbors = it->second;
   auto it_neighbor = std::find(neighbors.begin(), neighbors.end(), t2);
   if (it_neighbor != neighbors.end()) {
-      neighbors.erase(it_neighbor);
+    neighbors.erase(it_neighbor);
   }
 }
 
 auto LockManager::HasCycle(txn_id_t *txn_id) -> bool {
-  std::unordered_set<txn_id_t> visited;
-  std::unordered_set<txn_id_t> recursion_stack;
+  std::unordered_map<txn_id_t, bool> visited;
   std::vector<txn_id_t> start_nodes;
-  txn_id_t min_id = std::numeric_limits<txn_id_t>::max();
 
-  for (const auto& pair : waits_for_) {
-      const txn_id_t& node = pair.first;
-      if (!visited.count(node)) {
-          start_nodes.push_back(node);
-      }
+  for (const auto &pair : waits_for_) {
+    start_nodes.push_back(pair.first);
   }
   std::sort(start_nodes.begin(), start_nodes.end());
 
-  for (const txn_id_t& node : start_nodes) {
-      if (!visited.count(node) && DFS(node, visited, recursion_stack, min_id)) {
-          return min_id;
+  for (const txn_id_t &node : start_nodes) {
+    if (visited.find(node) == visited.end()) {
+      std::stack<txn_id_t> recursion_stack;
+      recursion_stack.push(node);
+      visited.emplace(node, true);
+      if (DFS(node, visited, recursion_stack, *txn_id)) {
+        return true;
       }
+    }
   }
 
-  return min_id;
+  return false;
 }
 
 auto LockManager::GetEdgeList() -> std::vector<std::pair<txn_id_t, txn_id_t>> {
   std::vector<std::pair<txn_id_t, txn_id_t>> edges(0);
-  for (const auto& node_pair : waits_for_) {
-      txn_id_t src_node = node_pair.first;
-      const std::vector<txn_id_t>& neighbors = node_pair.second;
+  for (const auto &node_pair : waits_for_) {
+    txn_id_t src_node = node_pair.first;
+    const std::vector<txn_id_t> &neighbors = node_pair.second;
 
-      for (const txn_id_t& dest_node : neighbors) {
-          edges.emplace_back(src_node, dest_node);
-      }
+    for (const txn_id_t &dest_node : neighbors) {
+      edges.emplace_back(src_node, dest_node);
+    }
   }
   return edges;
 }
@@ -294,10 +294,44 @@ void LockManager::RunCycleDetection() {
     LOG_INFO("Start CycleDetection");
 #endif
     {
-      for(auto &table:table_lock_map_){
-        table.
+      std::lock_guard<std::mutex> guard(waits_for_latch_);
+      if (!enable_cycle_detection_) {
+        break;
       }
+      waits_for_.clear();
+      BuildGraph();
 
+#ifdef Debug
+      auto list = GetEdgeList();
+      for (const auto &edge : list) {
+        txn_id_t t1 = edge.first;
+        txn_id_t t2 = edge.second;
+        LOG_INFO("Edge: %d -> %d", t1, t2);
+      }
+#endif
+
+      txn_id_t target_txn = INVALID_TXN_ID;
+      while (HasCycle(&target_txn)) {
+#ifdef Debug
+        LOG_INFO("Cycle Detected %d", target_txn);
+#endif
+        auto txn = TransactionManager::GetTransaction(target_txn);
+        txn->SetState(TransactionState::ABORTED);
+        {
+          std::lock_guard<std::mutex> table_guard(table_lock_map_latch_);
+          for (const auto &table_lock : table_lock_map_) {
+            table_lock.second->cv_.notify_all();
+          }
+        }
+        {
+          std::lock_guard<std::mutex> row_guard(row_lock_map_latch_);
+          for (const auto &row_lock : row_lock_map_) {
+            row_lock.second->cv_.notify_all();
+          }
+        }
+        waits_for_.clear();
+        BuildGraph();
+      }
     }
 #ifdef Debug
     LOG_INFO("End CycleDetection");
@@ -305,6 +339,27 @@ void LockManager::RunCycleDetection() {
   }
 }
 // helper function
+template <typename T>
+void LockManager::GetEdgeFromLockMap(T &lock_map, std::mutex &lock_map_latch) {
+  std::lock_guard<std::mutex> lock_map_guard(lock_map_latch);
+  for (auto &element : lock_map) {
+    auto &lock_request_queue = element.second->request_queue_;
+    std::lock_guard<std::mutex> request_queue_guard(element.second->latch_);
+
+    for (auto &request : lock_request_queue) {
+      auto *txn = TransactionManager::GetTransaction(request->txn_id_);
+
+      if (!request->granted_ && txn->GetState() != TransactionState::ABORTED) {
+        for (auto &sub_req : lock_request_queue) {
+          if (sub_req->granted_) {
+            AddEdge(request->txn_id_, sub_req->txn_id_);
+          }
+        }
+      }
+    }
+  }
+}
+
 auto LockManager::LockTableIllegalBehavior(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) const -> bool {
   auto txn_state = txn->GetState();
   if (txn_state != TransactionState::GROWING && txn_state != TransactionState::SHRINKING) {
@@ -750,35 +805,88 @@ auto LockManager::GetRequest(const std::shared_ptr<LockRequestQueue> &req_queue,
   return nullptr;
 }
 
-auto LockManager::DFS(txn_id_t start, std::unordered_set<txn_id_t>& visited, std::unordered_set<txn_id_t>& recursion_stack, txn_id_t& min_id) -> bool{
-  std::stack<txn_id_t> stack;
-  stack.push(start);
-  visited.insert(start);
-  recursion_stack.insert(start);
-  min_id = start;
-
-  while (!stack.empty()) {
-      txn_id_t curr = stack.top();
-      stack.pop();
-
-      std::vector<txn_id_t> neighbors = waits_for_[curr];
-      std::sort(neighbors.begin(), neighbors.end());
-
-      for (const txn_id_t& neighbor : neighbors) {
-          if (recursion_stack.count(neighbor)) {
-              min_id = std::min(min_id, neighbor);
-              return true;
-          }
-          if (!visited.count(neighbor)) {
-              visited.insert(neighbor);
-              recursion_stack.insert(neighbor);
-              stack.push(neighbor);
-          }
+auto LockManager::DFS(txn_id_t start, std::unordered_map<txn_id_t, bool> &visited,
+                      std::stack<txn_id_t> &recursion_stack, txn_id_t &min_id) -> bool {
+  bool result = false;
+  std::vector<txn_id_t> &neighbors = waits_for_[start];
+  for (const txn_id_t &neighbor : neighbors) {
+    auto it = visited.find(neighbor);
+    if (it == visited.end()) {
+      recursion_stack.push(neighbor);
+      visited.emplace(neighbor, true);
+      if (DFS(neighbor, visited, recursion_stack, min_id)) {
+        result = true;
+        break;
       }
-      recursion_stack.erase(curr);
+    }
+    if (it != visited.end() && it->second) {
+      min_id = GetMinTxnID(neighbor, recursion_stack);
+      result = true;
+      break;
+    }
+  }
+  visited.insert_or_assign(recursion_stack.top(), false);
+  recursion_stack.pop();
+  return result;
+}
+auto LockManager::GetMinTxnID(txn_id_t vertex, std::stack<txn_id_t> &recursion_stack) -> txn_id_t {
+  txn_id_t min_id = INVALID_TXN_ID;
+  std::stack<txn_id_t> stack;
+  stack.push(recursion_stack.top());
+  recursion_stack.pop();
+
+  while (stack.top() != vertex) {
+    stack.push(recursion_stack.top());
+    recursion_stack.pop();
+  }
+  while (!stack.empty()) {
+    min_id = std::max(min_id, stack.top());
+    recursion_stack.push(stack.top());
+    stack.pop();
   }
 
-  return false;
+  return min_id;
 }
+
+void LockManager::BuildGraph() {
+  {
+    std::lock_guard guard{table_lock_map_latch_};
+    for (const auto &itr : table_lock_map_) {
+      std::lock_guard guard{itr.second->latch_};
+      AddEdges(itr.second->request_queue_);
+    }
+  }
+
+  {
+    std::lock_guard guard{row_lock_map_latch_};
+    for (const auto &itr : row_lock_map_) {
+      std::lock_guard guard{itr.second->latch_};
+      AddEdges(itr.second->request_queue_);
+    }
+  }
+}
+void LockManager::AddEdges(const std::list<LockRequest *> &lck_reqs) {
+  std::vector<txn_id_t> granteds;
+  std::vector<txn_id_t> waitings;
+  for (const auto lck_req : lck_reqs) {
+    const auto txn = TransactionManager::GetTransaction(lck_req->txn_id_);
+    if (txn->GetState() == TransactionState::ABORTED) {
+      continue;
+    }
+
+    if (lck_req->granted_) {
+      granteds.push_back(lck_req->txn_id_);
+    } else {
+      waitings.push_back(lck_req->txn_id_);
+    }
+  }
+
+  for (auto &&t1 : waitings) {
+    for (auto &&t2 : granteds) {
+      AddEdge(t1, t2);
+    }
+  }
+}
+
 // end of helper function
 }  // namespace bustub
