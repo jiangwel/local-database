@@ -65,6 +65,10 @@ class DeleteExecutor : public AbstractExecutor {
   bool done_flag_ = false;
   TableHeap *table_heap_ = nullptr;
   TableInfo *table_info_ = nullptr;
+  TableHeap *table_heap_ ;
+  TableInfo *table_info_ ;
+  Transaction *txn_;
+  LockManager *lock_manager_;
   std::vector<bustub::IndexInfo *> table_indexs_ = {};
 };
 }  // namespace bustub

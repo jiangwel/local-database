@@ -24,11 +24,16 @@ void SeqScanExecutor::Init() {
   auto *table_metadata = catalog->GetTable(table_oid);
   table_heap_ = table_metadata->table_.get();
   table_iter_ = table_heap_->Begin(exec_ctx->GetTransaction());
+  txn_ = GetExecutorContext()->GetTransaction();
+  lock_manager_  = GetExecutorContext()->GetLockManager();
 }
 
 auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   if (table_iter_ == table_heap_->End()) {
     return false;
+  }
+  if(!lock_manager_->LockTable(txn_,LockManager::LockMode::SHARED,plan_->GetTableOid())){
+    throw ExecutionException("Fail to lock table");
   }
   *rid = table_iter_->GetRid();
 
@@ -42,6 +47,7 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   *tuple = Tuple{values, &GetOutputSchema()};
 
   table_iter_++;
+  lock_manager_->UnlockTable(txn_,plan_->GetTableOid());
   return true;
 }
 

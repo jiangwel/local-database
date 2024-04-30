@@ -18,6 +18,7 @@
 
 namespace bustub {
 #define Debug
+// #define DeadlockDetection
 auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool {
 #ifdef Debug
   LOG_INFO("LockTable: txn_id: %d, lock_mode: %d, oid: %d,iso level: %d", txn->GetTransactionId(),
@@ -290,7 +291,7 @@ auto LockManager::GetEdgeList() -> std::vector<std::pair<txn_id_t, txn_id_t>> {
 void LockManager::RunCycleDetection() {
   while (enable_cycle_detection_) {
     std::this_thread::sleep_for(cycle_detection_interval);
-#ifdef Debug
+#ifdef DeadlockDetection
     LOG_INFO("Start CycleDetection");
 #endif
     {
@@ -301,7 +302,7 @@ void LockManager::RunCycleDetection() {
       waits_for_.clear();
       BuildGraph();
 
-#ifdef Debug
+#ifdef DeadlockDetection
       auto list = GetEdgeList();
       for (const auto &edge : list) {
         txn_id_t t1 = edge.first;
@@ -312,7 +313,7 @@ void LockManager::RunCycleDetection() {
 
       txn_id_t target_txn = INVALID_TXN_ID;
       while (HasCycle(&target_txn)) {
-#ifdef Debug
+#ifdef DeadlockDetection
         LOG_INFO("Cycle Detected %d", target_txn);
 #endif
         auto txn = TransactionManager::GetTransaction(target_txn);
@@ -333,7 +334,7 @@ void LockManager::RunCycleDetection() {
         BuildGraph();
       }
     }
-#ifdef Debug
+#ifdef DeadlockDetection
     LOG_INFO("End CycleDetection");
 #endif
   }
