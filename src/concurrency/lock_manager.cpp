@@ -17,8 +17,9 @@
 #include "concurrency/transaction_manager.h"
 
 namespace bustub {
-#define Debug
+// #define Debug
 // #define DeadlockDetection
+
 auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool {
 #ifdef Debug
   LOG_INFO("LockTable: txn_id: %d, lock_mode: %d, oid: %d,iso level: %d", txn->GetTransactionId(),
@@ -319,13 +320,13 @@ void LockManager::RunCycleDetection() {
         auto txn = TransactionManager::GetTransaction(target_txn);
         txn->SetState(TransactionState::ABORTED);
         {
-          std::lock_guard<std::mutex> table_guard(table_lock_map_latch_);
+          std::lock_guard table_guard(table_lock_map_latch_);
           for (const auto &table_lock : table_lock_map_) {
             table_lock.second->cv_.notify_all();
           }
         }
         {
-          std::lock_guard<std::mutex> row_guard(row_lock_map_latch_);
+          std::lock_guard row_guard(row_lock_map_latch_);
           for (const auto &row_lock : row_lock_map_) {
             row_lock.second->cv_.notify_all();
           }
@@ -381,10 +382,16 @@ auto LockManager::LockTableIllegalBehavior(Transaction *txn, LockMode lock_mode,
   if (is_repeatable_read_shrinking || (is_read_committed_shrinking && is_x_ix_six) ||
       (is_read_uncommitted_shrinking && is_x_ix_six)) {
     txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+    LOG_DEBUG("LOCK ON SHRINKING");
+#endif
     throw TransactionAbortException(txn->GetTransactionId(), AbortReason::LOCK_ON_SHRINKING);
   }
   if (isolation_level == IsolationLevel::READ_UNCOMMITTED && is_s_is_six) {
     txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+    LOG_DEBUG("LOCK SHARED ON READ UNCOMMITTED");
+#endif
     throw TransactionAbortException(txn->GetTransactionId(), AbortReason::LOCK_SHARED_ON_READ_UNCOMMITTED);
   }
 
@@ -423,6 +430,9 @@ auto LockManager::LockTableIllegalBehavior(Transaction *txn, LockMode lock_mode,
           lock_mode == LockMode::SHARED_INTENTION_EXCLUSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE));
     if (!is_legal_upgrade) {
       txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+      LOG_DEBUG("INCOMPATIBLE UPGRADE");
+#endif
       throw TransactionAbortException(txn->GetTransactionId(), AbortReason::INCOMPATIBLE_UPGRADE);
     }
   }
@@ -448,14 +458,23 @@ auto LockManager::LockRowIllegalBehavior(Transaction *txn, LockMode lock_mode, c
 
   if (is_i) {
     txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+    LOG_DEBUG("ATTEMPTED INTENTION LOCK ON ROW");
+#endif
     throw TransactionAbortException(txn->GetTransactionId(), AbortReason::ATTEMPTED_INTENTION_LOCK_ON_ROW);
   }
   if (is_repeatable_read_shrinking || is_read_committed_shrinking_x || is_read_uncommitted_shrinking_x) {
     txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+    LOG_DEBUG("LOCK ON SHRINKING");
+#endif
     throw TransactionAbortException(txn->GetTransactionId(), AbortReason::LOCK_ON_SHRINKING);
   }
   if (is_read_uncommitted_s) {
     txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+    LOG_DEBUG("LOCK SHARED ON READ UNCOMMITTED");
+#endif
     throw TransactionAbortException(txn->GetTransactionId(), AbortReason::LOCK_SHARED_ON_READ_UNCOMMITTED);
   }
 
@@ -493,6 +512,9 @@ auto LockManager::LockRowIllegalBehavior(Transaction *txn, LockMode lock_mode, c
       (lock_mode == LockMode::EXCLUSIVE && table_mode != LockMode::EXCLUSIVE &&
        table_mode != LockMode::INTENTION_EXCLUSIVE && table_mode != LockMode::SHARED_INTENTION_EXCLUSIVE)) {
     txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+    LOG_DEBUG("TABLE LOCK NOT PRESENT");
+#endif
     throw TransactionAbortException(txn->GetTransactionId(), AbortReason::TABLE_LOCK_NOT_PRESENT);
   }
 
@@ -503,6 +525,9 @@ auto LockManager::LockRowIllegalBehavior(Transaction *txn, LockMode lock_mode, c
     bool is_legal_upgrade = old_row_mode == LockMode::SHARED && lock_mode == LockMode::EXCLUSIVE;
     if (!is_legal_upgrade) {
       txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+      LOG_DEBUG("INCOMPATIBLE UPGRADE");
+#endif
       throw TransactionAbortException(txn->GetTransactionId(), AbortReason::INCOMPATIBLE_UPGRADE);
     }
   }
@@ -626,6 +651,9 @@ auto LockManager::TryTableLockUpgrade(Transaction *txn, const std::shared_ptr<Lo
     }
     if (req_queue->upgrading_ != INVALID_TXN_ID) {
       txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+      LOG_DEBUG("UPGRADE CONFLICT");
+#endif
       throw TransactionAbortException(txn->GetTransactionId(), AbortReason::UPGRADE_CONFLICT);
     }
     TableTxnLockSetDeleteRecord(txn, old_mode, req->oid_);
@@ -695,6 +723,9 @@ auto LockManager::TryRowLockUpgrade(Transaction *txn, const std::shared_ptr<Lock
 
     if (req_queue->upgrading_ != INVALID_TXN_ID) {
       txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+      LOG_DEBUG("UPGRADE CONFLICT");
+#endif
       throw TransactionAbortException(txn->GetTransactionId(), AbortReason::UPGRADE_CONFLICT);
     }
     RowTxnLockSetDeleteRecord(txn, old_mode, req->oid_, req->rid_);
@@ -765,6 +796,9 @@ auto LockManager::UnlockTableIllegalBehavior(Transaction *txn, const table_oid_t
   if ((s_row_lock_set->count(oid) > 0 && !s_row_lock_set->at(oid).empty()) ||
       (x_row_lock_set->count(oid) > 0 && !x_row_lock_set->at(oid).empty())) {
     txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+    LOG_DEBUG("TABLE_UNLOCKED_BEFORE_UNLOCKING_ROWS");
+#endif
     throw TransactionAbortException(txn->GetTransactionId(), AbortReason::TABLE_UNLOCKED_BEFORE_UNLOCKING_ROWS);
     return true;
   }
@@ -772,6 +806,9 @@ auto LockManager::UnlockTableIllegalBehavior(Transaction *txn, const table_oid_t
       !txn->IsTableIntentionSharedLocked(oid) && !txn->IsTableSharedIntentionExclusiveLocked(oid) &&
       !txn->IsTableSharedLocked(oid)) {
     txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+    LOG_DEBUG("ATTEMPTED_UNLOCK_BUT_NO_LOCK_HELD");
+#endif
     throw TransactionAbortException(txn->GetTransactionId(), AbortReason::ATTEMPTED_UNLOCK_BUT_NO_LOCK_HELD);
     return true;
   }
@@ -780,6 +817,9 @@ auto LockManager::UnlockTableIllegalBehavior(Transaction *txn, const table_oid_t
 auto LockManager::UnlockRowIllegalBehavior(Transaction *txn, const table_oid_t &oid, const RID &rid) const -> bool {
   if (!txn->IsRowExclusiveLocked(oid, rid) && !txn->IsRowSharedLocked(oid, rid)) {
     txn->SetState(TransactionState::ABORTED);
+#ifdef Debug
+    LOG_DEBUG("ATTEMPTED_UNLOCK_BUT_NO_LOCK_HELD");
+#endif
     throw TransactionAbortException(txn->GetTransactionId(), AbortReason::ATTEMPTED_UNLOCK_BUT_NO_LOCK_HELD);
     return true;
   }

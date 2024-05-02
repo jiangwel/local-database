@@ -26,7 +26,15 @@ void InsertExecutor::Init() {
   table_heap_ = table_info_->table_.get();
   table_indexs_ = GetExecutorContext()->GetCatalog()->GetTableIndexes(table_info_->name_);
   txn_ = GetExecutorContext()->GetTransaction();
-  lock_manager_  = GetExecutorContext()->GetLockManager();
+  lock_manager_ = GetExecutorContext()->GetLockManager();
+
+  try {
+    if (!lock_manager_->LockTable(txn_, LockManager::LockMode::INTENTION_EXCLUSIVE, table_info_->oid_)) {
+      throw ExecutionException("Fail to lock table");
+    }
+  } catch (TransactionAbortException &e) {
+    throw ExecutionException("Fail to lock table");
+  }
 }
 
 void InsertExecutor::UpdateIndex(Tuple *tuple, RID *rid) {
@@ -38,7 +46,8 @@ void InsertExecutor::UpdateIndex(Tuple *tuple, RID *rid) {
     auto key = tuple->KeyFromTuple(table_info_->schema_, *index->GetKeySchema(), index->GetKeyAttrs());
     index->InsertEntry(key, *rid, GetExecutorContext()->GetTransaction());
 
-    IndexWriteRecord index_record(*rid,table_info_->oid_,WType::INSERT,*tuple,index_info->index_oid_,GetExecutorContext()->GetCatalog());
+    IndexWriteRecord index_record(*rid, table_info_->oid_, WType::INSERT, *tuple, index_info->index_oid_,
+                                  GetExecutorContext()->GetCatalog());
     txn_->AppendIndexWriteRecord(index_record);
   }
 }
@@ -47,10 +56,6 @@ auto InsertExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   if (done_flag_) {
     return false;
   }
-  if(!lock_manager_->LockTable(txn_,LockManager::LockMode::EXCLUSIVE,table_info_->oid_)){
-    throw ExecutionException("Fail to lock table");
-  }
-
   done_flag_ = true;
 
   Tuple child_tuple{};
@@ -60,13 +65,17 @@ auto InsertExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   while (child_executor_->Next(&child_tuple, rid)) {
     table_heap_->InsertTuple(child_tuple, rid, GetExecutorContext()->GetTransaction());
 
-    TableWriteRecord table_record(*rid,WType::INSERT,child_tuple,table_heap_);
-    txn_->AppendTableWriteRecord(table_record);
+    try {
+      if (!lock_manager_->LockRow(txn_, LockManager::LockMode::EXCLUSIVE, table_info_->oid_, *rid)) {
+        throw ExecutionException("Fail to lock row");
+      }
+    } catch (TransactionAbortException &e) {
+      throw ExecutionException("Fail to lock row");
+    }
 
     UpdateIndex(&child_tuple, rid);
     inserted_rows_num++;
   }
-  lock_manager_->UnlockTable(txn_,table_info_->oid_);
 
   std::vector<Value> values{};
   values.reserve(1);
