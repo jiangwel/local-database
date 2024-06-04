@@ -1,20 +1,19 @@
-# What
+### Based on C++ Support for a Basic SQL Database Kernel Implementation
 
-BusTub is a relational database management system built at Carnegie Mellon University for the Introduction to Database Systems (15-445/645) course.  
-### LAB1 Buffer Pool implementation   
-  + Extendible Hash Table  
-  + LRU-K Replacement Policy  
-  + Buffer Pool Manager Instance
-### LAB2 B+ Tree index implementation
-  + B+ tree pages
-  + B+ Tree Data Structure(Insertion,Deletion,Point Search)
-  + Index Iterator
-  + Concurrent Index(crabbing technique)
-### LAB3 Operator executors(based on the volcano model)  & Top-N Optimization implementation  
-  + Seq scan executor, Insert executor, Delete executor, Index scan executor, Aggregation executor, Nested loop join executor, Nested index join executor, Sort executor, Limit executor, Topn executor
-  + Sort limit as topn optimizer
-### LAB4 Lock Manager implementation
-  + Lock manager 
+### Project Description:
+This project is an open project from CMU15445. The goal is to develop a database kernel supporting basic SQL using C++. It is divided into four labs and requires passing 96 test cases.
+
+### Project Contributions:
++ Implemented Buffer Pool Management: 
+  + Implemented the LRU-K algorithm as the page replacement strategy for the Buffer Pool. 
++ Implemented B+ tree Index: 
+  + Used the crabbing protocol to achieve concurrent operations on the B+ tree.
++ Implemented a Volcano model-based query executor with TopN optimization: 
+  + Aggregation executor, Nested loop join executor, Nested index join executor, Sort executor.
++ Implemented a Lock Manager based on two-phase locking: 
+  + Supported three isolation levels: RR, RC, RU.
+  + Supported five lock types at both table and row granularities.
+  + Implemented deadlock detection and handling.
    
   
 
